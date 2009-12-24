@@ -1,0 +1,118 @@
+TOP2049 USB protocol
+
+This is incomplete and doesn't make a whole lot of sense, but it's what we got for now...
+
+
+
+=== INITIALIZATION ===
+
+USB_REQ_SET_CONFIGURATION -> 1
+Bulk transfer happens on EP 0x2
+
+	Bulk out: 4 bytes
+		0E11 0000
+	Bulk out: 1 byte
+		07
+	Bulk in: 64 bytes
+		0711 0000 0000 0000 0000 0000 0000 0000 
+		0000 0000 0000 0000 0000 0000 0000 0000 
+		0000 0000 0000 0000 0000 0000 0000 0000 
+		0000 0000 0000 0000 0000 0000 0000 0000 
+	Bulk out: 2 bytes
+		0D07
+	Bulk in: 64 bytes
+		0D07 0000 0000 0000 0000 0000 0000 0000 
+		0000 0000 0000 0000 0000 0000 0000 0000 
+		0000 0000 0000 0000 0000 0000 0000 0000 
+		0000 0000 0000 0000 0000 0000 0000 0000 
+	Bulk out: 3 bytes
+		0A1B FF
+	Bulk out: 4 bytes
+		0E12 0000 
+	Bulk out: 1 byte
+		1B
+	Bulk out: 4 bytes
+		0E12 0000 
+	Bulk out: 1 byte
+		1B
+	Bulk out: 4 bytes
+		0E12 0000 
+	Bulk out: 1 byte
+		1B
+	Bulk out: 4 bytes
+		0E12 7800 
+	Bulk out: 1 byte
+		1B
+	Bulk out: 4 bytes
+		0E20 0000 
+	Bulk out: 1 byte
+		1B
+	Bulk out: 4 bytes
+		0E13 0000 
+	Bulk out: 1 byte
+		1B
+	Bulk out: 3 bytes
+		0A1D 86
+	Bulk out: 4 bytes
+		0E16 0000 
+	Bulk out: 4 bytes
+		0E14 0000 
+	Bulk out: 4 bytes
+		0E15 0000 
+	Bulk out: 1 byte
+		1B
+	Bulk out: 4 bytes
+		0E12 0000 
+	Bulk out: 1 byte
+		1B
+	Bulk out: 4 bytes
+		0E12 7800 
+	Bulk out: 1 byte
+		1B
+	Bulk out: 4 bytes
+		0E20 0000 
+	Bulk out: 1 byte
+		1B
+	Bulk out: 4 bytes
+		0E25 0000 
+	Bulk out: 1 byte
+		07
+	Bulk in: 64 bytes
+		0725 0000 3034 3920 7665 7231 2E32 3020 
+		16FC 47FC 3DED 678E 8A85 A684 D025 6A31 
+		9DFD AA83 ED36 BE63 9102 B379 D2D6 1796 
+		0283 3B67 F343 91F8 3BDF 151E 27B5 ABE6
+
+
+
+=== BITFILE UPLOAD ===
+
+	Bulk out: 3 bytes
+		0A1B 00
+	Bulk out: 4 bytes
+		0E21 0000 
+	Bulk out: 1 bytes
+		07
+	Bulk in: 64 bytes
+		0721 0000 0000 0000 0000 0000 0000 0000 
+		0000 0000 0000 0000 0000 0000 0000 0000 
+		0000 0000 0000 0000 0000 0000 0000 0000 
+		0000 0000 0000 0000 0000 0000 0000 0000 
+
+	for each 60byte bitfile chunk:
+		Bulk out: 64 bytes
+			0E22 0000    + 60bytes payload
+
+	Bulk out: 4 bytes
+		0E16 0E00 
+	Bulk out: 4 bytes
+		0E13 3200 
+	Bulk out: 1 byte
+		1B
+	Bulk out: 4 bytes
+		0E12 0000 
+	Bulk out: 1 byte
+		1B
+	Bulk out: 4 bytes
+		0E12 7800 
+

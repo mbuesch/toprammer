@@ -22,14 +22,152 @@
 from bitfile import *
 import sys
 import getopt
+try:
+	import usb
+except (ImportError), e:
+	print "Python USB support module not found. Please install python-usb."
+	sys.exit(1)
+
+
+def dumpMem(mem):
+	def toAscii(char):
+		if char >= 32 and char <= 126:
+			return chr(char)
+		return "."
+
+	ascii = ""
+	for i in range(0, len(mem)):
+		if i % 16 == 0 and i != 0:
+			sys.stdout.write("  " + ascii + "\n")
+			ascii = ""
+		if i % 16 == 0:
+			sys.stdout.write("0x%04X:  " % i)
+		c = ord(mem[i])
+		sys.stdout.write("%02X" % c)
+		if (i % 2 != 0):
+			sys.stdout.write(" ")
+		ascii += toAscii(c)
+	sys.stdout.write("  " + ascii + "\n")
 
 
 class TOPException(Exception): pass
 
 class TOP:
-	def __init__(self, bitfileName):
+	def __init__(self, bitfileName, busDev=None):
+		"""bitfileName is the path to the .bit file.
+		   busDev is a tuple (BUSID, DEVID) or None."""
 		self.bitfile = Bitfile()
 		self.bitfile.parseFile(bitfileName)
+
+		# Find the device
+		for bus in usb.busses():
+			if busDev and bus.dirname != "%03d" % busDev[0]:
+				continue
+			for dev in bus.devices:
+				if busDev and dev.filename != "%03d" % busDev[1]:
+					continue
+				if self.__isTOP(dev):
+					break
+				if busDev:
+					raise TOPException(
+						"Device %03d.%03d is not a TOP device" %\
+						(busDev[0], busDev[1]))
+			else:
+				continue
+			break
+		else:
+			raise TOPException("TOP programmer device not found!")
+		self.usbbus = bus
+		self.usbdev = dev
+		self.bulkOut = None
+		self.bulkIn = None
+
+		# Set up the USB interface
+		try:
+			self.usbh = self.usbdev.open()
+			config = self.usbdev.configurations[0]
+			interface = config.interfaces[0][0]
+
+			# Find the endpoints
+			for ep in interface.endpoints:
+				if not self.bulkIn and \
+				   ep.type == usb.ENDPOINT_TYPE_BULK and \
+				   (ep.address & usb.ENDPOINT_IN) != 0:
+					self.bulkIn = ep
+				if not self.bulkOut and \
+				   ep.type == usb.ENDPOINT_TYPE_BULK and \
+				   (ep.address & usb.ENDPOINT_IN) == 0:
+					self.bulkOut = ep
+			if not self.bulkIn or not self.bulkOut:
+				raise TOPException("Did not find all USB EPs")
+
+			self.usbh.setConfiguration(config)
+			self.usbh.claimInterface(interface)
+			self.usbh.setAltInterface(interface)
+			self.usbh.clearHalt(self.bulkOut.address)
+			self.usbh.clearHalt(self.bulkIn.address)
+		except (usb.USBError), e:
+			raise TOPException("USB error: " + str(e))
+
+		self.__initialize()
+
+	@staticmethod
+	def __isTOP(usbdev):
+		ids = ( (0x2471, 0x0853), )
+		return (usbdev.idVendor, usbdev.idProduct) in ids
+
+	def __initialize(self):
+		"Initialize the hardware"
+		self.__sendCommand("\x0E\x11\x00\x00")
+		self.__sendCommand("\x07")
+		self.__readReply(64)
+		self.__sendCommand("\x0D\x07")
+		self.__readReply(64)
+		self.__sendCommand("\x0A\x1B\xFF")
+		self.__sendCommand("\x0E\x12\x00\x00")
+		self.__sendCommand("\x1B")
+		self.__sendCommand("\x0E\x12\x00\x00")
+		self.__sendCommand("\x1B")
+		self.__sendCommand("\x0E\x12\x00\x00")
+		self.__sendCommand("\x1B")
+		self.__sendCommand("\x0E\x12\x78\x00")
+		self.__sendCommand("\x1B")
+		self.__sendCommand("\x0E\x20\x00\x00")
+		self.__sendCommand("\x1B")
+		self.__sendCommand("\x0E\x13\x00\x00")
+		self.__sendCommand("\x1B")
+		self.__sendCommand("\x0A\x1D\x86")
+		self.__sendCommand("\x0E\x16\x00\x00")
+		self.__sendCommand("\x0E\x14\x00\x00")
+		self.__sendCommand("\x0E\x15\x00\x00")
+		self.__sendCommand("\x1B")
+		self.__sendCommand("\x0E\x12\x00\x00")
+		self.__sendCommand("\x1B")
+		self.__sendCommand("\x0E\x12\x78\x00")
+		self.__sendCommand("\x1B")
+		self.__sendCommand("\x0E\x20\x00\x00")
+		self.__sendCommand("\x1B")
+		self.__sendCommand("\x0E\x25\x00\x00")
+		self.__sendCommand("\x07")
+		self.__readReply(64)
+
+	def __sendCommand(self, command):
+		try:
+			ep = self.bulkOut.address
+			self.usbh.bulkWrite(ep, command)
+		except (usb.USBError), e:
+			raise TOPException("USB bulk write error: " + str(e))
+
+	def __readReply(self, size):
+		try:
+			ep = self.bulkIn.address
+			data = ""
+			for c in self.usbh.bulkRead(ep, size):
+				data += chr(c)
+			dumpMem(data)#XXX
+		except (usb.USBError), e:
+			raise TOPException("USB bulk read error: " + str(e))
+		return data
 
 def usage():
 	print "TOP2049 Open Source programming suite"
@@ -37,13 +175,17 @@ def usage():
 	print "Usage: %s [OPTIONS]" % sys.argv[0]
 	print ""
 	print " -b|--bitfile           Path to the *.bit file (mandatory)"
+	print ""
+	print " -d|--device BUS.DEV    Use the programmer at BUS.DEV"
+	print "                        First found programmer is used, if not given."
 
 def main(argv):
 	opt_bitfile = None
+	opt_device = None
 	try:
 		(opts, args) = getopt.getopt(sys.argv[1:],
-			"hb:",
-			[ "help", "bitfile=", ])
+			"hb:d:",
+			[ "help", "bitfile=", "device=", ])
 	except getopt.GetoptError:
 		usage()
 		return 1
@@ -53,12 +195,19 @@ def main(argv):
 			return 0
 		if o in ("-b", "--bitfile"):
 			opt_bitfile = v
+		if o in ("-d", "--device"):
+			try:
+				v = v.split(".")
+				opt_device = (int(v[0]), int(v[1]))
+			except (IndexError, ValueError), e:
+				print "-d|--device invalid BUS.DEV id."
+				return 1
 	if not opt_bitfile:
 		print "-b|--bitfile is mandatory!"
 		return 1
 
 	try:
-		top = TOP(opt_bitfile)
+		top = TOP(opt_bitfile, opt_device)
 	except (TOPException, BitfileException), e:
 		print e
 		return 1
