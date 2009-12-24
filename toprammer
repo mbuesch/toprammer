@@ -150,6 +150,27 @@ class TOP:
 		self.__sendCommand("\x0E\x25\x00\x00")
 		self.__sendCommand("\x07")
 		self.__readReply(64)
+		self.__bitfileUpload()
+
+	def __bitfileUpload(self):
+		self.__sendCommand("\x0A\x1B\x00")
+		self.__sendCommand("\x0E\x21\x00\x00")
+		self.__sendCommand("\x07")
+		self.__readReply(64)
+
+		data = self.bitfile.getPayload()
+		for i in range(0, len(data), 60):
+			cmd = "\x0E\x22\x00\x00"
+			cmd += data[i : i + 60]
+			cmd += "\x00" * (64 - len(cmd)) # padding
+			self.__sendCommand(cmd)
+
+		self.__sendCommand("\x0E\x16\x0E\x00")
+		self.__sendCommand("\x0E\x13\x32\x00")
+		self.__sendCommand("\x1B")
+		self.__sendCommand("\x0E\x12\x00\x00")
+		self.__sendCommand("\x1B")
+		self.__sendCommand("\x0E\x12\x78\x00")
 
 	def __sendCommand(self, command):
 		try:
