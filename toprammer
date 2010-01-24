@@ -143,8 +143,8 @@ class TOP:
 		self.s("\x1B")
 		self.s("\x0A\x1D\x86")
 		self.s("\x0E\x16\x00\x00")
-		self.s("\x0E\x14\x00\x00")
-		self.s("\x0E\x15\x00\x00")
+		self.cmdLoadVPPLayout()
+		self.cmdLoadVCCXLayout()
 		self.s("\x1B")
 		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 0)
 		self.s("\x1B")
@@ -165,10 +165,7 @@ class TOP:
 
 		data = self.bitfile.getPayload()
 		for i in range(0, len(data), 60):
-			cmd = "\x0E\x22\x00\x00"
-			cmd += data[i : i + 60]
-			cmd += "\x00" * (64 - len(cmd)) # padding
-			self.s(cmd)
+			self.cmdFPGAUploadData(data[i : i + 60])
 
 		self.s("\x0E\x16\x0E\x00")
 		self.cmdSetVoltage(TOP.VOLTAGE_VCCX, 5)
@@ -176,6 +173,21 @@ class TOP:
 		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 0)
 		self.s("\x1B")
 		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 12)
+
+	def cmdFPGAUploadData(self, data):
+		"""Upload data into the FPGA."""
+		assert(len(data) <= 60)
+		cmd = "\x0E\x22\x00\x00" + data
+		cmd += "\x00" * (64 - len(cmd)) # padding
+		self.__send(cmd)
+
+	def cmdLoadVPPLayout(self):
+		"""Load the VPP configuration into the shift registers."""
+		self.__send("\x0E\x14\x00\x00")
+
+	def cmdLoadVCCXLayout(self):
+		"""Load the VCCX configuration into the shift registers."""
+		self.__send("\x0E\x15\x00\x00")
 
 	def cmdSetVoltage(self, line, voltage):
 		"""Set the voltage of a line. line is a VOLTAGE_xxx idenitifier.
