@@ -47,7 +47,7 @@ def dumpMem(mem):
 		if (i % 2 != 0):
 			sys.stdout.write(" ")
 		ascii += toAscii(c)
-	sys.stdout.write("  " + ascii + "\n")
+	sys.stdout.write("  " + ascii + "\n\n")
 
 
 class TOPException(Exception): pass
@@ -118,68 +118,70 @@ class TOP:
 
 	def __initialize(self):
 		"Initialize the hardware"
-		self.__sendCommand("\x0E\x11\x00\x00")
-		self.__sendCommand("\x07")
-		self.__readReply(64)
-		self.__sendCommand("\x0D\x07")
-		self.__readReply(64)
-		self.__sendCommand("\x0A\x1B\xFF")
-		self.__sendCommand("\x0E\x12\x00\x00")
-		self.__sendCommand("\x1B")
-		self.__sendCommand("\x0E\x12\x00\x00")
-		self.__sendCommand("\x1B")
-		self.__sendCommand("\x0E\x12\x00\x00")
-		self.__sendCommand("\x1B")
-		self.__sendCommand("\x0E\x12\x78\x00")
-		self.__sendCommand("\x1B")
-		self.__sendCommand("\x0E\x20\x00\x00")
-		self.__sendCommand("\x1B")
-		self.__sendCommand("\x0E\x13\x00\x00")
-		self.__sendCommand("\x1B")
-		self.__sendCommand("\x0A\x1D\x86")
-		self.__sendCommand("\x0E\x16\x00\x00")
-		self.__sendCommand("\x0E\x14\x00\x00")
-		self.__sendCommand("\x0E\x15\x00\x00")
-		self.__sendCommand("\x1B")
-		self.__sendCommand("\x0E\x12\x00\x00")
-		self.__sendCommand("\x1B")
-		self.__sendCommand("\x0E\x12\x78\x00")
-		self.__sendCommand("\x1B")
-		self.__sendCommand("\x0E\x20\x00\x00")
-		self.__sendCommand("\x1B")
-		self.__sendCommand("\x0E\x25\x00\x00")
-		self.__sendCommand("\x07")
-		self.__readReply(64)
+		self.s("\x0E\x11\x00\x00")
+		self.s("\x07")
+		self.r(64)
+		self.s("\x0D\x07")
+		self.r(64)
+		self.s("\x0A\x1B\xFF")
+		self.s("\x0E\x12\x00\x00")
+		self.s("\x1B")
+		self.s("\x0E\x12\x00\x00")
+		self.s("\x1B")
+		self.s("\x0E\x12\x00\x00")
+		self.s("\x1B")
+		self.s("\x0E\x12\x78\x00")
+		self.s("\x1B")
+		self.s("\x0E\x20\x00\x00")
+		self.s("\x1B")
+		self.s("\x0E\x13\x00\x00")
+		self.s("\x1B")
+		self.s("\x0A\x1D\x86")
+		self.s("\x0E\x16\x00\x00")
+		self.s("\x0E\x14\x00\x00")
+		self.s("\x0E\x15\x00\x00")
+		self.s("\x1B")
+		self.s("\x0E\x12\x00\x00")
+		self.s("\x1B")
+		self.s("\x0E\x12\x78\x00")
+		self.s("\x1B")
+		self.s("\x0E\x20\x00\x00")
+		self.s("\x1B")
+		self.s("\x0E\x25\x00\x00")
+		self.s("\x07")
+		self.r(64)
 		self.__bitfileUpload()
 
 	def __bitfileUpload(self):
-		self.__sendCommand("\x0A\x1B\x00")
-		self.__sendCommand("\x0E\x21\x00\x00")
-		self.__sendCommand("\x07")
-		self.__readReply(64)
+		self.s("\x0A\x1B\x00")
+		self.s("\x0E\x21\x00\x00")
+		self.s("\x07")
+		self.r(64)
 
 		data = self.bitfile.getPayload()
 		for i in range(0, len(data), 60):
 			cmd = "\x0E\x22\x00\x00"
 			cmd += data[i : i + 60]
 			cmd += "\x00" * (64 - len(cmd)) # padding
-			self.__sendCommand(cmd)
+			self.s(cmd)
 
-		self.__sendCommand("\x0E\x16\x0E\x00")
-		self.__sendCommand("\x0E\x13\x32\x00")
-		self.__sendCommand("\x1B")
-		self.__sendCommand("\x0E\x12\x00\x00")
-		self.__sendCommand("\x1B")
-		self.__sendCommand("\x0E\x12\x78\x00")
+		self.s("\x0E\x16\x0E\x00")
+		self.s("\x0E\x13\x32\x00")
+		self.s("\x1B")
+		self.s("\x0E\x12\x00\x00")
+		self.s("\x1B")
+		self.s("\x0E\x12\x78\x00")
 
-	def __sendCommand(self, command):
+	def s(self, command): self.__send(command)
+	def __send(self, command):
 		try:
 			ep = self.bulkOut.address
 			self.usbh.bulkWrite(ep, command)
 		except (usb.USBError), e:
 			raise TOPException("USB bulk write error: " + str(e))
 
-	def __readReply(self, size):
+	def r(self, size): return self.__receive(size)
+	def __receive(self, size):
 		try:
 			ep = self.bulkIn.address
 			data = ""
