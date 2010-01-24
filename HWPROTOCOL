@@ -4,6 +4,18 @@ This is incomplete and doesn't make a whole lot of sense, but it's what we got f
 
 
 
+=== COMMANDS ===
+
+07		>= Related to reading values from device.
+
+0E12xx00	>= Set VPP, where xx is the voltage.
+		   xx is in centivolt.
+
+0E13xx00	>= Set VCCX, where xx is the voltage.
+		   xx is in centivolt.
+
+
+
 === INITIALIZATION ===
 
 USB_REQ_SET_CONFIGURATION -> 1

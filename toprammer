@@ -22,6 +22,7 @@
 from bitfile import *
 import sys
 import getopt
+import time
 try:
 	import usb
 except (ImportError), e:
@@ -53,6 +54,10 @@ def dumpMem(mem):
 class TOPException(Exception): pass
 
 class TOP:
+	# Configurable voltage lines.
+	VOLTAGE_VPP	= 0x12
+	VOLTAGE_VCCX	= 0x13
+
 	def __init__(self, bitfileName, busDev=None):
 		"""bitfileName is the path to the .bit file.
 		   busDev is a tuple (BUSID, DEVID) or None."""
@@ -124,26 +129,26 @@ class TOP:
 		self.s("\x0D\x07")
 		self.r(64)
 		self.s("\x0A\x1B\xFF")
-		self.s("\x0E\x12\x00\x00")
+		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 0)
 		self.s("\x1B")
-		self.s("\x0E\x12\x00\x00")
+		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 0)
 		self.s("\x1B")
-		self.s("\x0E\x12\x00\x00")
+		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 0)
 		self.s("\x1B")
-		self.s("\x0E\x12\x78\x00")
+		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 12)
 		self.s("\x1B")
 		self.s("\x0E\x20\x00\x00")
 		self.s("\x1B")
-		self.s("\x0E\x13\x00\x00")
+		self.cmdSetVoltage(TOP.VOLTAGE_VCCX, 0)
 		self.s("\x1B")
 		self.s("\x0A\x1D\x86")
 		self.s("\x0E\x16\x00\x00")
 		self.s("\x0E\x14\x00\x00")
 		self.s("\x0E\x15\x00\x00")
 		self.s("\x1B")
-		self.s("\x0E\x12\x00\x00")
+		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 0)
 		self.s("\x1B")
-		self.s("\x0E\x12\x78\x00")
+		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 12)
 		self.s("\x1B")
 		self.s("\x0E\x20\x00\x00")
 		self.s("\x1B")
@@ -166,11 +171,18 @@ class TOP:
 			self.s(cmd)
 
 		self.s("\x0E\x16\x0E\x00")
-		self.s("\x0E\x13\x32\x00")
+		self.cmdSetVoltage(TOP.VOLTAGE_VCCX, 5)
 		self.s("\x1B")
-		self.s("\x0E\x12\x00\x00")
+		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 0)
 		self.s("\x1B")
-		self.s("\x0E\x12\x78\x00")
+		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 12)
+
+	def cmdSetVoltage(self, line, voltage):
+		"""Set the voltage of a line. line is a VOLTAGE_xxx idenitifier.
+		voltage is a floating point number."""
+		centivolt = int(voltage * 10)
+		cmd = chr(0x0E) + chr(line) + chr(centivolt) + chr(0)
+		self.__send(cmd)
 
 	def s(self, command): self.__send(command)
 	def __send(self, command):
