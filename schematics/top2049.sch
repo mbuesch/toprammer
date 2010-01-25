@@ -1,0 +1,748 @@
+EESchema Schematic File Version 1
+LIBS:power,device,conn,linear,regul,74xx,cmos4000,adc-dac,memory,xilinx,special,microcontrollers,dsp,microchip,analog_switches,motorola,texas,intel,audio,interface,digital-audio,philips,display,cypress,siliconi,contrib,valves
+EELAYER 43  0
+EELAYER END
+$Descr A3 16535 11700
+Sheet 1 1
+Title "TOP2049 "L" and "H" chip connections"
+Date "25 jan 2010"
+Rev "1"
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+Wire Wire Line
+	6250 5050 13200 5050
+Wire Wire Line
+	13200 5050 13200 6950
+Wire Wire Line
+	13400 7500 13400 7250
+Wire Wire Line
+	12700 7500 12700 7250
+Wire Wire Line
+	6250 5650 11800 5650
+Wire Wire Line
+	11800 5650 11800 6950
+Wire Wire Line
+	11600 7250 11600 7500
+Wire Wire Line
+	10400 6950 10400 5850
+Wire Wire Line
+	10400 5850 6250 5850
+Wire Wire Line
+	11300 7500 11300 7250
+Wire Wire Line
+	10200 7500 10200 7250
+Wire Wire Line
+	9500 7250 9500 7500
+Wire Wire Line
+	5550 5750 5400 5750
+Wire Wire Line
+	5400 5750 5400 6150
+Wire Wire Line
+	5400 6150 9000 6150
+Wire Wire Line
+	9000 6150 9000 6950
+Wire Wire Line
+	8800 7500 8800 7250
+Wire Wire Line
+	8100 7500 8100 7250
+Wire Wire Line
+	7800 7500 7800 7250
+Wire Wire Line
+	7600 6950 7600 6350
+Wire Wire Line
+	7600 6350 5200 6350
+Wire Wire Line
+	5200 6350 5200 5550
+Wire Wire Line
+	5200 5550 5550 5550
+Wire Wire Line
+	7100 7500 7100 7250
+Wire Wire Line
+	6400 7500 6400 7250
+Wire Wire Line
+	6200 6950 6200 6550
+Wire Wire Line
+	6200 6550 5000 6550
+Wire Wire Line
+	5000 6550 5000 5050
+Wire Wire Line
+	5000 5050 5550 5050
+Wire Wire Line
+	6250 5150 6550 5150
+Wire Wire Line
+	6550 5150 6550 4150
+Connection ~ 4600 4150
+Wire Wire Line
+	6550 4150 4600 4150
+Connection ~ 4900 4050
+Wire Wire Line
+	4900 3950 4900 5250
+Wire Wire Line
+	2900 7250 2900 7500
+Wire Wire Line
+	3800 5550 3250 5550
+Wire Wire Line
+	3250 5550 3250 6500
+Wire Wire Line
+	3250 6500 2700 6500
+Wire Wire Line
+	2700 6500 2700 6950
+Wire Wire Line
+	3200 7500 3200 7250
+Wire Wire Line
+	3450 6400 3450 5750
+Wire Wire Line
+	3450 6400 4100 6400
+Wire Wire Line
+	4100 6400 4100 6950
+Wire Wire Line
+	5700 7500 5700 7250
+Wire Wire Line
+	5300 7500 5300 7250
+Wire Wire Line
+	3900 7500 3900 7250
+Wire Wire Line
+	4300 7500 4300 7250
+Wire Wire Line
+	3450 5750 3800 5750
+Wire Wire Line
+	3200 5450 3800 5450
+Connection ~ 5400 5250
+Connection ~ 5400 4600
+Wire Wire Line
+	5400 4600 5400 5350
+Connection ~ 3650 5250
+Wire Wire Line
+	3650 5350 3650 4600
+Connection ~ 3650 5350
+Wire Wire Line
+	3050 5350 3800 5350
+Wire Wire Line
+	3650 5250 3800 5250
+Wire Wire Line
+	5400 5250 5550 5250
+Connection ~ 5400 5350
+Wire Wire Line
+	3650 4600 6750 4600
+Wire Wire Line
+	6750 4600 6750 5450
+Wire Wire Line
+	6750 5450 6250 5450
+Wire Wire Line
+	3800 5850 3550 5850
+Wire Wire Line
+	4800 6950 4800 6850
+Wire Wire Line
+	5000 7500 5000 7250
+Wire Wire Line
+	4600 7500 4600 7250
+Wire Wire Line
+	4500 5850 4600 5850
+Wire Wire Line
+	4600 5850 4600 6750
+Wire Wire Line
+	4600 6750 5500 6750
+Wire Wire Line
+	5500 6750 5500 6950
+Wire Wire Line
+	4800 6850 4500 6850
+Wire Wire Line
+	4500 6850 4500 6300
+Wire Wire Line
+	4500 6300 3550 6300
+Wire Wire Line
+	3550 6300 3550 5850
+Wire Wire Line
+	3800 5650 3350 5650
+Wire Wire Line
+	3350 5650 3350 6500
+Wire Wire Line
+	3350 6500 3400 6500
+Wire Wire Line
+	3400 6500 3400 6950
+Wire Wire Line
+	3600 7500 3600 7250
+Wire Wire Line
+	2500 7500 2500 7250
+Wire Wire Line
+	4900 5250 4500 5250
+Wire Wire Line
+	4900 4050 6650 4050
+Wire Wire Line
+	6650 4050 6650 5250
+Wire Wire Line
+	6650 5250 6250 5250
+Wire Wire Line
+	4500 5150 4600 5150
+Wire Wire Line
+	4600 5150 4600 3500
+Wire Wire Line
+	5450 5450 5550 5450
+Wire Wire Line
+	4500 5450 4600 5450
+Wire Wire Line
+	4600 5450 4600 5350
+Wire Wire Line
+	4600 5350 5550 5350
+Wire Wire Line
+	5550 5150 5100 5150
+Wire Wire Line
+	6000 7500 6000 7250
+Wire Wire Line
+	6700 7500 6700 7250
+Wire Wire Line
+	5100 5150 5100 6450
+Wire Wire Line
+	5100 6450 6900 6450
+Wire Wire Line
+	6900 6450 6900 6950
+Wire Wire Line
+	7400 7500 7400 7250
+Wire Wire Line
+	8300 6950 8300 6250
+Wire Wire Line
+	8300 6250 5300 6250
+Wire Wire Line
+	5300 6250 5300 5650
+Wire Wire Line
+	5300 5650 5550 5650
+Wire Wire Line
+	8500 7500 8500 7250
+Wire Wire Line
+	9200 7500 9200 7250
+Wire Wire Line
+	9700 6950 9700 6050
+Wire Wire Line
+	9700 6050 5500 6050
+Wire Wire Line
+	5500 6050 5500 5850
+Wire Wire Line
+	5500 5850 5550 5850
+Wire Wire Line
+	9900 7500 9900 7250
+Wire Wire Line
+	10600 7500 10600 7250
+Wire Wire Line
+	10900 7500 10900 7250
+Wire Wire Line
+	6250 5750 11100 5750
+Wire Wire Line
+	11100 5750 11100 6950
+Wire Wire Line
+	12000 7250 12000 7500
+Wire Wire Line
+	12300 7500 12300 7250
+Wire Wire Line
+	13000 7500 13000 7250
+Wire Wire Line
+	6250 5550 12500 5550
+Wire Wire Line
+	12500 5550 12500 6950
+NoConn ~ 6250 5350
+$Comp
+L TST P?
+U 1 1 4B5DB472
+P 13400 7500
+F 0 "P?" H 13400 7800 40  0000 C C
+F 1 "ZIF PIN26" H 13400 7750 30  0000 C C
+	1    13400 7500
+	-1   0    0    1   
+$EndComp
+$Comp
+L TST P?
+U 1 1 4B5DB46E
+P 12700 7500
+F 0 "P?" H 12700 7800 40  0000 C C
+F 1 "ZIF PIN16" H 12700 7750 30  0000 C C
+	1    12700 7500
+	-1   0    0    1   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B5DB469
+P 13000 7500
+F 0 "#PWR?" H 13000 7500 30  0001 C C
+F 1 "GND" H 13000 7430 30  0001 C C
+	1    13000 7500
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B5DB465
+P 12300 7500
+F 0 "#PWR?" H 12300 7500 30  0001 C C
+F 1 "GND" H 12300 7430 30  0001 C C
+	1    12300 7500
+	1    0    0    -1  
+$EndComp
+$Comp
+L NPN Q22G
+U 1 1 4B5DB45E
+P 13200 7150
+F 0 "Q22G" H 13350 7150 50  0000 C C
+F 1 "NPN" H 13102 7300 50  0000 C C
+	1    13200 7150
+	0    1    1    0   
+$EndComp
+$Comp
+L NPN Q12G
+U 1 1 4B5DB41E
+P 12500 7150
+F 0 "Q12G" H 12650 7150 50  0000 C C
+F 1 "NPN" H 12402 7300 50  0000 C C
+	1    12500 7150
+	0    1    1    0   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B5DB24F
+P 11600 7500
+F 0 "#PWR?" H 11600 7500 30  0001 C C
+F 1 "GND" H 11600 7430 30  0001 C C
+	1    11600 7500
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B5DB24C
+P 10900 7500
+F 0 "#PWR?" H 10900 7500 30  0001 C C
+F 1 "GND" H 10900 7430 30  0001 C C
+	1    10900 7500
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B5DB249
+P 10200 7500
+F 0 "#PWR?" H 10200 7500 30  0001 C C
+F 1 "GND" H 10200 7430 30  0001 C C
+	1    10200 7500
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B5DB245
+P 9500 7500
+F 0 "#PWR?" H 9500 7500 30  0001 C C
+F 1 "GND" H 9500 7430 30  0001 C C
+	1    9500 7500
+	1    0    0    -1  
+$EndComp
+$Comp
+L TST P?
+U 1 1 4B5DB21C
+P 12000 7500
+F 0 "P?" H 12000 7800 40  0000 C C
+F 1 "ZIF PIN15" H 12000 7750 30  0000 C C
+	1    12000 7500
+	-1   0    0    1   
+$EndComp
+$Comp
+L TST P?
+U 1 1 4B5DB219
+P 11300 7500
+F 0 "P?" H 11300 7800 40  0000 C C
+F 1 "ZIF PIN29" H 11300 7750 30  0000 C C
+	1    11300 7500
+	-1   0    0    1   
+$EndComp
+$Comp
+L TST P?
+U 1 1 4B5DB214
+P 10600 7500
+F 0 "P?" H 10600 7800 40  0000 C C
+F 1 "ZIF PIN18" H 10600 7750 30  0000 C C
+	1    10600 7500
+	-1   0    0    1   
+$EndComp
+$Comp
+L TST P?
+U 1 1 4B5DB20F
+P 9900 7500
+F 0 "P?" H 9900 7800 40  0000 C C
+F 1 "ZIF PIN35" H 9900 7750 30  0000 C C
+	1    9900 7500
+	-1   0    0    1   
+$EndComp
+$Comp
+L NPN Q11G
+U 1 1 4B5DB1FC
+P 11800 7150
+F 0 "Q11G" H 11950 7150 50  0000 C C
+F 1 "NPN" H 11702 7300 50  0000 C C
+	1    11800 7150
+	0    1    1    0   
+$EndComp
+$Comp
+L NPN Q25G
+U 1 1 4B5DB1F7
+P 11100 7150
+F 0 "Q25G" H 11250 7150 50  0000 C C
+F 1 "NPN" H 11002 7300 50  0000 C C
+	1    11100 7150
+	0    1    1    0   
+$EndComp
+$Comp
+L NPN Q14G
+U 1 1 4B5DB1F2
+P 10400 7150
+F 0 "Q14G" H 10550 7150 50  0000 C C
+F 1 "NPN" H 10302 7300 50  0000 C C
+	1    10400 7150
+	0    1    1    0   
+$EndComp
+$Comp
+L TST P?
+U 1 1 4B5DAF9A
+P 9200 7500
+F 0 "P?" H 9200 7800 40  0000 C C
+F 1 "ZIF PIN24" H 9200 7750 30  0000 C C
+	1    9200 7500
+	-1   0    0    1   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B5DAF93
+P 8800 7500
+F 0 "#PWR?" H 8800 7500 30  0001 C C
+F 1 "GND" H 8800 7430 30  0001 C C
+	1    8800 7500
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B5DAF56
+P 8100 7500
+F 0 "#PWR?" H 8100 7500 30  0001 C C
+F 1 "GND" H 8100 7430 30  0001 C C
+	1    8100 7500
+	1    0    0    -1  
+$EndComp
+$Comp
+L TST P?
+U 1 1 4B5DAF2C
+P 8500 7500
+F 0 "P?" H 8500 7800 40  0000 C C
+F 1 "ZIF PIN20" H 8500 7750 30  0000 C C
+	1    8500 7500
+	-1   0    0    1   
+$EndComp
+$Comp
+L NPN Q31G
+U 1 1 4B5DAEF1
+P 9700 7150
+F 0 "Q31G" H 9850 7150 50  0000 C C
+F 1 "NPN" H 9602 7300 50  0000 C C
+	1    9700 7150
+	0    1    1    0   
+$EndComp
+$Comp
+L NPN Q20G
+U 1 1 4B5DAEED
+P 9000 7150
+F 0 "Q20G" H 9150 7150 50  0000 C C
+F 1 "NPN" H 8902 7300 50  0000 C C
+	1    9000 7150
+	0    1    1    0   
+$EndComp
+$Comp
+L NPN Q16G
+U 1 1 4B5DAEDD
+P 8300 7150
+F 0 "Q16G" H 8450 7150 50  0000 C C
+F 1 "NPN" H 8202 7300 50  0000 C C
+	1    8300 7150
+	0    1    1    0   
+$EndComp
+$Comp
+L TST P?
+U 1 1 4B5DAE38
+P 7800 7500
+F 0 "P?" H 7800 7800 40  0000 C C
+F 1 "ZIF PIN14" H 7800 7750 30  0000 C C
+	1    7800 7500
+	-1   0    0    1   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B5DAE31
+P 7400 7500
+F 0 "#PWR?" H 7400 7500 30  0001 C C
+F 1 "GND" H 7400 7430 30  0001 C C
+	1    7400 7500
+	1    0    0    -1  
+$EndComp
+$Comp
+L NPN Q10G
+U 1 1 4B5DAE15
+P 7600 7150
+F 0 "Q10G" H 7750 7150 50  0000 C C
+F 1 "NPN" H 7502 7300 50  0000 C C
+	1    7600 7150
+	0    1    1    0   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B5DACFA
+P 6700 7500
+F 0 "#PWR?" H 6700 7500 30  0001 C C
+F 1 "GND" H 6700 7430 30  0001 C C
+	1    6700 7500
+	1    0    0    -1  
+$EndComp
+$Comp
+L TST P?
+U 1 1 4B5DACEC
+P 7100 7500
+F 0 "P?" H 7100 7800 40  0000 C C
+F 1 "ZIF PIN34" H 7100 7750 30  0000 C C
+	1    7100 7500
+	-1   0    0    1   
+$EndComp
+$Comp
+L TST P?
+U 1 1 4B5DAC5C
+P 6400 7500
+F 0 "P?" H 6400 7800 40  0000 C C
+F 1 "ZIF PIN27" H 6400 7750 30  0000 C C
+	1    6400 7500
+	-1   0    0    1   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B5DAC56
+P 6000 7500
+F 0 "#PWR?" H 6000 7500 30  0001 C C
+F 1 "GND" H 6000 7430 30  0001 C C
+	1    6000 7500
+	1    0    0    -1  
+$EndComp
+NoConn ~ 4500 5050
+$Comp
+L TST P?
+U 1 1 4B5DAAA1
+P 4600 3500
+F 0 "P?" H 4600 3800 40  0000 C C
+F 1 "MICROCTRLR P1.7" H 4600 3750 30  0000 C C
+	1    4600 3500
+	1    0    0    -1  
+$EndComp
+$Comp
+L TST P?
+U 1 1 4B5DA98C
+P 4900 3950
+F 0 "P?" H 4900 4250 40  0000 C C
+F 1 "MICROCTRLR ALE" H 4900 4200 30  0000 C C
+	1    4900 3950
+	1    0    0    -1  
+$EndComp
+NoConn ~ 4500 5350
+NoConn ~ 4500 5550
+NoConn ~ 4500 5650
+NoConn ~ 4500 5750
+$Comp
+L TST P?
+U 1 1 4B5DA855
+P 2900 7500
+F 0 "P?" H 2900 7800 40  0000 C C
+F 1 "ZIF PIN28" H 2900 7750 30  0000 C C
+	1    2900 7500
+	-1   0    0    1   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B5DA84D
+P 2500 7500
+F 0 "#PWR?" H 2500 7500 30  0001 C C
+F 1 "GND" H 2500 7430 30  0001 C C
+	1    2500 7500
+	1    0    0    -1  
+$EndComp
+$Comp
+L TST P?
+U 1 1 4B5DA782
+P 3600 7500
+F 0 "P?" H 3600 7800 40  0000 C C
+F 1 "ZIF PIN33" H 3600 7750 30  0000 C C
+	1    3600 7500
+	-1   0    0    1   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B5DA778
+P 3200 7500
+F 0 "#PWR?" H 3200 7500 30  0001 C C
+F 1 "GND" H 3200 7430 30  0001 C C
+	1    3200 7500
+	1    0    0    -1  
+$EndComp
+$Comp
+L NPN Q24G
+U 1 1 4B5DA73F
+P 2700 7150
+F 0 "Q24G" H 2850 7150 50  0000 C C
+F 1 "NPN" H 2602 7300 50  0000 C C
+	1    2700 7150
+	0    1    1    0   
+$EndComp
+$Comp
+L NPN Q29G
+U 1 1 4B5DA72D
+P 3400 7150
+F 0 "Q29G" H 3550 7150 50  0000 C C
+F 1 "NPN" H 3302 7300 50  0000 C C
+	1    3400 7150
+	0    1    1    0   
+$EndComp
+$Comp
+L TST P?
+U 1 1 4B5D7B4C
+P 5700 7500
+F 0 "P?" H 5700 7800 40  0000 C C
+F 1 "ZIF PIN5" H 5700 7750 30  0000 C C
+	1    5700 7500
+	-1   0    0    1   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B5D7AD6
+P 5300 7500
+F 0 "#PWR?" H 5300 7500 30  0001 C C
+F 1 "GND" H 5300 7430 30  0001 C C
+	1    5300 7500
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B5D7AD1
+P 4600 7500
+F 0 "#PWR?" H 4600 7500 30  0001 C C
+F 1 "GND" H 4600 7430 30  0001 C C
+	1    4600 7500
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B5D7ACC
+P 3900 7500
+F 0 "#PWR?" H 3900 7500 30  0001 C C
+F 1 "GND" H 3900 7430 30  0001 C C
+	1    3900 7500
+	1    0    0    -1  
+$EndComp
+$Comp
+L TST P?
+U 1 1 4B5D7AA8
+P 5000 7500
+F 0 "P?" H 5000 7800 40  0000 C C
+F 1 "ZIF PIN19" H 5000 7750 30  0000 C C
+	1    5000 7500
+	-1   0    0    1   
+$EndComp
+$Comp
+L TST P?
+U 1 1 4B5D7A0D
+P 4300 7500
+F 0 "P?" H 4300 7800 40  0000 C C
+F 1 "ZIF PIN17" H 4300 7750 30  0000 C C
+	1    4300 7500
+	-1   0    0    1   
+$EndComp
+$Comp
+L NPN Q30G
+U 1 1 4B5D798E
+P 6900 7150
+F 0 "Q30G" H 7050 7150 50  0000 C C
+F 1 "NPN" H 6802 7300 50  0000 C C
+	1    6900 7150
+	0    1    1    0   
+$EndComp
+$Comp
+L NPN Q23G
+U 1 1 4B5D7980
+P 6200 7150
+F 0 "Q23G" H 6350 7150 50  0000 C C
+F 1 "NPN" H 6102 7300 50  0000 C C
+	1    6200 7150
+	0    1    1    0   
+$EndComp
+$Comp
+L NPN Q1G
+U 1 1 4B5D797B
+P 5500 7150
+F 0 "Q1G" H 5650 7150 50  0000 C C
+F 1 "NPN" H 5402 7300 50  0000 C C
+	1    5500 7150
+	0    1    1    0   
+$EndComp
+$Comp
+L NPN Q13
+U 1 1 4B5D7976
+P 4800 7150
+F 0 "Q13" H 4950 7150 50  0000 C C
+F 1 "NPN" H 4702 7300 50  0000 C C
+	1    4800 7150
+	0    1    1    0   
+$EndComp
+$Comp
+L NPN Q13G
+U 1 1 4B5D796F
+P 4100 7150
+F 0 "Q13G" H 4250 7150 50  0000 C C
+F 1 "NPN" H 4002 7300 50  0000 C C
+	1    4100 7150
+	0    1    1    0   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B5D7899
+P 5450 5450
+F 0 "#PWR?" H 5450 5450 30  0001 C C
+F 1 "GND" H 5450 5380 30  0001 C C
+	1    5450 5450
+	0    1    1    0   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B5D7889
+P 3200 5450
+F 0 "#PWR?" H 3200 5450 30  0001 C C
+F 1 "GND" H 3200 5380 30  0001 C C
+	1    3200 5450
+	0    1    1    0   
+$EndComp
+$Comp
+L +3.3V #PWR?
+U 1 1 4B5D778C
+P 3050 5350
+F 0 "#PWR?" H 3050 5310 30  0001 C C
+F 1 "+3.3V" H 3050 5460 30  0000 C C
+	1    3050 5350
+	0    -1   -1   0   
+$EndComp
+NoConn ~ 3800 5150
+NoConn ~ 3800 5050
+$Comp
+L DIL18 U2
+U 1 1 4B5D763E
+P 5900 5450
+F 0 "U2" H 5900 6000 70  0000 C C
+F 1 ""H"-chip" H 5900 4900 70  0000 C C
+	1    5900 5450
+	1    0    0    -1  
+$EndComp
+$Comp
+L DIL18 U2B
+U 1 1 4B5D763B
+P 4150 5450
+F 0 "U2B" H 4150 6000 70  0000 C C
+F 1 ""L"-chip" H 4150 4900 70  0000 C C
+	1    4150 5450
+	1    0    0    -1  
+$EndComp
+$EndSCHEMATC

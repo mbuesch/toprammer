@@ -2,3 +2,5 @@
 *.swp
 *.pyc
 *.bit
+*.cache.*
+*.bak
