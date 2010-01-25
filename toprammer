@@ -142,7 +142,7 @@ class TOP:
 		self.cmdSetVoltage(TOP.VOLTAGE_VCCX, 0)
 		self.s("\x1B")
 		self.s("\x0A\x1D\x86")
-		self.s("\x0E\x16\x00\x00")
+		self.cmdSetGNDPin(0)
 		self.cmdLoadVPPLayout()
 		self.cmdLoadVCCXLayout()
 		self.s("\x1B")
@@ -167,7 +167,7 @@ class TOP:
 		for i in range(0, len(data), 60):
 			self.cmdFPGAUploadData(data[i : i + 60])
 
-		self.s("\x0E\x16\x0E\x00")
+		self.cmdSetGNDPin(18)
 		self.cmdSetVoltage(TOP.VOLTAGE_VCCX, 5)
 		self.s("\x1B")
 		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 0)
@@ -179,6 +179,16 @@ class TOP:
 		assert(len(data) <= 60)
 		cmd = "\x0E\x22\x00\x00" + data
 		cmd += "\x00" * (64 - len(cmd)) # padding
+		self.__send(cmd)
+
+	def cmdSetGNDPin(self, zifPin):
+		"""Assign GND to a ZIF socket pin. 0=none"""
+		valid = (0, 5, 14, 15, 16, 17, 18, 19, 20, 24, 26, 27,
+			 28, 29, 33, 34, 35)
+		assert(zifPin in valid)
+		if zifPin != 0:
+			zifPin -= 4
+		cmd = chr(0x0E) + chr(0x16) + chr(zifPin) + chr(0)
 		self.__send(cmd)
 
 	def cmdLoadVPPLayout(self):

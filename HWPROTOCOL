@@ -1,6 +1,4 @@
-TOP2049 USB protocol
-
-This is incomplete and doesn't make a whole lot of sense, but it's what we got for now...
+TOP2049 USB protocol (incomplete)
 
 
 
@@ -16,13 +14,23 @@ This is incomplete and doesn't make a whole lot of sense, but it's what we got f
 
 0E140000	>= Shift data into the 4 shiftregisters on the left side.
 		   Sends 4 times 8 clock pulses and one strobe.
-		   These shiftregisters are used for VPP pullup.
+		   These shiftregisters are used for VPP chip supply.
 		   How's data controlled?
 
 0E150000	>= Shift data into the 3 shiftregisters on the right side.
 		   Sends 3 times 8 clock pulses and one strobe.
-		   These shiftregisters are used for VCCX pullup.
+		   These shiftregisters are used for VCCX chip supply.
 		   How's data controlled?
+
+0E16xx00	>= Controls the digital input to the "H" and "L" chips.
+		   These chips control the ZIF socket GND supply.
+		   xx is the ZIF-socket pin that is pulled to GND.
+		   It is calculated as follows:
+		   xx = ZIF_pin_number - 4
+		   Valid ZIF_pin_numbers are:
+		   0,5,14-20,24,26-29,33-35
+		   0 is a special value for not assigning GND to any pin.
+		   If the pin number is 0 (=none), 4 is not subtracted.
 
 0E220000...	>= Program the FPGA. 60bytes of data is appended.
 
