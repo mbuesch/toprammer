@@ -143,8 +143,8 @@ class TOP:
 		self.s("\x1B")
 		self.s("\x0A\x1D\x86")
 		self.cmdSetGNDPin(0)
-		self.cmdLoadVPPLayout()
-		self.cmdLoadVCCXLayout()
+		self.cmdLoadVPPLayout(0)
+		self.cmdLoadVCCXLayout(0)
 		self.s("\x1B")
 		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 0)
 		self.s("\x1B")
@@ -191,13 +191,15 @@ class TOP:
 		cmd = chr(0x0E) + chr(0x16) + chr(zifPin) + chr(0)
 		self.__send(cmd)
 
-	def cmdLoadVPPLayout(self):
+	def cmdLoadVPPLayout(self, layout):
 		"""Load the VPP configuration into the shift registers."""
-		self.__send("\x0E\x14\x00\x00")
+		cmd = chr(0x0E) + chr(0x14) + chr(layout) + chr(0)
+		self.__send(cmd)
 
-	def cmdLoadVCCXLayout(self):
+	def cmdLoadVCCXLayout(self, layout):
 		"""Load the VCCX configuration into the shift registers."""
-		self.__send("\x0E\x15\x00\x00")
+		cmd = chr(0x0E) + chr(0x15) + chr(layout) + chr(0)
+		self.__send(cmd)
 
 	def cmdSetVoltage(self, line, voltage):
 		"""Set the voltage of a line. line is a VOLTAGE_xxx idenitifier.

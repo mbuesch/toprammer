@@ -12,15 +12,15 @@ TOP2049 USB protocol (incomplete)
 0E13xx00	>= Set VCCX, where xx is the voltage.
 		   xx is in centivolt.
 
-0E140000	>= Shift data into the 4 shiftregisters on the left side.
-		   Sends 4 times 8 clock pulses and one strobe.
-		   These shiftregisters are used for VPP chip supply.
-		   How's data controlled?
+0E14xx00	>= Load the ZIF socket VPP supply layout.
+		   xx is the layout ID.
+		   (Shift data into the 4 shiftregisters on the left side.
+		    Sends 4 times 8 clock pulses and one strobe.)
 
-0E150000	>= Shift data into the 3 shiftregisters on the right side.
-		   Sends 3 times 8 clock pulses and one strobe.
-		   These shiftregisters are used for VCCX chip supply.
-		   How's data controlled?
+0E15xx00	>= Load the ZIF socket VCCX supply layout.
+		   xx is the layout ID.
+		   (Shift data into the 3 shiftregisters on the right side.
+		    Sends 3 times 8 clock pulses and one strobe.)
 
 0E16xx00	>= Controls the digital input to the "H" and "L" chips.
 		   These chips control the ZIF socket GND supply.
