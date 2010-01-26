@@ -123,11 +123,13 @@ class TOP:
 
 	def __initialize(self):
 		"Initialize the hardware"
-		self.s("\x0E\x11\x00\x00")
-		self.s("\x07")
-		self.r(64)
-		self.s("\x0D\x07")
-		self.r(64)
+		ver = self.cmdRequestVersion()
+		print "Detected a", ver
+
+		self.__send("\x0D")
+		stat = self.cmdReadStatusReg()
+		# What to do with the status?
+
 		self.s("\x0A\x1B\xFF")
 		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 0)
 		self.s("\x1B")
@@ -153,15 +155,15 @@ class TOP:
 		self.s("\x0E\x20\x00\x00")
 		self.s("\x1B")
 		self.s("\x0E\x25\x00\x00")
-		self.s("\x07")
-		self.r(64)
+		stat = self.cmdReadStatusReg()
+		# What to do with the status?
 		self.__bitfileUpload()
 
 	def __bitfileUpload(self):
 		self.s("\x0A\x1B\x00")
 		self.s("\x0E\x21\x00\x00")
-		self.s("\x07")
-		self.r(64)
+		stat = self.cmdReadStatusReg()
+		# What to do with the status?
 
 		data = self.bitfile.getPayload()
 		for i in range(0, len(data), 60):
@@ -173,6 +175,17 @@ class TOP:
 		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 0)
 		self.s("\x1B")
 		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 12)
+
+	def cmdReadStatusReg(self):
+		"""Read the status register. Returns 64 bytes."""
+		self.__send(chr(0x07))
+		return self.__receive(64)
+
+	def cmdRequestVersion(self):
+		"""Returns the device ID and versioning string."""
+		self.__send("\x0E\x11\x00\x00")
+		data = self.cmdReadStatusReg()
+		return data[0:16].strip()
 
 	def cmdFPGAUploadData(self, data):
 		"""Upload data into the FPGA."""

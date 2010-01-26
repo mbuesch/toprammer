@@ -4,7 +4,12 @@ TOP2049 USB protocol (incomplete)
 
 === COMMANDS ===
 
-07		>= Related to reading values from device.
+07		>= Read the status register.
+		   The register is read by sending 07h via bulk out
+		   and reading 64bytes via bulk in.
+
+0E110000	>= Put the device ID string into the status register.
+		   String length is 16 bytes.
 
 0E12xx00	>= Set VPP, where xx is the voltage.
 		   xx is in centivolt.
