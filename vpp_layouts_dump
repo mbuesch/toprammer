@@ -129,7 +129,7 @@ def printLayouts():
 				string = "%d.%d" % (reg, bit)
 				zifPin = shreg2zif_map[string]
 				hotPins.append(zifPin)
-		print "        o--------o"
+		print "        o---------o"
 		for pin in range(1, 25):
 			left = "     "
 			right = ""
@@ -137,8 +137,8 @@ def printLayouts():
 				left = "VPP >"
 			if (49 - pin) in hotPins:
 				right = "< VPP"
-			print "%s   | %2d | %2d|   %s" % (left, pin, 49 - pin, right)
-		print "        o--------o"
+			print "%s   | %2d | %2d |   %s" % (left, pin, 49 - pin, right)
+		print "        o---------o"
 		print ""
 
 printLayouts()
