@@ -180,9 +180,10 @@ class TOP:
 		self.cmdFlush()
 		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 12)
 
-	def cmdFlush(self):
-		"""Send a flush request."""
-		self.__send(chr(0x1B))
+	def cmdFlush(self, count=1):
+		"""Send 'count' flush requests."""
+		assert(count >= 1)
+		self.__send(chr(0x1B) * count)
 
 	def cmdReadStatusReg(self):
 		"""Read the status register. Returns 64 bytes."""

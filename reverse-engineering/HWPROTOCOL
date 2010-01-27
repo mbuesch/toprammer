@@ -1,0 +1,42 @@
+TOP2049 USB protocol (incomplete)
+
+
+
+=== COMMANDS ===
+
+07		>= Read the status register.
+		   The register is read by sending 07h via bulk out
+		   and reading 64bytes via bulk in.
+
+0E110000	>= Put the device ID string into the status register.
+		   String length is 16 bytes.
+
+0E12xx00	>= Set VPP, where xx is the voltage.
+		   xx is in centivolt.
+
+0E13xx00	>= Set VCCX, where xx is the voltage.
+		   xx is in centivolt.
+
+0E14xx00	>= Load the ZIF socket VPP supply layout.
+		   xx is the layout ID.
+		   (Shift data into the 4 shiftregisters on the left side.
+		    Sends 4 times 8 clock pulses and one strobe.)
+
+0E15xx00	>= Load the ZIF socket VCCX supply layout.
+		   xx is the layout ID.
+		   (Shift data into the 3 shiftregisters on the right side.
+		    Sends 3 times 8 clock pulses and one strobe.)
+
+0E16xx00	>= Controls the digital input to the "H" and "L" chips.
+		   These chips control the ZIF socket GND supply.
+		   xx is the ZIF-socket pin that is pulled to GND.
+		   It is calculated as follows:
+		   xx = ZIF_pin_number - 4
+		   Valid ZIF_pin_numbers are:
+		   0,5,14-20,24,26-29,33-35
+		   0 is a special value for not assigning GND to any pin.
+		   If the pin number is 0 (=none), 4 is not subtracted.
+
+0E220000...	>= Program the FPGA. 60bytes of data is appended.
+
+1B		>= Flush (and/or commit) command
