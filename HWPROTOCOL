@@ -39,6 +39,8 @@ TOP2049 USB protocol (incomplete)
 
 0E220000...	>= Program the FPGA. 60bytes of data is appended.
 
+1B		>= Flush (and/or commit) command
+
 
 
 === INITIALIZATION ===

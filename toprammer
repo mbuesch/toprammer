@@ -2,7 +2,7 @@
 """
 #    TOP2049 Open Source programming suite
 #
-#    Copyright (c) 2009 Michael Buesch <mb@bu3sch.de>
+#    Copyright (c) 2009-2010 Michael Buesch <mb@bu3sch.de>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -130,38 +130,40 @@ class TOP:
 		stat = self.cmdReadStatusReg()
 		# What to do with the status?
 
-		self.s("\x0A\x1B\xFF")
+		self.__send("\x0A\x1B\xFF")
 		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 0)
-		self.s("\x1B")
+		self.cmdFlush()
 		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 0)
-		self.s("\x1B")
+		self.cmdFlush()
 		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 0)
-		self.s("\x1B")
+		self.cmdFlush()
 		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 12)
-		self.s("\x1B")
-		self.s("\x0E\x20\x00\x00")
-		self.s("\x1B")
+		self.cmdFlush()
+		self.__send("\x0E\x20\x00\x00")
+		self.cmdFlush()
 		self.cmdSetVoltage(TOP.VOLTAGE_VCCX, 0)
-		self.s("\x1B")
-		self.s("\x0A\x1D\x86")
+		self.cmdFlush()
+		self.__send("\x0A\x1D\x86")
 		self.cmdSetGNDPin(0)
 		self.cmdLoadVPPLayout(0)
 		self.cmdLoadVCCXLayout(0)
-		self.s("\x1B")
+		self.cmdFlush()
 		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 0)
-		self.s("\x1B")
+		self.cmdFlush()
 		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 12)
-		self.s("\x1B")
-		self.s("\x0E\x20\x00\x00")
-		self.s("\x1B")
-		self.s("\x0E\x25\x00\x00")
+		self.cmdFlush()
+		self.__send("\x0E\x20\x00\x00")
+		self.cmdFlush()
+		self.__send("\x0E\x25\x00\x00")
 		stat = self.cmdReadStatusReg()
 		# What to do with the status?
+
 		self.__bitfileUpload()
+		self.__initVoltageLayouts()
 
 	def __bitfileUpload(self):
-		self.s("\x0A\x1B\x00")
-		self.s("\x0E\x21\x00\x00")
+		self.__send("\x0A\x1B\x00")
+		self.__send("\x0E\x21\x00\x00")
 		stat = self.cmdReadStatusReg()
 		# What to do with the status?
 
@@ -169,12 +171,18 @@ class TOP:
 		for i in range(0, len(data), 60):
 			self.cmdFPGAUploadData(data[i : i + 60])
 
+	def __initVoltageLayouts(self):
+		# FIXME: This depends on the selected chip
 		self.cmdSetGNDPin(18)
 		self.cmdSetVoltage(TOP.VOLTAGE_VCCX, 5)
-		self.s("\x1B")
+		self.cmdFlush()
 		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 0)
-		self.s("\x1B")
+		self.cmdFlush()
 		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 12)
+
+	def cmdFlush(self):
+		"""Send a flush request."""
+		self.__send(chr(0x1B))
 
 	def cmdReadStatusReg(self):
 		"""Read the status register. Returns 64 bytes."""
@@ -221,7 +229,6 @@ class TOP:
 		cmd = chr(0x0E) + chr(line) + chr(centivolt) + chr(0)
 		self.__send(cmd)
 
-	def s(self, command): self.__send(command)
 	def __send(self, command):
 		try:
 			ep = self.bulkOut.address
@@ -229,7 +236,6 @@ class TOP:
 		except (usb.USBError), e:
 			raise TOPException("USB bulk write error: " + str(e))
 
-	def r(self, size): return self.__receive(size)
 	def __receive(self, size):
 		try:
 			ep = self.bulkIn.address
