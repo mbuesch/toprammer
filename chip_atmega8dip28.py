@@ -21,6 +21,7 @@
 """
 
 from chip import *
+import time
 
 
 class ATMega8DIP28(Chip):
@@ -36,8 +37,79 @@ class ATMega8DIP28(Chip):
 		self.top.cmdSetVPPVoltage(12)
 
 	def readImage(self):
-		pass#TODO
-		return "Fooobar"
+		# First check if the chip is properly inserted
+		self.top.send("\x1B\x0A\x1D\x86")
+		self.top.cmdSetGNDPin(0)
+		self.top.cmdLoadVPPLayout(0)
+		self.top.cmdLoadVCCXLayout(0)
+		self.top.send("\x1B\x1B\x0A\x1B\xFF")
+		self.top.send("\x0E\x28\x00\x00")
+		self.top.cmdSetVPPVoltage(0)
+		self.top.cmdFlush()
+		self.top.cmdSetVPPVoltage(5)
+		self.top.cmdFlush(21)
+		self.top.cmdLoadVPPLayout(14)
+		self.top.send("\x1B\x1B\x0B\x16\x0B\x17\x0B\x18\x0B\x19\x0B\x1A\x0B\x1B\x07")
+		stat = self.top.cmdReadStatusReg32()
+		if stat != 0xFFFFFFC0:
+			self.throwError("Did not detect chip. Please check connections.")
+
+		self.top.cmdLoadVPPLayout(0)
+		self.top.cmdLoadVCCXLayout(0)
+		self.top.cmdFlush()
+		self.top.send("\x0E\x28\x01\x00")
+		self.top.send("\x0A\x1B\x00")
+		self.top.cmdSetVPPVoltage(0)
+		self.top.cmdFlush()
+		self.top.cmdSetVPPVoltage(12)
+		self.top.cmdFlush()
+		self.top.cmdSetGNDPin(18)
+		self.top.cmdFlush()
+		self.top.cmdSetVCCXVoltage(4.4)
+		self.top.cmdFlush()
+		self.top.send("\x0A\x12\x05\x0A\x12\x06\x0A\x12\x04\x0A\x12\x03")
+		self.top.cmdSetGNDPin(18)
+		self.top.cmdLoadVCCXLayout(13)
+		self.top.send("\x1B\x19\x0A\x12\x01\x34\x0A\x12\x01\x0A\x12\x02\x0A\x12\x83\x0A" +\
+			      "\x12\x07\x0A\x12\x05\x0A\x12\x06\x0A\x12\x08\x0A\x12\x04\x0A\x12" +\
+			      "\x0A\x0A\x12\x09\x0A\x12\x87\x0A\x12\x07\x0A\x12\x87\x0A\x12\x07" +\
+			      "\x0A\x12\x87\x0A\x12\x07\x0A\x12\x87\x0A\x12\x07\x0A\x12\x87\x00")
+		self.top.send("\x0A\x12\x07\x0A\x12\x87\x0A\x12\x07\x0A\x12\x87\x0A\x12\x07\x0A" +\
+			      "\x12\x87\x0A\x12\x07\x0A\x12\x87\x0A\x12\x07\x0A\x12\x87\x0A\x12" +\
+			      "\x07\x19")
+		self.top.cmdLoadVPPLayout(7)
+		self.top.send("\x34\x0A\x12\x88\x1B")
+		self.top.cmdFlush(10)
+		self.top.send("\x0E\x1F\x00\x00")
+		time.sleep(0.1)
+		stat = self.top.cmdReadStatusReg32()
+		if stat != 0xFFFFFFC0:
+			self.throwError("read: Unexpected status value 0x%X012" % stat)
+
+		# Now read the image
+		image = ""
+		self.top.send("\x0A\x12\x81")
+		high = 0
+		for chunk in range(0, 256, 2):
+			self.top.send("\x34\x0A\x12\x01\x0A\x12\x82\x0A\x12\x04\x34\x0A\x12\x05\x0A\x12" +\
+				      "\x86\x10\x02\x0A\x12\x87\x0A\x12\x07\x0A\x12\x05\x0A\x12\x06\x10" +\
+				      chr((chunk << 4) & 0xFF) +\
+				      "\x0A\x12\x87\x0A\x12\x07\x0A\x12\x84\x0A\x12\x05\x0A\x12\x06" +\
+				      "\x10" + chr(high) + "\x0A\x12\x87\x0A\x12\x07\x0A\x12\x81")
+			for word in range(0, 31, 1):
+				value = (chunk << 4) + (word + 1)
+				high = (value >> 8) & 0xFF
+				self.top.send("\x0A\x12\x04\x0A\x12\x02\x01\x0A\x12\x84\x01\x0A\x12\x82\x0A\x12" +\
+					      "\x01\x34\x0A\x12\x01\x0A\x12\x82\x0A\x12\x04\x34\x0A\x12\x05\x0A" +\
+					      "\x12\x86\x10\x02\x0A\x12\x87\x0A\x12\x07\x0A\x12\x05\x0A\x12\x06" +\
+					      "\x10" + chr(value & 0xFF) + "\x0A\x12\x87\x0A\x12\x07\x0A\x12\x84\x0A\x12\x05\x00\x00")
+				self.top.send("\x0A\x12\x06\x10" + chr(high) + "\x0A\x12\x87\x0A\x12\x07\x0A\x12\x81")
+			self.top.send("\x0A\x12\x04\x0A\x12\x02\x01\x0A\x12\x84\x01\x0A\x12\x82\x0A\x12" +\
+				      "\x01\x07")
+			data = self.top.cmdReadStatusReg()
+			dumpMem(data)
+			image += data
+		return image
 
 	def writeImage(self, image):
 		pass#TODO

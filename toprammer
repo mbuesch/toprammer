@@ -20,6 +20,8 @@
 """
 
 from bitfile import *
+from util import *
+
 import sys
 import getopt
 import time
@@ -33,28 +35,8 @@ except (ImportError), e:
 from chip_atmega8dip28 import *
 
 
-def dumpMem(mem):
-	def toAscii(char):
-		if char >= 32 and char <= 126:
-			return chr(char)
-		return "."
-
-	ascii = ""
-	for i in range(0, len(mem)):
-		if i % 16 == 0 and i != 0:
-			sys.stdout.write("  " + ascii + "\n")
-			ascii = ""
-		if i % 16 == 0:
-			sys.stdout.write("0x%04X:  " % i)
-		c = ord(mem[i])
-		sys.stdout.write("%02X" % c)
-		if (i % 2 != 0):
-			sys.stdout.write(" ")
-		ascii += toAscii(c)
-	sys.stdout.write("  " + ascii + "\n\n")
-
 class TOP:
-	def __init__(self, bitfileName, busDev=None, verbose=1):
+	def __init__(self, bitfileName, busDev=None, verbose=0):
 		"""bitfileName is the path to the .bit file.
 		   busDev is a tuple (BUSID, DEVID) or None."""
 
@@ -141,10 +123,12 @@ class TOP:
 		"Initialize the hardware"
 		ver = self.cmdRequestVersion()
 		self.printInfo("Detected a " + ver)
+		self.printDebug("Initializing hardware...")
 
 		self.send("\x0D")
-		stat = self.cmdReadStatusReg()
-		dumpMem(stat)# What to do with the status?
+		stat = self.cmdReadStatusReg32()
+		if stat != 0x00020C69:
+			raise TOPException("Init: Unexpected status register (a): 0x%08X" % stat)
 
 		self.send("\x0A\x1B\xFF")
 		self.cmdSetVPPVoltage(0)
@@ -171,17 +155,20 @@ class TOP:
 		self.send("\x0E\x20\x00\x00")
 		self.cmdFlush()
 		self.send("\x0E\x25\x00\x00")
-		stat = self.cmdReadStatusReg()
-		dumpMem(stat)# What to do with the status?
+		stat = self.cmdReadStatusReg32()
+		if stat != 0x0000686C:
+			raise TOPException("Init: Unexpected status register (b): 0x%08X" % stat)
 
 		self.__bitfileUpload()
 		self.chip.initializeChip()
 
 	def __bitfileUpload(self):
+		self.printDebug("Uploading bitfile...")
 		self.send("\x0A\x1B\x00")
 		self.send("\x0E\x21\x00\x00")
-		stat = self.cmdReadStatusReg()
-		dumpMem(stat)# What to do with the status?
+		stat = self.cmdReadStatusReg32()
+		if stat != 0x00006801:
+			raise TOPException("bit-upload: Unexpected status register (b): 0x%08X" % stat)
 
 		data = self.bitfile.getPayload()
 		for i in range(0, len(data), 60):
@@ -210,6 +197,13 @@ class TOP:
 		self.send(chr(0x07))
 		return self.receive(64)
 
+	def cmdReadStatusReg32(self):
+		"""Read a 32bit value from the status register."""
+		stat = self.cmdReadStatusReg()
+		stat = ord(stat[0]) | (ord(stat[1]) << 8) | \
+		       (ord(stat[2]) << 16) | (ord(stat[3]) << 24)
+		return stat
+
 	def cmdRequestVersion(self):
 		"""Returns the device ID and versioning string."""
 		self.send("\x0E\x11\x00\x00")
@@ -232,6 +226,7 @@ class TOP:
 			zifPin -= 4
 		cmd = chr(0x0E) + chr(0x16) + chr(zifPin) + chr(0)
 		self.send(cmd)
+		time.sleep(0.15)
 
 	def cmdSetVPPVoltage(self, voltage):
 		"""Set the VPP voltage. voltage is a floating point voltage number."""
@@ -243,6 +238,7 @@ class TOP:
 		"""Load the VPP configuration into the shift registers."""
 		cmd = chr(0x0E) + chr(0x14) + chr(layout) + chr(0)
 		self.send(cmd)
+		time.sleep(0.15)
 
 	def cmdSetVCCXVoltage(self, voltage):
 		"""Set the VCCX voltage. voltage is a floating point voltage number."""
@@ -254,9 +250,11 @@ class TOP:
 		"""Load the VCCX configuration into the shift registers."""
 		cmd = chr(0x0E) + chr(0x15) + chr(layout) + chr(0)
 		self.send(cmd)
+		time.sleep(0.15)
 
 	def send(self, command):
 		try:
+			assert(len(command) <= 64)
 			ep = self.bulkOut.address
 			self.usbh.bulkWrite(ep, command)
 		except (usb.USBError), e:
@@ -286,10 +284,10 @@ def usage():
 	print "Optional:"
 	print " -d|--device BUS.DEV    Use the programmer at BUS.DEV"
 	print "                        First found programmer is used, if not given."
-	print " -V|--verbose LEVEL     Set the verbosity level. Default = 1"
+	print " -V|--verbose LEVEL     Set the verbosity level. Default = 2"
 
 def main(argv):
-	opt_verbose = 1
+	opt_verbose = 2
 	opt_bitfile = None
 	opt_device = None
 	opt_action = None

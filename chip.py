@@ -20,7 +20,8 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-class TOPException(Exception): pass
+from util import *
+
 
 supportedChips = []
 
@@ -34,6 +35,15 @@ class Chip:
 
 	def setTOP(self, top):
 		self.top = top
+
+	def printInfo(self, message):
+		self.top.printInfo(self.chipID + ": " + message)
+
+	def printDebug(self, message):
+		self.top.printDebug(self.chipID + ": " + message)
+
+	def throwError(self, message):
+		raise TOPException(self.chipID + ": " + message)
 
 	def initializeChip(self):
 		pass # Override me in the subclass, if required.
