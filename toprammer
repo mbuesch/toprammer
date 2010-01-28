@@ -29,6 +29,9 @@ except (ImportError), e:
 	print "Python USB support module not found. Please install python-usb."
 	sys.exit(1)
 
+# Import the supported chip modules
+from chip_atmega8dip28 import *
+
 
 def dumpMem(mem):
 	def toAscii(char):
@@ -54,15 +57,20 @@ def dumpMem(mem):
 class TOPException(Exception): pass
 
 class TOP:
-	# Configurable voltage lines.
-	VOLTAGE_VPP	= 0x12
-	VOLTAGE_VCCX	= 0x13
-
 	def __init__(self, bitfileName, busDev=None):
 		"""bitfileName is the path to the .bit file.
 		   busDev is a tuple (BUSID, DEVID) or None."""
 		self.bitfile = Bitfile()
 		self.bitfile.parseFile(bitfileName)
+
+		# Find a chip handler for the given bitfile.
+		chipID = self.bitfile.getSrcFile().lower()
+		if chipID.endswith(".ncd"):
+			chipID = chipID[0:-4]
+		self.chip = chipFind(chipID)
+		if not self.chip:
+			raise TOPException("Did not find an implementation for the chip %s" % chipID)
+		self.chip.setTOP(self)
 
 		# Find the device
 		for bus in usb.busses():
@@ -126,73 +134,64 @@ class TOP:
 		ver = self.cmdRequestVersion()
 		print "Detected a", ver
 
-		self.__send("\x0D")
+		self.send("\x0D")
 		stat = self.cmdReadStatusReg()
-		# What to do with the status?
+		dumpMem(stat)# What to do with the status?
 
-		self.__send("\x0A\x1B\xFF")
-		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 0)
+		self.send("\x0A\x1B\xFF")
+		self.cmdSetVPPVoltage(0)
 		self.cmdFlush()
-		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 0)
+		self.cmdSetVPPVoltage(0)
 		self.cmdFlush()
-		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 0)
+		self.cmdSetVPPVoltage(0)
 		self.cmdFlush()
-		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 12)
+		self.cmdSetVPPVoltage(12)
 		self.cmdFlush()
-		self.__send("\x0E\x20\x00\x00")
+		self.send("\x0E\x20\x00\x00")
 		self.cmdFlush()
-		self.cmdSetVoltage(TOP.VOLTAGE_VCCX, 0)
+		self.cmdSetVCCXVoltage(0)
 		self.cmdFlush()
-		self.__send("\x0A\x1D\x86")
+		self.send("\x0A\x1D\x86")
 		self.cmdSetGNDPin(0)
 		self.cmdLoadVPPLayout(0)
 		self.cmdLoadVCCXLayout(0)
 		self.cmdFlush()
-		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 0)
+		self.cmdSetVPPVoltage(0)
 		self.cmdFlush()
-		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 12)
+		self.cmdSetVPPVoltage(12)
 		self.cmdFlush()
-		self.__send("\x0E\x20\x00\x00")
+		self.send("\x0E\x20\x00\x00")
 		self.cmdFlush()
-		self.__send("\x0E\x25\x00\x00")
+		self.send("\x0E\x25\x00\x00")
 		stat = self.cmdReadStatusReg()
-		# What to do with the status?
+		dumpMem(stat)# What to do with the status?
 
 		self.__bitfileUpload()
-		self.__initVoltageLayouts()
+		self.chip.initializeChip()
 
 	def __bitfileUpload(self):
-		self.__send("\x0A\x1B\x00")
-		self.__send("\x0E\x21\x00\x00")
+		self.send("\x0A\x1B\x00")
+		self.send("\x0E\x21\x00\x00")
 		stat = self.cmdReadStatusReg()
-		# What to do with the status?
+		dumpMem(stat)# What to do with the status?
 
 		data = self.bitfile.getPayload()
 		for i in range(0, len(data), 60):
 			self.cmdFPGAUploadData(data[i : i + 60])
 
-	def __initVoltageLayouts(self):
-		# FIXME: This depends on the selected chip
-		self.cmdSetGNDPin(18)
-		self.cmdSetVoltage(TOP.VOLTAGE_VCCX, 5)
-		self.cmdFlush()
-		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 0)
-		self.cmdFlush()
-		self.cmdSetVoltage(TOP.VOLTAGE_VPP, 12)
-
 	def cmdFlush(self, count=1):
 		"""Send 'count' flush requests."""
 		assert(count >= 1)
-		self.__send(chr(0x1B) * count)
+		self.send(chr(0x1B) * count)
 
 	def cmdReadStatusReg(self):
 		"""Read the status register. Returns 64 bytes."""
-		self.__send(chr(0x07))
-		return self.__receive(64)
+		self.send(chr(0x07))
+		return self.receive(64)
 
 	def cmdRequestVersion(self):
 		"""Returns the device ID and versioning string."""
-		self.__send("\x0E\x11\x00\x00")
+		self.send("\x0E\x11\x00\x00")
 		data = self.cmdReadStatusReg()
 		return data[0:16].strip()
 
@@ -201,7 +200,7 @@ class TOP:
 		assert(len(data) <= 60)
 		cmd = "\x0E\x22\x00\x00" + data
 		cmd += "\x00" * (64 - len(cmd)) # padding
-		self.__send(cmd)
+		self.send(cmd)
 
 	def cmdSetGNDPin(self, zifPin):
 		"""Assign GND to a ZIF socket pin. 0=none"""
@@ -211,39 +210,43 @@ class TOP:
 		if zifPin != 0:
 			zifPin -= 4
 		cmd = chr(0x0E) + chr(0x16) + chr(zifPin) + chr(0)
-		self.__send(cmd)
+		self.send(cmd)
+
+	def cmdSetVPPVoltage(self, voltage):
+		"""Set the VPP voltage. voltage is a floating point voltage number."""
+		centivolt = int(voltage * 10)
+		cmd = chr(0x0E) + chr(0x12) + chr(centivolt) + chr(0)
+		self.send(cmd)
 
 	def cmdLoadVPPLayout(self, layout):
 		"""Load the VPP configuration into the shift registers."""
 		cmd = chr(0x0E) + chr(0x14) + chr(layout) + chr(0)
-		self.__send(cmd)
+		self.send(cmd)
+
+	def cmdSetVCCXVoltage(self, voltage):
+		"""Set the VCCX voltage. voltage is a floating point voltage number."""
+		centivolt = int(voltage * 10)
+		cmd = chr(0x0E) + chr(0x13) + chr(centivolt) + chr(0)
+		self.send(cmd)
 
 	def cmdLoadVCCXLayout(self, layout):
 		"""Load the VCCX configuration into the shift registers."""
 		cmd = chr(0x0E) + chr(0x15) + chr(layout) + chr(0)
-		self.__send(cmd)
+		self.send(cmd)
 
-	def cmdSetVoltage(self, line, voltage):
-		"""Set the voltage of a line. line is a VOLTAGE_xxx idenitifier.
-		voltage is a floating point number."""
-		centivolt = int(voltage * 10)
-		cmd = chr(0x0E) + chr(line) + chr(centivolt) + chr(0)
-		self.__send(cmd)
-
-	def __send(self, command):
+	def send(self, command):
 		try:
 			ep = self.bulkOut.address
 			self.usbh.bulkWrite(ep, command)
 		except (usb.USBError), e:
 			raise TOPException("USB bulk write error: " + str(e))
 
-	def __receive(self, size):
+	def receive(self, size):
 		try:
 			ep = self.bulkIn.address
 			data = ""
 			for c in self.usbh.bulkRead(ep, size):
 				data += chr(c)
-			dumpMem(data)#XXX
 		except (usb.USBError), e:
 			raise TOPException("USB bulk read error: " + str(e))
 		return data

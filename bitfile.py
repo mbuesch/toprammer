@@ -79,17 +79,21 @@ class Bitfile:
 	def __parseNextField(self, data, i):
 		fieldId = ord(data[i + 0])
 		if (fieldId == self.FIELD_SRCFILE):
-			self.srcfile = self.__parse16bitField(data, i + 1).strip()
-			return len(self.srcfile) + 3
+			data = self.__parse16bitField(data, i + 1)
+			self.srcfile = data.strip().strip("\x00")
+			return len(data) + 3
 		if (fieldId == self.FIELD_FPGA):
-			self.fpga = self.__parse16bitField(data, i + 1).strip()
-			return len(self.fpga) + 3
+			data = self.__parse16bitField(data, i + 1)
+			self.fpga = data.strip().strip("\x00")
+			return len(data) + 3
 		if (fieldId == self.FIELD_DATE):
-			self.date = self.__parse16bitField(data, i + 1).strip()
-			return len(self.date) + 3
+			data = self.__parse16bitField(data, i + 1)
+			self.date = data.strip().strip("\x00")
+			return len(data) + 3
 		if (fieldId == self.FIELD_TIME):
-			self.time = self.__parse16bitField(data, i + 1).strip()
-			return len(self.time) + 3
+			data = self.__parse16bitField(data, i + 1)
+			self.time = data.strip().strip("\x00")
+			return len(data) + 3
 		if (fieldId == self.FIELD_PAYLOAD):
 			self.payload = self.__parse32bitField(data, i + 1)
 			return len(self.payload) + 5
