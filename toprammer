@@ -53,13 +53,13 @@ def dumpMem(mem):
 		ascii += toAscii(c)
 	sys.stdout.write("  " + ascii + "\n\n")
 
-
-class TOPException(Exception): pass
-
 class TOP:
-	def __init__(self, bitfileName, busDev=None):
+	def __init__(self, bitfileName, busDev=None, verbose=1):
 		"""bitfileName is the path to the .bit file.
 		   busDev is a tuple (BUSID, DEVID) or None."""
+
+		self.verbose = verbose
+
 		self.bitfile = Bitfile()
 		self.bitfile.parseFile(bitfileName)
 
@@ -122,17 +122,25 @@ class TOP:
 		except (usb.USBError), e:
 			raise TOPException("USB error: " + str(e))
 
-		self.__initialize()
+		self.__initializeHardware()
+
+	def printInfo(self, message):
+		if self.verbose >= 1:
+			print message
+
+	def printDebug(self, message):
+		if self.verbose >= 2:
+			print message
 
 	@staticmethod
 	def __isTOP(usbdev):
 		ids = ( (0x2471, 0x0853), )
 		return (usbdev.idVendor, usbdev.idProduct) in ids
 
-	def __initialize(self):
+	def __initializeHardware(self):
 		"Initialize the hardware"
 		ver = self.cmdRequestVersion()
-		print "Detected a", ver
+		self.printInfo("Detected a " + ver)
 
 		self.send("\x0D")
 		stat = self.cmdReadStatusReg()
@@ -178,6 +186,19 @@ class TOP:
 		data = self.bitfile.getPayload()
 		for i in range(0, len(data), 60):
 			self.cmdFPGAUploadData(data[i : i + 60])
+
+	def readImage(self):
+		"""Reads the chip image and returns it."""
+		self.printDebug("Reading image from chip...")
+		image = self.chip.readImage()
+		self.printDebug("done reading %d bytes." % len(image))
+		return image
+
+	def writeImage(self, image):
+		"""Writes an image to the chip."""
+		self.printDebug("Writing %d bytes image to chip..." % len(image))
+		self.chip.writeImage(image)
+		self.printDebug("done writing image.")
 
 	def cmdFlush(self, count=1):
 		"""Send 'count' flush requests."""
@@ -258,39 +279,70 @@ def usage():
 	print ""
 	print " -b|--bitfile           Path to the *.bit file (mandatory)"
 	print ""
+	print "Actions:"
+	print " -w|--write FILE        Flash an image to the device"
+	print " -r|--read FILE         Read the device and store image in file"
+	print ""
+	print "Optional:"
 	print " -d|--device BUS.DEV    Use the programmer at BUS.DEV"
 	print "                        First found programmer is used, if not given."
+	print " -V|--verbose LEVEL     Set the verbosity level. Default = 1"
 
 def main(argv):
+	opt_verbose = 1
 	opt_bitfile = None
 	opt_device = None
+	opt_action = None
+	opt_file = None
 	try:
 		(opts, args) = getopt.getopt(sys.argv[1:],
-			"hb:d:",
-			[ "help", "bitfile=", "device=", ])
-	except getopt.GetoptError:
+			"hb:d:w:r:V:",
+			[ "help", "bitfile=", "device=", "write=", "read=",
+			  "verbose=", ])
+		for (o, v) in opts:
+			if o in ("-h", "--help"):
+				usage()
+				return 0
+			if o in ("-b", "--bitfile"):
+				opt_bitfile = v
+			if o in ("-d", "--device"):
+				try:
+					v = v.split(".")
+					opt_device = (int(v[0]), int(v[1]))
+				except (IndexError, ValueError), e:
+					print "-d|--device invalid BUS.DEV id."
+					return 1
+			if o in ("-w", "--write"):
+				opt_action = "write"
+				opt_file = v
+			if o in ("-r", "--read"):
+				opt_action = "read"
+				opt_file = v
+			if o in ("-V", "--verbose"):
+				opt_verbose = int(v)
+	except (getopt.GetoptError, ValueError), e:
 		usage()
 		return 1
-	for (o, v) in opts:
-		if o in ("-h", "--help"):
-			usage()
-			return 0
-		if o in ("-b", "--bitfile"):
-			opt_bitfile = v
-		if o in ("-d", "--device"):
-			try:
-				v = v.split(".")
-				opt_device = (int(v[0]), int(v[1]))
-			except (IndexError, ValueError), e:
-				print "-d|--device invalid BUS.DEV id."
-				return 1
 	if not opt_bitfile:
 		print "-b|--bitfile is mandatory!"
 		return 1
+	if not opt_action:
+		print "An action is mandatory!"
+		return 1
 
 	try:
-		top = TOP(opt_bitfile, opt_device)
-	except (TOPException, BitfileException), e:
+		top = TOP(opt_bitfile, opt_device, opt_verbose)
+		if opt_action == "read":
+			fd = file(opt_file, "w+b")
+			image = top.readImage()
+			fd.write(image)
+		elif opt_action == "write":
+			fd = file(opt_file, "rb")
+			image = fd.read()
+			top.writeImage(image)
+		else:
+			assert(0)
+	except (TOPException, BitfileException, IOError), e:
 		print e
 		return 1
 	return 0

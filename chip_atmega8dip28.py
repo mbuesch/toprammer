@@ -35,4 +35,11 @@ class ATMega8DIP28(Chip):
 		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(12)
 
+	def readImage(self):
+		pass#TODO
+		return "Fooobar"
+
+	def writeImage(self, image):
+		pass#TODO
+
 supportedChips.append(ATMega8DIP28())

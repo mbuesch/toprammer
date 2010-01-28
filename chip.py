@@ -20,6 +20,7 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
+class TOPException(Exception): pass
 
 supportedChips = []
 
@@ -35,7 +36,15 @@ class Chip:
 		self.top = top
 
 	def initializeChip(self):
-		pass # Override me in the subclass
+		pass # Override me in the subclass, if required.
+
+	def readImage(self):
+		# Override me in the subclass, if required.
+		raise TOPException("Image reading not supported on " + self.chipID)
+
+	def writeImage(self, image):
+		# Override me in the subclass, if required.
+		raise TOPException("Image writing not supported on " + self.chipID)
 
 def chipFind(chipID):
 	for chip in supportedChips:
