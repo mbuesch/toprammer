@@ -29,6 +29,7 @@ class Chip:
 	def __init__(self, chipID):
 		"The chipID is the ID string from the bitfile."
 		self.chipID = chipID
+		self.printPrefix = True
 
 	def getID(self):
 		return self.chipID
@@ -36,11 +37,17 @@ class Chip:
 	def setTOP(self, top):
 		self.top = top
 
-	def printInfo(self, message):
-		self.top.printInfo(self.chipID + ": " + message)
+	def printInfo(self, message, newline=True):
+		if self.printPrefix:
+			message = self.chipID + ": " + message
+		self.top.printInfo(message, newline)
+		self.printPrefix = newline
 
-	def printDebug(self, message):
-		self.top.printDebug(self.chipID + ": " + message)
+	def printDebug(self, message, newline=True):
+		if self.printPrefix:
+			message = self.chipID + ": " + message
+		self.top.printDebug(message, newline)
+		self.printPrefix = newline
 
 	def throwError(self, message):
 		raise TOPException(self.chipID + ": " + message)

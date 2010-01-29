@@ -87,10 +87,17 @@ class ATMega8DIP28(Chip):
 			self.throwError("read: Unexpected status value 0x%X012" % stat)
 
 		# Now read the image
+		self.printInfo("Reading image ", newline=False)
 		image = ""
 		self.top.send("\x0A\x12\x81")
 		high = 0
 		for chunk in range(0, 256, 2):
+			if chunk % 8 == 0:
+				percent = (chunk * 100 / 256)
+				if percent % 25 == 0:
+					self.printInfo("%d%%" % percent, newline=False)
+				else:
+					self.printInfo(".", newline=False)
 			self.top.send("\x34\x0A\x12\x01\x0A\x12\x82\x0A\x12\x04\x34\x0A\x12\x05\x0A\x12" +\
 				      "\x86\x10\x02\x0A\x12\x87\x0A\x12\x07\x0A\x12\x05\x0A\x12\x06\x10" +\
 				      chr((chunk << 4) & 0xFF) +\
@@ -107,8 +114,8 @@ class ATMega8DIP28(Chip):
 			self.top.send("\x0A\x12\x04\x0A\x12\x02\x01\x0A\x12\x84\x01\x0A\x12\x82\x0A\x12" +\
 				      "\x01\x07")
 			data = self.top.cmdReadStatusReg()
-			dumpMem(data)
 			image += data
+		self.printInfo("100%")
 		return image
 
 	def writeImage(self, image):

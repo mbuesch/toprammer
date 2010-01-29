@@ -106,13 +106,21 @@ class TOP:
 
 		self.__initializeHardware()
 
-	def printInfo(self, message):
+	def printInfo(self, message, newline=True):
 		if self.verbose >= 1:
-			print message
+			if newline:
+				print message
+			else:
+				sys.stdout.write(message)
+				sys.stdout.flush()
 
-	def printDebug(self, message):
+	def printDebug(self, message, newline=True):
 		if self.verbose >= 2:
-			print message
+			if newline:
+				print message
+			else:
+				sys.stdout.write(message)
+				sys.stdout.flush()
 
 	@staticmethod
 	def __isTOP(usbdev):
@@ -178,14 +186,14 @@ class TOP:
 		"""Reads the chip image and returns it."""
 		self.printDebug("Reading image from chip...")
 		image = self.chip.readImage()
-		self.printDebug("done reading %d bytes." % len(image))
+		self.printDebug("Done reading %d bytes." % len(image))
 		return image
 
 	def writeImage(self, image):
 		"""Writes an image to the chip."""
 		self.printDebug("Writing %d bytes image to chip..." % len(image))
 		self.chip.writeImage(image)
-		self.printDebug("done writing image.")
+		self.printDebug("Done writing image.")
 
 	def cmdFlush(self, count=1):
 		"""Send 'count' flush requests."""
