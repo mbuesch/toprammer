@@ -38,11 +38,20 @@ class ATMega8DIP28(Chip):
 
 	def readImage(self):
 		# First check if the chip is properly inserted
-		self.top.send("\x1B\x0A\x1D\x86")
+		self.top.blockCommands()
+		self.top.cmdFlush()
+		self.top.send("\x0A\x1D\x86")
+		self.top.unblockCommands()
+
 		self.top.cmdSetGNDPin(0)
 		self.top.cmdLoadVPPLayout(0)
 		self.top.cmdLoadVCCXLayout(0)
-		self.top.send("\x1B\x1B\x0A\x1B\xFF")
+
+		self.top.blockCommands()
+		self.top.cmdFlush(2)
+		self.top.send("\x0A\x1B\xFF")
+		self.top.unblockCommands()
+
 		self.top.send("\x0E\x28\x00\x00")
 		self.top.cmdSetVPPVoltage(0)
 		self.top.cmdFlush()

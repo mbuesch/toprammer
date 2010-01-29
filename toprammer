@@ -42,6 +42,9 @@ class TOP:
 
 		self.verbose = verbose
 
+		self.commandsBlocked = False
+		self.commandQueue = []
+
 		self.bitfile = Bitfile()
 		self.bitfile.parseFile(bitfileName)
 
@@ -260,23 +263,60 @@ class TOP:
 		self.send(cmd)
 		time.sleep(0.15)
 
-	def send(self, command):
+	def __doSend(self, command):
 		try:
 			assert(len(command) <= 64)
+			if self.verbose >= 3:
+				print "Sending command:"
+				dumpMem(command)
 			ep = self.bulkOut.address
 			self.usbh.bulkWrite(ep, command)
 		except (usb.USBError), e:
 			raise TOPException("USB bulk write error: " + str(e))
 
+	def send(self, command):
+		assert(len(command) <= 64)
+		if self.commandsBlocked:
+			self.commandQueue.append(command)
+		else:
+			self.__doSend(command)
+
 	def receive(self, size):
+		assert(not self.commandsBlocked)
 		try:
 			ep = self.bulkIn.address
 			data = ""
 			for c in self.usbh.bulkRead(ep, size):
 				data += chr(c)
+			if self.verbose >= 3:
+				print "Received data:"
+				dumpMem(data)
 		except (usb.USBError), e:
 			raise TOPException("USB bulk read error: " + str(e))
 		return data
+
+	def blockCommands(self):
+		"""Each succeeding command will be queued in software instead
+		of writing it to the device. The queue will be flushed and sent to
+		the device on unblocking."""
+		assert(not self.commandsBlocked)
+		self.commandsBlocked = True
+
+	def unblockCommands(self):
+		"""Flush the software command queue and send them to the device."""
+		assert(self.commandsBlocked)
+		self.commandsBlocked = False
+		# Flush the queue
+		command = ""
+		for oneCommand in self.commandQueue:
+			assert(len(oneCommand) <= 64)
+			if len(command) + len(oneCommand) > 64:
+				self.__doSend(command)
+				command = ""
+			command += oneCommand
+		if command:
+			self.__doSend(command)
+		self.commandQueue = []
 
 def usage():
 	print "TOP2049 Open Source programming suite"
