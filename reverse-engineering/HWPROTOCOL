@@ -37,6 +37,9 @@ TOP2049 USB protocol (incomplete)
 		   0 is a special value for not assigning GND to any pin.
 		   If the pin number is 0 (=none), 4 is not subtracted.
 
+0E210000	>= Initiate FPGA programming sequence.
+		   Pulls the ~PROGRAM pin of the FPGA low.
+
 0E220000...	>= Program the FPGA. 60bytes of data is appended.
 
 1B		>= Flush (and/or commit) command

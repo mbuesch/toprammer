@@ -175,11 +175,13 @@ class TOP:
 
 	def __bitfileUpload(self):
 		self.printDebug("Uploading bitfile...")
+
 		self.send("\x0A\x1B\x00")
-		self.send("\x0E\x21\x00\x00")
+		self.cmdFPGAInitiateConfig()
 		stat = self.cmdReadStatusReg32()
 		if stat != 0x00006801:
-			raise TOPException("bit-upload: Unexpected status register (b): 0x%08X" % stat)
+			raise TOPException("bit-upload: Failed to initiate " +\
+				"config sequence (0x%08X)" % stat)
 
 		data = self.bitfile.getPayload()
 		for i in range(0, len(data), 60):
@@ -220,6 +222,10 @@ class TOP:
 		self.send("\x0E\x11\x00\x00")
 		data = self.cmdReadStatusReg()
 		return data[0:16].strip()
+
+	def cmdFPGAInitiateConfig(self):
+		"""Initiate a configuration sequence on the FPGA."""
+		self.send("\x0E\x21\x00\x00")
 
 	def cmdFPGAUploadData(self, data):
 		"""Upload data into the FPGA."""
