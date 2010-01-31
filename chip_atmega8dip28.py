@@ -144,7 +144,8 @@ class ATMega8DIP28(Chip):
 		# Now read the image
 		self.printInfo("Reading image ", newline=False)
 		image = ""
-		self.__setB1(1)
+		self.__setB1(0)
+		self.__setOE(1)
 		self.top.blockCommands()
 		for chunk in range(0, 256, 2):
 			if chunk % 8 == 0:
@@ -153,21 +154,15 @@ class ATMega8DIP28(Chip):
 					self.printInfo("%d%%" % percent, newline=False)
 				else:
 					self.printInfo(".", newline=False)
-			self.top.send("\x34")
-			self.__setB1(0)
-			self.__setOE(1)
 			self.__loadCommand(self.CMD_READFLASH)
 			self.__loadAddr(chunk << 4)
-			self.__setB1(1)
 			for word in range(0, 31, 1):
+				self.__setB1(1)
 				self.__readWordToStatusReg()
 				self.__setB1(0)
-				self.top.send("\x34")
-				self.__setB1(0)
-				self.__setOE(1)
 				self.__loadCommand(self.CMD_READFLASH)
 				self.__loadAddr((chunk << 4) + word + 1)
-				self.__setB1(1)
+			self.__setB1(1)
 			self.__readWordToStatusReg()
 			self.__setB1(0)
 			data = self.top.cmdReadStatusReg()
@@ -225,6 +220,7 @@ class ATMega8DIP28(Chip):
 
 	def __loadCommand(self, command):
 		"""Load a command into the device."""
+		self.top.send("\x34")
 		self.__setBS1(0)
 		self.top.send("\x34")
 		self.__setXA0(0)
