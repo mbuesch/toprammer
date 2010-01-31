@@ -36,11 +36,12 @@ from chip_atmega8dip28 import *
 
 
 class TOP:
-	def __init__(self, bitfileName, busDev=None, verbose=0):
+	def __init__(self, bitfileName, busDev=None, verbose=0, noqueue=False):
 		"""bitfileName is the path to the .bit file.
 		   busDev is a tuple (BUSID, DEVID) or None."""
 
 		self.verbose = verbose
+		self.noqueue = noqueue
 
 		self.commandsBlocked = False
 		self.commandQueue = []
@@ -106,6 +107,10 @@ class TOP:
 			self.usbh.clearHalt(self.bulkIn.address)
 		except (usb.USBError), e:
 			raise TOPException("USB error: " + str(e))
+
+		if self.noqueue:
+			self.printInfo("WARNING: Command queuing disabled. " +\
+				"Hardware access will be _really_ slow.")
 
 		self.__initializeHardware()
 
@@ -308,12 +313,16 @@ class TOP:
 		"""Each succeeding command will be queued in software instead
 		of writing it to the device. The queue will be flushed and sent to
 		the device on a call to unblockCommands() or receive()."""
+		if self.noqueue:
+			return
 		assert(not self.commandsBlocked)
 		self.commandsBlocked = True
 
 	def unblockCommands(self):
 		"""Flush and unblock the software command queue and send the
 		queued commands to the device."""
+		if self.noqueue:
+			return
 		assert(self.commandsBlocked)
 		self.commandsBlocked = False
 		self.__flushCommands()
@@ -346,6 +355,7 @@ def usage():
 	print " -d|--device BUS.DEV    Use the programmer at BUS.DEV"
 	print "                        First found programmer is used, if not given."
 	print " -V|--verbose LEVEL     Set the verbosity level. Default = 2"
+	print " -Q|--noqueue           Disable command queuing. Really slow!"
 
 def main(argv):
 	opt_verbose = 2
@@ -353,11 +363,12 @@ def main(argv):
 	opt_device = None
 	opt_action = None
 	opt_file = None
+	opt_noqueue = False
 	try:
 		(opts, args) = getopt.getopt(sys.argv[1:],
-			"hb:d:w:r:V:",
+			"hb:d:w:r:V:Q",
 			[ "help", "bitfile=", "device=", "write=", "read=",
-			  "verbose=", ])
+			  "verbose=", "noqueue", ])
 		for (o, v) in opts:
 			if o in ("-h", "--help"):
 				usage()
@@ -379,6 +390,8 @@ def main(argv):
 				opt_file = v
 			if o in ("-V", "--verbose"):
 				opt_verbose = int(v)
+			if o in ("-Q", "--noqueue"):
+				opt_noqueue = True
 	except (getopt.GetoptError, ValueError), e:
 		usage()
 		return 1
@@ -390,7 +403,7 @@ def main(argv):
 		return 1
 
 	try:
-		top = TOP(opt_bitfile, opt_device, opt_verbose)
+		top = TOP(opt_bitfile, opt_device, opt_verbose, opt_noqueue)
 		if opt_action == "read":
 			fd = file(opt_file, "w+b")
 			image = top.readImage()
