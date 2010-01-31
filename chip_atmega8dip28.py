@@ -87,10 +87,10 @@ class ATMega8DIP28(Chip):
 		self.top.cmdFlush()
 
 		self.top.blockCommands()
-		self.top.send("\x0A\x12\x05")
-		self.top.send("\x0A\x12\x06")
-		self.top.send("\x0A\x12\x04")
-		self.top.send("\x0A\x12\x03")
+		self.__setXA0(0)
+		self.__setXA1(0)
+		self.__setBS1(0)
+		self.__setWR(0)
 		self.top.unblockCommands()
 
 		self.top.cmdSetGNDPin(18)
@@ -99,18 +99,18 @@ class ATMega8DIP28(Chip):
 		self.top.blockCommands()
 		self.top.cmdFlush()
 		self.top.send("\x19")
-		self.top.send("\x0A\x12\x01")
+		self.__setB1(0)
 		self.top.send("\x34")
-		self.top.send("\x0A\x12\x01")
-		self.top.send("\x0A\x12\x02")
-		self.top.send("\x0A\x12\x83")
-		self.__setXTAL1(False)
-		self.top.send("\x0A\x12\x05")
-		self.top.send("\x0A\x12\x06")
+		self.__setB1(0)
+		self.__setOE(0)
+		self.__setWR(1)
+		self.__setXTAL1(0)
+		self.__setXA0(0)
+		self.__setXA1(0)
 		self.top.send("\x0A\x12\x08")
-		self.top.send("\x0A\x12\x04")
-		self.top.send("\x0A\x12\x0A")
-		self.top.send("\x0A\x12\x09")
+		self.__setBS1(0)
+		self.__setBS2(0)
+		self.__setPAGEL(0)
 		self.__pulseXTAL1(10)
 		self.top.send("\x19")
 		self.top.unblockCommands()
@@ -133,7 +133,7 @@ class ATMega8DIP28(Chip):
 		# Now read the image
 		self.printInfo("Reading image ", newline=False)
 		image = ""
-		self.top.send("\x0A\x12\x81")
+		self.__setB1(1)
 		high = 0
 		for chunk in range(0, 256, 2):
 			if chunk % 8 == 0:
@@ -144,65 +144,64 @@ class ATMega8DIP28(Chip):
 					self.printInfo(".", newline=False)
 			self.top.blockCommands()
 			self.top.send("\x34")
-			self.top.send("\x0A\x12\x01")
-			self.top.send("\x0A\x12\x82")
-			self.top.send("\x0A\x12\x04")
+			self.__setB1(0)
+			self.__setOE(1)
+			self.__setBS1(0)
 			self.top.send("\x34")
-			self.top.send("\x0A\x12\x05")
-			self.top.send("\x0A\x12\x86")
+			self.__setXA0(0)
+			self.__setXA1(1)
 			self.top.send("\x10\x02")
 			self.__pulseXTAL1()
-			self.top.send("\x0A\x12\x05")
-			self.top.send("\x0A\x12\x06")
+			self.__setXA0(0)
+			self.__setXA1(0)
 			self.top.send("\x10" + chr((chunk << 4) & 0xFF))
 			self.__pulseXTAL1()
-			self.top.send("\x0A\x12\x84")
-			self.top.send("\x0A\x12\x05")
-			self.top.send("\x0A\x12\x06")
+			self.__setBS1(1)
+			self.__setXA0(0)
+			self.__setXA1(0)
 			self.top.send("\x10" + chr(high))
 			self.__pulseXTAL1()
-			self.top.send("\x0A\x12\x81")
+			self.__setB1(1)
 			self.top.unblockCommands()
 			for word in range(0, 31, 1):
 				value = (chunk << 4) + (word + 1)
 				high = (value >> 8) & 0xFF
 				self.top.blockCommands()
-				self.top.send("\x0A\x12\x04")
-				self.top.send("\x0A\x12\x02")
+				self.__setBS1(0)
+				self.__setOE(0)
 				self.top.send("\x01")
-				self.top.send("\x0A\x12\x84")
+				self.__setBS1(1)
 				self.top.send("\x01")
-				self.top.send("\x0A\x12\x82")
-				self.top.send("\x0A\x12\x01")
+				self.__setOE(1)
+				self.__setB1(0)
 				self.top.send("\x34")
-				self.top.send("\x0A\x12\x01")
-				self.top.send("\x0A\x12\x82")
-				self.top.send("\x0A\x12\x04")
+				self.__setB1(0)
+				self.__setOE(1)
+				self.__setBS1(0)
 				self.top.send("\x34")
-				self.top.send("\x0A\x12\x05")
-				self.top.send("\x0A\x12\x86")
+				self.__setXA0(0)
+				self.__setXA1(1)
 				self.top.send("\x10\x02")
 				self.__pulseXTAL1()
-				self.top.send("\x0A\x12\x05")
-				self.top.send("\x0A\x12\x06")
+				self.__setXA0(0)
+				self.__setXA1(0)
 				self.top.send("\x10" + chr(value & 0xFF))
 				self.__pulseXTAL1()
-				self.top.send("\x0A\x12\x84")
-				self.top.send("\x0A\x12\x05")
-				#self.top.send("\x00\x00")
-				self.top.send("\x0A\x12\x06")
+				self.__setBS1(1)
+				self.__setXA0(0)
+				self.__setXA1(0)
 				self.top.send("\x10" + chr(high))
 				self.__pulseXTAL1()
-				self.top.send("\x0A\x12\x81")
+				self.__setB1(1)
 				self.top.unblockCommands()
 			self.top.blockCommands()
-			self.top.send("\x0A\x12\x04")
-			self.top.send("\x0A\x12\x02")
+			self.__setBS1(0)
+			self.__setOE(0)
 			self.top.send("\x01")
-			self.top.send("\x0A\x12\x84")
+			self.__setBS1(1)
 			self.top.send("\x01")
-			self.top.send("\x0A\x12\x82")
-			self.top.send("\x0A\x12\x01")
+			self.__setOE(1)
+			self.__setB1(0)
 			data = self.top.cmdReadStatusReg()
 			self.top.unblockCommands()
 			image += data
@@ -211,6 +210,48 @@ class ATMega8DIP28(Chip):
 
 	def writeImage(self, image):
 		pass#TODO
+
+	def __setB1(self, high):
+		"""Set the B1 pin of the DUT"""
+		if high:
+			self.top.send("\x0A\x12\x81")
+		else:
+			self.top.send("\x0A\x12\x01")
+
+	def __setOE(self, high):
+		"""Set the OE pin of the DUT"""
+		if high:
+			self.top.send("\x0A\x12\x82")
+		else:
+			self.top.send("\x0A\x12\x02")
+
+	def __setWR(self, high):
+		"""Set the WR pin of the DUT"""
+		if high:
+			self.top.send("\x0A\x12\x83")
+		else:
+			self.top.send("\x0A\x12\x03")
+
+	def __setBS1(self, high):
+		"""Set the BS1 pin of the DUT"""
+		if high:
+			self.top.send("\x0A\x12\x84")
+		else:
+			self.top.send("\x0A\x12\x04")
+
+	def __setXA0(self, high):
+		"""Set the XA0 pin of the DUT"""
+		if high:
+			self.top.send("\x0A\x12\x85")
+		else:
+			self.top.send("\x0A\x12\x05")
+
+	def __setXA1(self, high):
+		"""Set the XA1 pin of the DUT"""
+		if high:
+			self.top.send("\x0A\x12\x86")
+		else:
+			self.top.send("\x0A\x12\x06")
 
 	def __setXTAL1(self, high):
 		"""Set the XTAL1 pin of the DUT"""
@@ -222,8 +263,22 @@ class ATMega8DIP28(Chip):
 	def __pulseXTAL1(self, count=1):
 		"""Do a positive pulse on the XTAL1 pin of the DUT"""
 		while count > 0:
-			self.__setXTAL1(True)
-			self.__setXTAL1(False)
+			self.__setXTAL1(1)
+			self.__setXTAL1(0)
 			count -= 1
+
+	def __setPAGEL(self, high):
+		"""Set the PAGEL pin of the DUT"""
+		if high:
+			self.top.send("\x0A\x12\x89")
+		else:
+			self.top.send("\x0A\x12\x09")
+
+	def __setBS2(self, high):
+		"""Set the BS2 pin of the DUT"""
+		if high:
+			self.top.send("\x0A\x12\x8A")
+		else:
+			self.top.send("\x0A\x12\x0A")
 
 supportedChips.append(ATMega8DIP28())
