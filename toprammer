@@ -307,7 +307,7 @@ class TOP:
 	def blockCommands(self):
 		"""Each succeeding command will be queued in software instead
 		of writing it to the device. The queue will be flushed and sent to
-		the device on unblocking."""
+		the device on a call to unblockCommands() or receive()."""
 		assert(not self.commandsBlocked)
 		self.commandsBlocked = True
 
