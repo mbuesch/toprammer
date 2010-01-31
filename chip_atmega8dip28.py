@@ -145,7 +145,6 @@ class ATMega8DIP28(Chip):
 		self.printInfo("Reading image ", newline=False)
 		image = ""
 		self.__setB1(1)
-		high = 0
 		self.top.blockCommands()
 		for chunk in range(0, 256, 2):
 			if chunk % 8 == 0:
@@ -158,21 +157,16 @@ class ATMega8DIP28(Chip):
 			self.__setB1(0)
 			self.__setOE(1)
 			self.__loadCommand(self.CMD_READFLASH)
-			self.__loadAddrLow(chunk << 4)
-			self.__loadAddrHigh(high)
+			self.__loadAddr(chunk << 4)
 			self.__setB1(1)
 			for word in range(0, 31, 1):
-				value = (chunk << 4) + (word + 1)
-				high = (value >> 8) & 0xFF
-
 				self.__readWordToStatusReg()
 				self.__setB1(0)
 				self.top.send("\x34")
 				self.__setB1(0)
 				self.__setOE(1)
 				self.__loadCommand(self.CMD_READFLASH)
-				self.__loadAddrLow(value)
-				self.__loadAddrHigh(high)
+				self.__loadAddr((chunk << 4) + word + 1)
 				self.__setB1(1)
 			self.__readWordToStatusReg()
 			self.__setB1(0)
@@ -207,6 +201,11 @@ class ATMega8DIP28(Chip):
 		self.__setOE(0)
 		self.top.cmdFPGAReadByte()
 		self.__setOE(1)
+
+	def __loadAddr(self, addr):
+		"""Load an address word."""
+		self.__loadAddrLow(addr)
+		self.__loadAddrHigh(addr >> 8)
 
 	def __loadAddrLow(self, addrLow):
 		"""Load the low address byte."""
