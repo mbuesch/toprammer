@@ -47,41 +47,8 @@ class ATMega8DIP28(Chip):
 		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(12)
 
-	def readImage(self):
-		# First check if the chip is properly inserted
-		self.top.blockCommands()
-		self.top.cmdFlush()
-		self.top.send("\x0A\x1D\x86")
-		self.top.unblockCommands()
-
-		self.top.cmdSetGNDPin(0)
-		self.top.cmdLoadVPPLayout(0)
-		self.top.cmdLoadVCCXLayout(0)
-
-		self.top.blockCommands()
-		self.top.cmdFlush(2)
-		self.top.send("\x0A\x1B\xFF")
-		self.top.unblockCommands()
-
-		self.top.send("\x0E\x28\x00\x00")
-		self.top.cmdSetVPPVoltage(0)
-		self.top.cmdFlush()
-		self.top.cmdSetVPPVoltage(5)
-		self.top.cmdFlush(21)
-		self.top.cmdLoadVPPLayout(14)
-
-		self.top.blockCommands()
-		self.top.cmdFlush(2)
-		self.top.send("\x0B\x16")
-		self.top.send("\x0B\x17")
-		self.top.send("\x0B\x18")
-		self.top.send("\x0B\x19")
-		self.top.send("\x0B\x1A")
-		self.top.send("\x0B\x1B")
-		stat = self.top.cmdReadStatusReg32()
-		self.top.unblockCommands()
-		if stat != 0xFFFFFFC0:
-			self.throwError("Did not detect chip. Please check connections.")
+	def readProgmem(self):
+		self.__checkDUTPresence()
 
 		self.top.cmdLoadVPPLayout(0)
 		self.top.cmdLoadVCCXLayout(0)
@@ -171,8 +138,41 @@ class ATMega8DIP28(Chip):
 		self.printInfo("100%")
 		return image
 
-	def writeImage(self, image):
-		pass#TODO
+	def __checkDUTPresence(self):
+		"""Check if a Device Under Test (DUT) is inserted into the ZIF."""
+		self.top.blockCommands()
+		self.top.cmdFlush()
+		self.top.send("\x0A\x1D\x86")
+		self.top.unblockCommands()
+
+		self.top.cmdSetGNDPin(0)
+		self.top.cmdLoadVPPLayout(0)
+		self.top.cmdLoadVCCXLayout(0)
+
+		self.top.blockCommands()
+		self.top.cmdFlush(2)
+		self.top.send("\x0A\x1B\xFF")
+		self.top.unblockCommands()
+
+		self.top.send("\x0E\x28\x00\x00")
+		self.top.cmdSetVPPVoltage(0)
+		self.top.cmdFlush()
+		self.top.cmdSetVPPVoltage(5)
+		self.top.cmdFlush(21)
+		self.top.cmdLoadVPPLayout(14)
+
+		self.top.blockCommands()
+		self.top.cmdFlush(2)
+		self.top.send("\x0B\x16")
+		self.top.send("\x0B\x17")
+		self.top.send("\x0B\x18")
+		self.top.send("\x0B\x19")
+		self.top.send("\x0B\x1A")
+		self.top.send("\x0B\x1B")
+		stat = self.top.cmdReadStatusReg32()
+		self.top.unblockCommands()
+		if stat != 0xFFFFFFC0:
+			self.throwError("Did not detect chip. Please check connections.")
 
 	def __readWordToStatusReg(self):
 		"""Read a data word from the DUT into the status register."""

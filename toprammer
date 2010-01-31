@@ -192,17 +192,17 @@ class TOP:
 		for i in range(0, len(data), 60):
 			self.cmdFPGAUploadConfig(data[i : i + 60])
 
-	def readImage(self):
-		"""Reads the chip image and returns it."""
-		self.printDebug("Reading image from chip...")
-		image = self.chip.readImage()
+	def readProgmem(self):
+		"""Reads the program memory image and returns it."""
+		self.printDebug("Reading program memory from chip...")
+		image = self.chip.readProgmem()
 		self.printDebug("Done reading %d bytes." % len(image))
 		return image
 
-	def writeImage(self, image):
-		"""Writes an image to the chip."""
-		self.printDebug("Writing %d bytes image to chip..." % len(image))
-		self.chip.writeImage(image)
+	def writeProgmem(self, image):
+		"""Writes a program memory image to the chip."""
+		self.printDebug("Writing %d bytes of program memory to chip..." % len(image))
+		self.chip.writeProgmem(image)
 		self.printDebug("Done writing image.")
 
 	def cmdFlush(self, count=1):
@@ -220,6 +220,14 @@ class TOP:
 		stat = self.cmdReadStatusReg()
 		stat = ord(stat[0]) | (ord(stat[1]) << 8) | \
 		       (ord(stat[2]) << 16) | (ord(stat[3]) << 24)
+		return stat
+
+	def cmdReadStatusReg48(self):
+		"""Read a 48bit value from the status register."""
+		stat = self.cmdReadStatusReg()
+		stat = ord(stat[0]) | (ord(stat[1]) << 8) | \
+		       (ord(stat[2]) << 16) | (ord(stat[3]) << 24) | \
+		       (ord(stat[4]) << 32) | (ord(stat[5]) << 40)
 		return stat
 
 	def cmdRequestVersion(self):
@@ -353,17 +361,38 @@ def usage():
 	print ""
 	print "Usage: %s [OPTIONS]" % sys.argv[0]
 	print ""
-	print " -b|--bitfile           Path to the *.bit file (mandatory)"
+	print " -b|--bitfile            Path to the *.bit file (mandatory)"
 	print ""
 	print "Actions:"
-	print " -w|--write FILE        Flash an image to the device"
-	print " -r|--read FILE         Read the device and store image in file"
+	print " -s|--read-sig FILE      Read the signature bytes"
+	print " -x|--erase              Erase the chip"
+	print ""
+	print " -p|--read-prog FILE     Read the program memory"
+	print " -P|--write-prog FILE    Write the program memory"
+	print ""
+	print " -e|--read-eeprom FILE   Read the EEPROM"
+	print " -E|--write-eeprom FILE  Write the EEPROM"
+	print ""
+	print " -f|--read-fuse FILE     Read the fuse bits"
+	print " -F|--write-fuse FILE    Write the fuse bits"
 	print ""
 	print "Optional:"
-	print " -d|--device BUS.DEV    Use the programmer at BUS.DEV"
-	print "                        First found programmer is used, if not given."
-	print " -V|--verbose LEVEL     Set the verbosity level. Default = 2"
-	print " -Q|--noqueue           Disable command queuing. Really slow!"
+	print " -d|--device BUS.DEV     Use the programmer at BUS.DEV"
+	print "                         First found programmer is used, if not given."
+	print " -V|--verbose LEVEL      Set the verbosity level. Default = 2"
+	print " -Q|--noqueue            Disable command queuing. Really slow!"
+
+def fileOut(filename, data):
+	if filename == "-":
+		dumpMem(data)
+	else:
+		file(filename, "w+b").write(data)
+
+def fileIn(filename):
+	if filename == "-":
+		pass#TODO
+	else:
+		return file(filename, "rb").read()
 
 def main(argv):
 	opt_verbose = 2
@@ -374,9 +403,10 @@ def main(argv):
 	opt_noqueue = False
 	try:
 		(opts, args) = getopt.getopt(sys.argv[1:],
-			"hb:d:w:r:V:Q",
-			[ "help", "bitfile=", "device=", "write=", "read=",
-			  "verbose=", "noqueue", ])
+			"hb:d:V:Qs:xp:P:e:E:f:F:",
+			[ "help", "bitfile=", "device=", "verbose=", "noqueue",
+			  "read-sig=", "erase", "read-prog=", "write-prog=",
+			  "read-eeprom=", "write-eeprom=", "read-fuse=", "write-fuse=", ])
 		for (o, v) in opts:
 			if o in ("-h", "--help"):
 				usage()
@@ -390,16 +420,33 @@ def main(argv):
 				except (IndexError, ValueError), e:
 					print "-d|--device invalid BUS.DEV id."
 					return 1
-			if o in ("-w", "--write"):
-				opt_action = "write"
-				opt_file = v
-			if o in ("-r", "--read"):
-				opt_action = "read"
-				opt_file = v
 			if o in ("-V", "--verbose"):
 				opt_verbose = int(v)
 			if o in ("-Q", "--noqueue"):
 				opt_noqueue = True
+			if o in ("-s", "--read-sig"):
+				opt_action = "read-sig"
+				opt_file = v
+			if o in ("-x", "--erase"):
+				opt_action = "erase"
+			if o in ("-P", "--write-prog"):
+				opt_action = "write-prog"
+				opt_file = v
+			if o in ("-p", "--read-prog"):
+				opt_action = "read-prog"
+				opt_file = v
+			if o in ("-E", "--write-eeprom"):
+				opt_action = "write-eeprom"
+				opt_file = v
+			if o in ("-e", "--read-eeprom"):
+				opt_action = "read-eeprom"
+				opt_file = v
+			if o in ("-F", "--write-fuse"):
+				opt_action = "write-fuse"
+				opt_file = v
+			if o in ("-f", "--read-fuse"):
+				opt_action = "read-fuse"
+				opt_file = v
 	except (getopt.GetoptError, ValueError), e:
 		usage()
 		return 1
@@ -412,14 +459,22 @@ def main(argv):
 
 	try:
 		top = TOP(opt_bitfile, opt_device, opt_verbose, opt_noqueue)
-		if opt_action == "read":
-			fd = file(opt_file, "w+b")
-			image = top.readImage()
-			fd.write(image)
-		elif opt_action == "write":
-			fd = file(opt_file, "rb")
-			image = fd.read()
-			top.writeImage(image)
+		if opt_action == "read-sig":
+			fileOut(opt_file, top.readSignature())
+		elif opt_action == "erase":
+			top.eraseChip()
+		elif opt_action == "read-prog":
+			fileOut(opt_file, top.readProgmem())
+		elif opt_action == "write-prog":
+			top.writeProgmem(fileIn(opt_file))
+		elif opt_action == "read-eeprom":
+			fileOut(opt_file, top.readEEPROM())
+		elif opt_action == "write-eeprom":
+			top.writeEEPROM(fileIn(opt_file))
+		elif opt_action == "read-fuse":
+			fileOut(opt_file, top.readFuse())
+		elif opt_action == "write-fuse":
+			top.writeFuse(fileIn(opt_file))
 		else:
 			assert(0)
 	except (TOPException, BitfileException, IOError), e:

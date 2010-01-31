@@ -55,13 +55,13 @@ class Chip:
 	def initializeChip(self):
 		pass # Override me in the subclass, if required.
 
-	def readImage(self):
+	def readProgmem(self):
 		# Override me in the subclass, if required.
-		raise TOPException("Image reading not supported on " + self.chipID)
+		raise TOPException("Program memory reading not supported on " + self.chipID)
 
-	def writeImage(self, image):
+	def writeProgmem(self, image):
 		# Override me in the subclass, if required.
-		raise TOPException("Image writing not supported on " + self.chipID)
+		raise TOPException("Program memory writing not supported on " + self.chipID)
 
 def chipFind(chipID):
 	for chip in supportedChips:
