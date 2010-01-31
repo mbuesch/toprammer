@@ -190,7 +190,7 @@ class TOP:
 
 		data = self.bitfile.getPayload()
 		for i in range(0, len(data), 60):
-			self.cmdFPGAUploadData(data[i : i + 60])
+			self.cmdFPGAUploadConfig(data[i : i + 60])
 
 	def readImage(self):
 		"""Reads the chip image and returns it."""
@@ -232,12 +232,16 @@ class TOP:
 		"""Initiate a configuration sequence on the FPGA."""
 		self.send("\x0E\x21\x00\x00")
 
-	def cmdFPGAUploadData(self, data):
-		"""Upload data into the FPGA."""
+	def cmdFPGAUploadConfig(self, data):
+		"""Upload configuration data into the FPGA."""
 		assert(len(data) <= 60)
 		cmd = "\x0E\x22\x00\x00" + data
 		cmd += "\x00" * (64 - len(cmd)) # padding
 		self.send(cmd)
+
+	def cmdFPGAReadByte(self):
+		"""Read a byte from the FPGA data line into the status register."""
+		self.send("\x01")
 
 	def cmdSetGNDPin(self, zifPin):
 		"""Assign GND to a ZIF socket pin. 0=none"""

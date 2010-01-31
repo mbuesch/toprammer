@@ -146,6 +146,7 @@ class ATMega8DIP28(Chip):
 		image = ""
 		self.__setB1(1)
 		high = 0
+		self.top.blockCommands()
 		for chunk in range(0, 256, 2):
 			if chunk % 8 == 0:
 				percent = (chunk * 100 / 256)
@@ -153,7 +154,6 @@ class ATMega8DIP28(Chip):
 					self.printInfo("%d%%" % percent, newline=False)
 				else:
 					self.printInfo(".", newline=False)
-			self.top.blockCommands()
 			self.top.send("\x34")
 			self.__setB1(0)
 			self.__setOE(1)
@@ -161,17 +161,11 @@ class ATMega8DIP28(Chip):
 			self.__loadAddrLow(chunk << 4)
 			self.__loadAddrHigh(high)
 			self.__setB1(1)
-			self.top.unblockCommands()
 			for word in range(0, 31, 1):
 				value = (chunk << 4) + (word + 1)
 				high = (value >> 8) & 0xFF
-				self.top.blockCommands()
-				self.__setBS1(0)
-				self.__setOE(0)
-				self.top.send("\x01")
-				self.__setBS1(1)
-				self.top.send("\x01")
-				self.__setOE(1)
+
+				self.__readWordToStatusReg()
 				self.__setB1(0)
 				self.top.send("\x34")
 				self.__setB1(0)
@@ -180,25 +174,42 @@ class ATMega8DIP28(Chip):
 				self.__loadAddrLow(value)
 				self.__loadAddrHigh(high)
 				self.__setB1(1)
-				self.top.unblockCommands()
-			self.top.blockCommands()
-			self.__setBS1(0)
-			self.__setOE(0)
-			self.top.send("\x01")
-			self.__setBS1(1)
-			self.top.send("\x01")
-			self.__setOE(1)
+			self.__readWordToStatusReg()
 			self.__setB1(0)
 			data = self.top.cmdReadStatusReg()
-			self.top.unblockCommands()
 			image += data
+		self.top.unblockCommands()
 		self.printInfo("100%")
 		return image
 
 	def writeImage(self, image):
 		pass#TODO
 
+	def __readWordToStatusReg(self):
+		"""Read a data word from the DUT into the status register."""
+		self.__setBS1(0)
+		self.__setOE(0)
+		self.top.cmdFPGAReadByte()
+		self.__setBS1(1)
+		self.top.cmdFPGAReadByte()
+		self.__setOE(1)
+
+	def __readLowByteToStatusReg(self):
+		"""Read the low data byte from the DUT into the status register."""
+		self.__setBS1(0)
+		self.__setOE(0)
+		self.top.cmdFPGAReadByte()
+		self.__setOE(1)
+
+	def __readHighByteToStatusReg(self):
+		"""Read the high data byte from the DUT into the status register."""
+		self.__setBS1(1)
+		self.__setOE(0)
+		self.top.cmdFPGAReadByte()
+		self.__setOE(1)
+
 	def __loadAddrLow(self, addrLow):
+		"""Load the low address byte."""
 		self.__setBS1(0)
 		self.__setXA0(0)
 		self.__setXA1(0)
@@ -206,6 +217,7 @@ class ATMega8DIP28(Chip):
 		self.__pulseXTAL1()
 
 	def __loadAddrHigh(self, addrHigh):
+		"""Load the high address byte."""
 		self.__setBS1(1)
 		self.__setXA0(0)
 		self.__setXA1(0)

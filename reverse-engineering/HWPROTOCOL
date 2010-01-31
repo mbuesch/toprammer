@@ -6,6 +6,8 @@ TOP2049 USB protocol (incomplete)
 
 00		>= NOP. No operation.
 
+01		>= Read a byte from the FPGA into the status register.
+
 07		>= Read the status register.
 		   The register is read by sending 07h via bulk out
 		   and reading 64bytes via bulk in.
