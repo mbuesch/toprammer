@@ -8,6 +8,8 @@ TOP2049 USB protocol (incomplete)
 
 01		>= Read a byte from the FPGA into the status register.
 
+10xx		>= Write a byte (xx) to the FPGA.
+
 07		>= Read the status register.
 		   The register is read by sending 07h via bulk out
 		   and reading 64bytes via bulk in.

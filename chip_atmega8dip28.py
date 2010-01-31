@@ -213,7 +213,7 @@ class ATMega8DIP28(Chip):
 		self.__setBS1(0)
 		self.__setXA0(0)
 		self.__setXA1(0)
-		self.top.send("\x10" + chr(addrLow & 0xFF))
+		self.top.cmdFPGAWriteByte(addrLow & 0xFF)
 		self.__pulseXTAL1()
 
 	def __loadAddrHigh(self, addrHigh):
@@ -221,7 +221,7 @@ class ATMega8DIP28(Chip):
 		self.__setBS1(1)
 		self.__setXA0(0)
 		self.__setXA1(0)
-		self.top.send("\x10" + chr(addrHigh & 0xFF))
+		self.top.cmdFPGAWriteByte(addrHigh & 0xFF)
 		self.__pulseXTAL1()
 
 	def __loadCommand(self, command):
@@ -230,7 +230,7 @@ class ATMega8DIP28(Chip):
 		self.top.send("\x34")
 		self.__setXA0(0)
 		self.__setXA1(1)
-		self.top.send("\x10" + chr(command))
+		self.top.cmdFPGAWriteByte(command)
 		self.__pulseXTAL1()
 
 	def __setB1(self, high):
