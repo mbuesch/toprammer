@@ -281,6 +281,7 @@ class TOP:
 			raise TOPException("USB bulk write error: " + str(e))
 
 	def send(self, command):
+		"""Send a raw command."""
 		assert(len(command) <= 64)
 		if self.commandsBlocked:
 			self.commandQueue.append(command)
@@ -288,7 +289,9 @@ class TOP:
 			self.__doSend(command)
 
 	def receive(self, size):
-		assert(not self.commandsBlocked)
+		"""Receive 'size' bytes on the bulk-in ep."""
+		# If there are blocked commands in the queue, send them now.
+		self.__flushCommands()
 		try:
 			ep = self.bulkIn.address
 			data = ""
@@ -309,10 +312,14 @@ class TOP:
 		self.commandsBlocked = True
 
 	def unblockCommands(self):
-		"""Flush the software command queue and send them to the device."""
+		"""Flush and unblock the software command queue and send the
+		queued commands to the device."""
 		assert(self.commandsBlocked)
 		self.commandsBlocked = False
-		# Flush the queue
+		self.__flushCommands()
+
+	def __flushCommands(self):
+		"""Flush the command queue, but don't unblock it."""
 		command = ""
 		for oneCommand in self.commandQueue:
 			assert(len(oneCommand) <= 64)
