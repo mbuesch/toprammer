@@ -25,6 +25,17 @@ import time
 
 
 class ATMega8DIP28(Chip):
+	# The Atmel Mega8 programming commands
+	CMD_CHIPERASE		= 0x80 # Chip Erase
+	CMD_WRITEFUSE		= 0x40 # Write Fuse Bits
+	CMD_WRITELOCK		= 0x20 # Write Lock Bits
+	CMD_WRITEFLASH		= 0x10 # Write Flash
+	CMD_WRITEEEPROM		= 0x11 # Write EEPROM
+	CMD_READSIG		= 0x08 # Read Signature bytes and Calibration byte
+	CMD_READFUSELOCK	= 0x04 # Read Fuse and Lock bits
+	CMD_READFLASH		= 0x02 # Read Flash
+	CMD_READEEPROM		= 0x03 # Read EEPROM
+
 	def __init__(self):
 		Chip.__init__(self, "atmega8dip28")
 
@@ -146,21 +157,9 @@ class ATMega8DIP28(Chip):
 			self.top.send("\x34")
 			self.__setB1(0)
 			self.__setOE(1)
-			self.__setBS1(0)
-			self.top.send("\x34")
-			self.__setXA0(0)
-			self.__setXA1(1)
-			self.top.send("\x10\x02")
-			self.__pulseXTAL1()
-			self.__setXA0(0)
-			self.__setXA1(0)
-			self.top.send("\x10" + chr((chunk << 4) & 0xFF))
-			self.__pulseXTAL1()
-			self.__setBS1(1)
-			self.__setXA0(0)
-			self.__setXA1(0)
-			self.top.send("\x10" + chr(high))
-			self.__pulseXTAL1()
+			self.__loadCommand(self.CMD_READFLASH)
+			self.__loadAddrLow(chunk << 4)
+			self.__loadAddrHigh(high)
 			self.__setB1(1)
 			self.top.unblockCommands()
 			for word in range(0, 31, 1):
@@ -177,21 +176,9 @@ class ATMega8DIP28(Chip):
 				self.top.send("\x34")
 				self.__setB1(0)
 				self.__setOE(1)
-				self.__setBS1(0)
-				self.top.send("\x34")
-				self.__setXA0(0)
-				self.__setXA1(1)
-				self.top.send("\x10\x02")
-				self.__pulseXTAL1()
-				self.__setXA0(0)
-				self.__setXA1(0)
-				self.top.send("\x10" + chr(value & 0xFF))
-				self.__pulseXTAL1()
-				self.__setBS1(1)
-				self.__setXA0(0)
-				self.__setXA1(0)
-				self.top.send("\x10" + chr(high))
-				self.__pulseXTAL1()
+				self.__loadCommand(self.CMD_READFLASH)
+				self.__loadAddrLow(value)
+				self.__loadAddrHigh(high)
 				self.__setB1(1)
 				self.top.unblockCommands()
 			self.top.blockCommands()
@@ -210,6 +197,29 @@ class ATMega8DIP28(Chip):
 
 	def writeImage(self, image):
 		pass#TODO
+
+	def __loadAddrLow(self, addrLow):
+		self.__setBS1(0)
+		self.__setXA0(0)
+		self.__setXA1(0)
+		self.top.send("\x10" + chr(addrLow & 0xFF))
+		self.__pulseXTAL1()
+
+	def __loadAddrHigh(self, addrHigh):
+		self.__setBS1(1)
+		self.__setXA0(0)
+		self.__setXA1(0)
+		self.top.send("\x10" + chr(addrHigh & 0xFF))
+		self.__pulseXTAL1()
+
+	def __loadCommand(self, command):
+		"""Load a command into the device."""
+		self.__setBS1(0)
+		self.top.send("\x34")
+		self.__setXA0(0)
+		self.__setXA1(1)
+		self.top.send("\x10" + chr(command))
+		self.__pulseXTAL1()
 
 	def __setB1(self, high):
 		"""Set the B1 pin of the DUT"""
