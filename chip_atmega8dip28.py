@@ -49,7 +49,92 @@ class ATMega8DIP28(Chip):
 
 	def readProgmem(self):
 		self.__checkDUTPresence()
+		self.__initPins()
 
+		self.top.cmdFlush(10)
+		self.top.send("\x0E\x1F\x00\x00")
+		time.sleep(0.1)
+		stat = self.top.cmdReadStatusReg32()
+		if stat != 0xB9C80101:
+			self.throwError("read: Unexpected status value 0x%08X" % stat)
+
+		# Now read the image
+		self.printInfo("Reading image ", newline=False)
+		image = ""
+		self.__setB1(0)
+		self.__setOE(1)
+		self.top.blockCommands()
+		for chunk in range(0, 256, 2):
+			if chunk % 8 == 0:
+				percent = (chunk * 100 / 256)
+				if percent % 25 == 0:
+					self.printInfo("%d%%" % percent, newline=False)
+				else:
+					self.printInfo(".", newline=False)
+			self.__loadCommand(self.CMD_READFLASH)
+			self.__loadAddr(chunk << 4)
+			for word in range(0, 31, 1):
+				self.__setB1(1)
+				self.__readWordToStatusReg()
+				self.__setB1(0)
+				self.__loadCommand(self.CMD_READFLASH)
+				self.__loadAddr((chunk << 4) + word + 1)
+			self.__setB1(1)
+			self.__readWordToStatusReg()
+			self.__setB1(0)
+			data = self.top.cmdReadStatusReg()
+			image += data
+		self.top.unblockCommands()
+		self.printInfo("100%")
+		return image
+
+	def writeProgmem(self, image):
+		if len(image) != 0x2000:
+			self.throwError("Invalid program memory image size %d (expected %d)" %\
+				(len(image), 0x2000))
+		self.__checkDUTPresence()
+		self.__initPins()
+
+		#TODO
+
+	def __checkDUTPresence(self):
+		"""Check if a Device Under Test (DUT) is inserted into the ZIF."""
+		self.top.blockCommands()
+		self.top.cmdFlush()
+		self.top.send("\x0A\x1D\x86")
+		self.top.unblockCommands()
+
+		self.top.cmdSetGNDPin(0)
+		self.top.cmdLoadVPPLayout(0)
+		self.top.cmdLoadVCCXLayout(0)
+
+		self.top.blockCommands()
+		self.top.cmdFlush(2)
+		self.top.send("\x0A\x1B\xFF")
+		self.top.unblockCommands()
+
+		self.top.send("\x0E\x28\x00\x00")
+		self.top.cmdSetVPPVoltage(0)
+		self.top.cmdFlush()
+		self.top.cmdSetVPPVoltage(5)
+		self.top.cmdFlush(21)
+		self.top.cmdLoadVPPLayout(14)
+
+		self.top.blockCommands()
+		self.top.cmdFlush(2)
+		self.top.send("\x0B\x16")
+		self.top.send("\x0B\x17")
+		self.top.send("\x0B\x18")
+		self.top.send("\x0B\x19")
+		self.top.send("\x0B\x1A")
+		self.top.send("\x0B\x1B")
+		stat = self.top.cmdReadStatusReg32()
+		self.top.unblockCommands()
+		if stat != 0xFFFFFFC0:
+			self.throwError("Did not detect chip. Please check connections.")
+
+	def __initPins(self):
+		"""Initialize the pin voltages and logic."""
 		self.top.cmdLoadVPPLayout(0)
 		self.top.cmdLoadVCCXLayout(0)
 		self.top.cmdFlush()
@@ -100,79 +185,6 @@ class ATMega8DIP28(Chip):
 		self.top.send("\x0A\x12\x88")
 		self.top.cmdFlush()
 		self.top.unblockCommands()
-
-		self.top.cmdFlush(10)
-		self.top.send("\x0E\x1F\x00\x00")
-		time.sleep(0.1)
-		stat = self.top.cmdReadStatusReg32()
-		if stat != 0xB9C80101:
-			self.throwError("read: Unexpected status value 0x%08X" % stat)
-
-		# Now read the image
-		self.printInfo("Reading image ", newline=False)
-		image = ""
-		self.__setB1(0)
-		self.__setOE(1)
-		self.top.blockCommands()
-		for chunk in range(0, 256, 2):
-			if chunk % 8 == 0:
-				percent = (chunk * 100 / 256)
-				if percent % 25 == 0:
-					self.printInfo("%d%%" % percent, newline=False)
-				else:
-					self.printInfo(".", newline=False)
-			self.__loadCommand(self.CMD_READFLASH)
-			self.__loadAddr(chunk << 4)
-			for word in range(0, 31, 1):
-				self.__setB1(1)
-				self.__readWordToStatusReg()
-				self.__setB1(0)
-				self.__loadCommand(self.CMD_READFLASH)
-				self.__loadAddr((chunk << 4) + word + 1)
-			self.__setB1(1)
-			self.__readWordToStatusReg()
-			self.__setB1(0)
-			data = self.top.cmdReadStatusReg()
-			image += data
-		self.top.unblockCommands()
-		self.printInfo("100%")
-		return image
-
-	def __checkDUTPresence(self):
-		"""Check if a Device Under Test (DUT) is inserted into the ZIF."""
-		self.top.blockCommands()
-		self.top.cmdFlush()
-		self.top.send("\x0A\x1D\x86")
-		self.top.unblockCommands()
-
-		self.top.cmdSetGNDPin(0)
-		self.top.cmdLoadVPPLayout(0)
-		self.top.cmdLoadVCCXLayout(0)
-
-		self.top.blockCommands()
-		self.top.cmdFlush(2)
-		self.top.send("\x0A\x1B\xFF")
-		self.top.unblockCommands()
-
-		self.top.send("\x0E\x28\x00\x00")
-		self.top.cmdSetVPPVoltage(0)
-		self.top.cmdFlush()
-		self.top.cmdSetVPPVoltage(5)
-		self.top.cmdFlush(21)
-		self.top.cmdLoadVPPLayout(14)
-
-		self.top.blockCommands()
-		self.top.cmdFlush(2)
-		self.top.send("\x0B\x16")
-		self.top.send("\x0B\x17")
-		self.top.send("\x0B\x18")
-		self.top.send("\x0B\x19")
-		self.top.send("\x0B\x1A")
-		self.top.send("\x0B\x1B")
-		stat = self.top.cmdReadStatusReg32()
-		self.top.unblockCommands()
-		if stat != 0xFFFFFFC0:
-			self.throwError("Did not detect chip. Please check connections.")
 
 	def __readWordToStatusReg(self):
 		"""Read a data word from the DUT into the status register."""
