@@ -38,6 +38,7 @@ class ATMega8DIP28(Chip):
 
 	def __init__(self):
 		Chip.__init__(self, "atmega8dip28")
+		self.signature = "\x1E\x93\x07" # The expected signature bytes
 
 	def initializeChip(self):
 		self.top.cmdSetGNDPin(18)
@@ -58,8 +59,7 @@ class ATMega8DIP28(Chip):
 		if stat != 0xB9C80101:
 			self.throwError("read: Unexpected status value 0x%08X" % stat)
 
-		# Now read the image
-		self.printInfo("Reading image ", newline=False)
+		self.printInfo("Reading Flash ", newline=False)
 		image = ""
 		self.__setB1(0)
 		self.__setOE(1)
@@ -91,6 +91,51 @@ class ATMega8DIP28(Chip):
 		self.__initPins()
 
 		#TODO
+
+	def readEEPROM(self):
+		self.__checkDUTPresence()
+		self.__initPins()
+
+		self.printInfo("Reading EEPROM", newline=False)
+		image = ""
+		self.__setB1(0)
+		self.__setOE(1)
+		self.top.blockCommands()
+		for chunk in range(0, 16, 2):
+			if chunk % 4 == 0:
+				self.printInfo(".", newline=False)
+			for word in range(0, 32):
+				self.__loadCommand(self.CMD_READEEPROM)
+				self.__loadAddr((chunk << 4) + word)
+				self.__setB1(1)
+				self.__readWordToStatusReg()
+				self.__setB1(0)
+			data = self.top.cmdReadStatusReg()
+			image += data
+		self.top.unblockCommands()
+		self.printInfo("100%")
+		return image
+
+	def __readSigAndCalib(self):
+		"""Reads the signature and calibration bytes and returns them.
+		This function expects a DUT present and pins initialized."""
+		signature = ""
+		calibration = ""
+		self.__setB1(0)
+		self.__setOE(1)
+		self.top.blockCommands()
+		for addr in range(0, 4):
+			self.__loadCommand(self.CMD_READSIG)
+			self.__loadAddr(addr)
+			self.__setB1(1)
+			self.__readWordToStatusReg()
+			self.__setB1(0)
+			data = self.top.cmdReadStatusReg()
+			if addr <= 2:
+				signature += data[0]
+			calibration += data[1]
+		self.top.unblockCommands()
+		return (signature, calibration)
 
 	def __checkDUTPresence(self):
 		"""Check if a Device Under Test (DUT) is inserted into the ZIF."""
@@ -180,6 +225,15 @@ class ATMega8DIP28(Chip):
 		self.top.send("\x0A\x12\x88")
 		self.top.cmdFlush()
 		self.top.unblockCommands()
+
+		(signature, calibration) = self.__readSigAndCalib()
+		if signature != self.signature:
+			self.throwError("Unexpected device signature. " +\
+				"Want %02X%02X%02X, but got %02X%02X%02X" % \
+				(ord(self.signature[0]), ord(self.signature[1]),
+				 ord(self.signature[2]),
+				 ord(signature[0]), ord(signature[1]),
+				 ord(signature[2])))
 
 	def __readWordToStatusReg(self):
 		"""Read a data word from the DUT into the status register."""
