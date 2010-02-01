@@ -61,8 +61,6 @@ class ATMega8DIP28(Chip):
 
 		self.printInfo("Reading Flash ", newline=False)
 		image = ""
-		self.__setB1(0)
-		self.__setOE(1)
 		self.top.blockCommands()
 		for chunk in range(0, 256, 2):
 			if chunk % 8 == 0:
@@ -74,9 +72,7 @@ class ATMega8DIP28(Chip):
 			for word in range(0, 32):
 				self.__loadCommand(self.CMD_READFLASH)
 				self.__loadAddr((chunk << 4) + word)
-				self.__setB1(1)
 				self.__readWordToStatusReg()
-				self.__setB1(0)
 			data = self.top.cmdReadStatusReg()
 			image += data
 		self.top.unblockCommands()
@@ -98,8 +94,6 @@ class ATMega8DIP28(Chip):
 
 		self.printInfo("Reading EEPROM", newline=False)
 		image = ""
-		self.__setB1(0)
-		self.__setOE(1)
 		self.top.blockCommands()
 		for chunk in range(0, 16, 2):
 			if chunk % 4 == 0:
@@ -107,9 +101,7 @@ class ATMega8DIP28(Chip):
 			for word in range(0, 32):
 				self.__loadCommand(self.CMD_READEEPROM)
 				self.__loadAddr((chunk << 4) + word)
-				self.__setB1(1)
 				self.__readWordToStatusReg()
-				self.__setB1(0)
 			data = self.top.cmdReadStatusReg()
 			image += data
 		self.top.unblockCommands()
@@ -130,15 +122,11 @@ class ATMega8DIP28(Chip):
 		This function expects a DUT present and pins initialized."""
 		signature = ""
 		calibration = ""
-		self.__setB1(0)
-		self.__setOE(1)
 		self.top.blockCommands()
 		for addr in range(0, 4):
 			self.__loadCommand(self.CMD_READSIG)
 			self.__loadAddr(addr)
-			self.__setB1(1)
 			self.__readWordToStatusReg()
-			self.__setB1(0)
 			data = self.top.cmdReadStatusReg()
 			if addr <= 2:
 				signature += data[0]
@@ -149,18 +137,12 @@ class ATMega8DIP28(Chip):
 	def __readFuseAndLockBits(self):
 		"""Reads the Fuse and Lock bits and returns them.
 		This function expects a DUT present and pins initialized."""
-		self.__setB1(0)
-		self.__setOE(1)
 		self.top.blockCommands()
 		self.__loadCommand(self.CMD_READFUSELOCK)
 		self.__setBS2(0)
-		self.__setB1(1)
 		self.__readWordToStatusReg()
-		self.__setB1(0)
 		self.__setBS2(1)
-		self.__setB1(1)
 		self.__readWordToStatusReg()
-		self.__setB1(0)
 		self.__setBS2(0)
 		data = self.top.cmdReadStatusReg()
 		self.top.unblockCommands()
@@ -254,6 +236,7 @@ class ATMega8DIP28(Chip):
 		self.top.blockCommands()
 		self.top.send("\x34")
 		self.top.send("\x0A\x12\x88")
+		self.__setOE(1)
 		self.top.cmdFlush()
 		self.top.unblockCommands()
 
@@ -268,26 +251,32 @@ class ATMega8DIP28(Chip):
 
 	def __readWordToStatusReg(self):
 		"""Read a data word from the DUT into the status register."""
+		self.__setB1(1)
 		self.__setBS1(0)
 		self.__setOE(0)
 		self.top.cmdFPGAReadByte()
 		self.__setBS1(1)
 		self.top.cmdFPGAReadByte()
 		self.__setOE(1)
+		self.__setB1(0)
 
 	def __readLowByteToStatusReg(self):
 		"""Read the low data byte from the DUT into the status register."""
+		self.__setB1(1)
 		self.__setBS1(0)
 		self.__setOE(0)
 		self.top.cmdFPGAReadByte()
 		self.__setOE(1)
+		self.__setB1(0)
 
 	def __readHighByteToStatusReg(self):
 		"""Read the high data byte from the DUT into the status register."""
+		self.__setB1(1)
 		self.__setBS1(1)
 		self.__setOE(0)
 		self.top.cmdFPGAReadByte()
 		self.__setOE(1)
+		self.__setB1(0)
 
 	def __loadAddr(self, addr):
 		"""Load an address word."""
