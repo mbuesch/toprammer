@@ -55,6 +55,14 @@ class Chip:
 	def initializeChip(self):
 		pass # Override me in the subclass, if required.
 
+	def readSignature(self):
+		# Override me in the subclass, if required.
+		raise TOPException("Signature reading not supported on " + self.chipID)
+
+	def erase(self):
+		# Override me in the subclass, if required.
+		raise TOPException("Chip erasing not supported on " + self.chipID)
+
 	def readProgmem(self):
 		# Override me in the subclass, if required.
 		raise TOPException("Program memory reading not supported on " + self.chipID)
@@ -62,6 +70,22 @@ class Chip:
 	def writeProgmem(self, image):
 		# Override me in the subclass, if required.
 		raise TOPException("Program memory writing not supported on " + self.chipID)
+
+	def readEEPROM(self):
+		# Override me in the subclass, if required.
+		raise TOPException("EEPROM reading not supported on " + self.chipID)
+
+	def writeEEPROM(self, image):
+		# Override me in the subclass, if required.
+		raise TOPException("EEPROM writing not supported on " + self.chipID)
+
+	def readFuse(self):
+		# Override me in the subclass, if required.
+		raise TOPException("Fuse reading not supported on " + self.chipID)
+
+	def writeFuse(self, image):
+		# Override me in the subclass, if required.
+		raise TOPException("Fuse writing not supported on " + self.chipID)
 
 def chipFind(chipID):
 	for chip in supportedChips:
