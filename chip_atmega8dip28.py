@@ -215,9 +215,9 @@ class ATMega8DIP28(Chip):
 		self.top.blockCommands()
 		self.top.cmdFlush()
 		self.top.send("\x19")
-		self.__setB1(0)
+		self.__setReadMode(0)
 		self.top.send("\x34")
-		self.__setB1(0)
+		self.__setReadMode(0)
 		self.__setOE(0)
 		self.__setWR(1)
 		self.__setXTAL1(0)
@@ -251,32 +251,32 @@ class ATMega8DIP28(Chip):
 
 	def __readWordToStatusReg(self):
 		"""Read a data word from the DUT into the status register."""
-		self.__setB1(1)
+		self.__setReadMode(1)
 		self.__setBS1(0)
 		self.__setOE(0)
 		self.top.cmdFPGAReadByte()
 		self.__setBS1(1)
 		self.top.cmdFPGAReadByte()
 		self.__setOE(1)
-		self.__setB1(0)
+		self.__setReadMode(0)
 
 	def __readLowByteToStatusReg(self):
 		"""Read the low data byte from the DUT into the status register."""
-		self.__setB1(1)
+		self.__setReadMode(1)
 		self.__setBS1(0)
 		self.__setOE(0)
 		self.top.cmdFPGAReadByte()
 		self.__setOE(1)
-		self.__setB1(0)
+		self.__setReadMode(0)
 
 	def __readHighByteToStatusReg(self):
 		"""Read the high data byte from the DUT into the status register."""
-		self.__setB1(1)
+		self.__setReadMode(1)
 		self.__setBS1(1)
 		self.__setOE(0)
 		self.top.cmdFPGAReadByte()
 		self.__setOE(1)
-		self.__setB1(0)
+		self.__setReadMode(0)
 
 	def __loadAddr(self, addr):
 		"""Load an address word."""
@@ -309,8 +309,8 @@ class ATMega8DIP28(Chip):
 		self.top.cmdFPGAWriteByte(command)
 		self.__pulseXTAL1()
 
-	def __setB1(self, high):
-		"""Set the B1 pin of the DUT"""
+	def __setReadMode(self, high):
+		"""Put the FPGA into read mode."""
 		if high:
 			self.top.send("\x0A\x12\x81")
 		else:
