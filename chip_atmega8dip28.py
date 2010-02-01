@@ -116,6 +116,15 @@ class ATMega8DIP28(Chip):
 		self.printInfo("100%")
 		return image
 
+	def readFuse(self):
+		self.__checkDUTPresence()
+		self.__initPins()
+
+		self.printInfo("Reading Fuse bits...", newline=False)
+		(fuse, lock) = self.__readFuseAndLockBits()
+		self.printInfo("100%")
+		return fuse
+
 	def __readSigAndCalib(self):
 		"""Reads the signature and calibration bytes and returns them.
 		This function expects a DUT present and pins initialized."""
@@ -136,6 +145,28 @@ class ATMega8DIP28(Chip):
 			calibration += data[1]
 		self.top.unblockCommands()
 		return (signature, calibration)
+
+	def __readFuseAndLockBits(self):
+		"""Reads the Fuse and Lock bits and returns them.
+		This function expects a DUT present and pins initialized."""
+		self.__setB1(0)
+		self.__setOE(1)
+		self.top.blockCommands()
+		self.__loadCommand(self.CMD_READFUSELOCK)
+		self.__setBS2(0)
+		self.__setB1(1)
+		self.__readWordToStatusReg()
+		self.__setB1(0)
+		self.__setBS2(1)
+		self.__setB1(1)
+		self.__readWordToStatusReg()
+		self.__setB1(0)
+		self.__setBS2(0)
+		data = self.top.cmdReadStatusReg()
+		self.top.unblockCommands()
+		fuses = data[0] + data[3]
+		lock = data[1]
+		return (fuses, lock)
 
 	def __checkDUTPresence(self):
 		"""Check if a Device Under Test (DUT) is inserted into the ZIF."""
