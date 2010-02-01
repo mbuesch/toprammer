@@ -71,17 +71,12 @@ class ATMega8DIP28(Chip):
 					self.printInfo("%d%%" % percent, newline=False)
 				else:
 					self.printInfo(".", newline=False)
-			self.__loadCommand(self.CMD_READFLASH)
-			self.__loadAddr(chunk << 4)
-			for word in range(0, 31, 1):
+			for word in range(0, 32):
+				self.__loadCommand(self.CMD_READFLASH)
+				self.__loadAddr((chunk << 4) + word)
 				self.__setB1(1)
 				self.__readWordToStatusReg()
 				self.__setB1(0)
-				self.__loadCommand(self.CMD_READFLASH)
-				self.__loadAddr((chunk << 4) + word + 1)
-			self.__setB1(1)
-			self.__readWordToStatusReg()
-			self.__setB1(0)
 			data = self.top.cmdReadStatusReg()
 			image += data
 		self.top.unblockCommands()
