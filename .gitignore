@@ -1,6 +1,6 @@
 *~
 *.swp
 *.pyc
-*.bit
 *.cache.*
 *.bak
+*.orig

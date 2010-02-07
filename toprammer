@@ -289,9 +289,14 @@ class TOP:
 		"""Read a byte from the FPGA data line into the status register."""
 		self.send("\x01")
 
-	def cmdFPGAWriteByte(self, byte):
+	def cmdFPGAWriteByte(self, byte):#FIXME
 		"""Write a byte to the FPGA data line."""
 		self.send("\x10" + chr(byte))
+
+	def cmdFPGAWrite(self, address, byte):
+		"""Write a byte to an FPGA address."""
+		cmd = chr(0x0A) + chr(address) + chr(byte)
+		self.send(cmd)
 
 	def cmdSetGNDPin(self, zifPin):
 		"""Assign GND to a ZIF socket pin. 0=none"""

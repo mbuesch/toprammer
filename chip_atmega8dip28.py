@@ -154,7 +154,7 @@ class ATMega8DIP28(Chip):
 		"""Check if a Device Under Test (DUT) is inserted into the ZIF."""
 		self.top.blockCommands()
 		self.top.cmdFlush()
-		self.top.send("\x0A\x1D\x86")
+		self.top.cmdFPGAWrite(0x1D, 0x86)
 		self.top.unblockCommands()
 
 		self.top.cmdSetGNDPin(0)
@@ -163,7 +163,7 @@ class ATMega8DIP28(Chip):
 
 		self.top.blockCommands()
 		self.top.cmdFlush(2)
-		self.top.send("\x0A\x1B\xFF")
+		self.top.cmdFPGAWrite(0x1B, 0xFF)
 		self.top.unblockCommands()
 
 		self.top.send("\x0E\x28\x00\x00")
@@ -192,7 +192,7 @@ class ATMega8DIP28(Chip):
 		self.top.cmdLoadVCCXLayout(0)
 		self.top.cmdFlush()
 		self.top.send("\x0E\x28\x01\x00")
-		self.top.send("\x0A\x1B\x00")
+		self.top.cmdFPGAWrite(0x1B, 0x00)
 		self.top.cmdSetVPPVoltage(0)
 		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(12)
@@ -223,7 +223,7 @@ class ATMega8DIP28(Chip):
 		self.__setXTAL1(0)
 		self.__setXA0(0)
 		self.__setXA1(0)
-		self.top.send("\x0A\x12\x08")
+		self.top.cmdFPGAWrite(0x12, 0x08)
 		self.__setBS1(0)
 		self.__setBS2(0)
 		self.__setPAGEL(0)
@@ -235,7 +235,7 @@ class ATMega8DIP28(Chip):
 
 		self.top.blockCommands()
 		self.top.send("\x34")
-		self.top.send("\x0A\x12\x88")
+		self.top.cmdFPGAWrite(0x12, 0x88)
 		self.__setOE(1)
 		self.top.cmdFlush()
 		self.top.unblockCommands()
@@ -311,52 +311,52 @@ class ATMega8DIP28(Chip):
 
 	def __setReadMode(self, high):
 		"""Put the FPGA into read mode."""
+		value = 0x01
 		if high:
-			self.top.send("\x0A\x12\x81")
-		else:
-			self.top.send("\x0A\x12\x01")
+			value |= 0x80
+		self.top.cmdFPGAWrite(0x12, value)
 
 	def __setOE(self, high):
 		"""Set the OE pin of the DUT"""
+		value = 0x02
 		if high:
-			self.top.send("\x0A\x12\x82")
-		else:
-			self.top.send("\x0A\x12\x02")
+			value |= 0x80
+		self.top.cmdFPGAWrite(0x12, value)
 
 	def __setWR(self, high):
 		"""Set the WR pin of the DUT"""
+		value = 0x03
 		if high:
-			self.top.send("\x0A\x12\x83")
-		else:
-			self.top.send("\x0A\x12\x03")
+			value |= 0x80
+		self.top.cmdFPGAWrite(0x12, value)
 
 	def __setBS1(self, high):
 		"""Set the BS1 pin of the DUT"""
+		value = 0x04
 		if high:
-			self.top.send("\x0A\x12\x84")
-		else:
-			self.top.send("\x0A\x12\x04")
+			value |= 0x80
+		self.top.cmdFPGAWrite(0x12, value)
 
 	def __setXA0(self, high):
 		"""Set the XA0 pin of the DUT"""
+		value = 0x05
 		if high:
-			self.top.send("\x0A\x12\x85")
-		else:
-			self.top.send("\x0A\x12\x05")
+			value |= 0x80
+		self.top.cmdFPGAWrite(0x12, value)
 
 	def __setXA1(self, high):
 		"""Set the XA1 pin of the DUT"""
+		value = 0x06
 		if high:
-			self.top.send("\x0A\x12\x86")
-		else:
-			self.top.send("\x0A\x12\x06")
+			value |= 0x80
+		self.top.cmdFPGAWrite(0x12, value)
 
 	def __setXTAL1(self, high):
 		"""Set the XTAL1 pin of the DUT"""
+		value = 0x07
 		if high:
-			self.top.send("\x0A\x12\x87")
-		else:
-			self.top.send("\x0A\x12\x07")
+			value |= 0x80
+		self.top.cmdFPGAWrite(0x12, value)
 
 	def __pulseXTAL1(self, count=1):
 		"""Do a positive pulse on the XTAL1 pin of the DUT"""
@@ -367,16 +367,16 @@ class ATMega8DIP28(Chip):
 
 	def __setPAGEL(self, high):
 		"""Set the PAGEL pin of the DUT"""
+		value = 0x09
 		if high:
-			self.top.send("\x0A\x12\x89")
-		else:
-			self.top.send("\x0A\x12\x09")
+			value |= 0x80
+		self.top.cmdFPGAWrite(0x12, value)
 
 	def __setBS2(self, high):
 		"""Set the BS2 pin of the DUT"""
+		value = 0x0A
 		if high:
-			self.top.send("\x0A\x12\x8A")
-		else:
-			self.top.send("\x0A\x12\x0A")
+			value |= 0x80
+		self.top.cmdFPGAWrite(0x12, value)
 
 supportedChips.append(ATMega8DIP28())
