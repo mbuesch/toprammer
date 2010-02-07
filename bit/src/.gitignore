@@ -1,5 +1,6 @@
 _ngo/
 _xmsgs/
+xst/
 
 *.lock
 *.ise_ISE_Backup

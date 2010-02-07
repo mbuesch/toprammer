@@ -46,7 +46,7 @@ module atmega8dip28(data, ale, write, read, zif);
 	assign low = 0;
 
 	always @(negedge ale) begin
-		address = data;
+		address <= data;
 	end
 
 	always @(posedge write) begin
@@ -54,23 +54,23 @@ module atmega8dip28(data, ale, write, read, zif);
 //			if (data[6:0] == 1)
 //				TODO
 			if (data[6:0] == 2)
-				dut_oe = data[7];
+				dut_oe <= data[7];
 			if (data[6:0] == 3)
-				dut_wr = data[7];
+				dut_wr <= data[7];
 			if (data[6:0] == 4)
-				dut_bs1 = data[7];
+				dut_bs1 <= data[7];
 			if (data[6:0] == 5)
-				dut_xa0 = data[7];
+				dut_xa0 <= data[7];
 			if (data[6:0] == 6)
-				dut_xa1 = data[7];
+				dut_xa1 <= data[7];
 			if (data[6:0] == 7)
-				dut_xtal = data[7];
+				dut_xtal <= data[7];
 //			if (data[6:0] == 8)
 				// Unused
 			if (data[6:0] == 9)
-				dut_pagel = data[7];
+				dut_pagel <= data[7];
 			if (data[6:0] == 10)
-				dut_bs2 = data[7];
+				dut_bs2 <= data[7];
 		end
 		if (address == 8'h1B) begin
 			//TODO
@@ -82,19 +82,13 @@ module atmega8dip28(data, ale, write, read, zif);
 			//TODO
 		end
 		if (address == 8'h10) begin
-			dut_data = data;
+			dut_data <= data;
 		end
 	end
 
 	always @(read or address or zif) begin
-		read_data[0] = zif[24];
-		read_data[1] = zif[25];
-		read_data[2] = zif[26];
-		read_data[3] = zif[27];
-		read_data[4] = zif[28];
-		read_data[5] = zif[29];
-		read_data[6] = zif[33];
-		read_data[7] = zif[34];
+		read_data[5:0] <= zif[29:24];
+		read_data[7:6] <= zif[34:33];
 	end
 
 	assign read_oe = !read && address[4];
