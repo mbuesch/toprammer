@@ -14,6 +14,10 @@ TOP2049 USB protocol (incomplete)
 		   The register is read by sending 07h via bulk out
 		   and reading 64bytes via bulk in.
 
+0Axxyy		>= Write data into the FPGA via the parallel uc->FPGA interface.
+		   xx is the address (clocked via ALE).
+		   yy is the data (clocked via WR).
+
 0E110000	>= Put the device ID string into the status register.
 		   String length is 16 bytes.
 
