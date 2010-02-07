@@ -36,11 +36,12 @@ from chip_atmega8dip28 import *
 
 
 class TOP:
-	def __init__(self, bitfileName, busDev=None, verbose=0, noqueue=False):
+	def __init__(self, bitfileName, busDev=None, verbose=0, forceLevel=0, noqueue=False):
 		"""bitfileName is the path to the .bit file.
 		   busDev is a tuple (BUSID, DEVID) or None."""
 
 		self.verbose = verbose
+		self.forceLevel = forceLevel
 		self.noqueue = noqueue
 
 		self.commandsBlocked = False
@@ -109,10 +110,21 @@ class TOP:
 			raise TOPException("USB error: " + str(e))
 
 		if self.noqueue:
-			self.printInfo("WARNING: Command queuing disabled. " +\
+			self.printWarning("WARNING: Command queuing disabled. " +\
 				"Hardware access will be _really_ slow.")
 
 		self.__initializeHardware()
+
+	def getForceLevel(self):
+		return self.forceLevel
+
+	def printWarning(self, message, newline=True):
+		if self.verbose >= 0:
+			if newline:
+				print message
+			else:
+				sys.stdout.write(message)
+				sys.stdout.flush()
 
 	def printInfo(self, message, newline=True):
 		if self.verbose >= 1:
@@ -423,6 +435,8 @@ def usage():
 	print " -d|--device BUS.DEV     Use the programmer at BUS.DEV"
 	print "                         First found programmer is used, if not given."
 	print " -V|--verbose LEVEL      Set the verbosity level. Default = 2"
+	print " -o|--force LEVEL        Set the force level. Default = 0"
+	print "                         Note that any value greater than 0 may brick devices"
 	print " -Q|--noqueue            Disable command queuing. Really slow!"
 
 def fileOut(filename, data):
@@ -439,6 +453,7 @@ def fileIn(filename):
 
 def main(argv):
 	opt_verbose = 2
+	opt_forceLevel = 0
 	opt_bitfile = None
 	opt_device = None
 	opt_action = None
@@ -446,10 +461,11 @@ def main(argv):
 	opt_noqueue = False
 	try:
 		(opts, args) = getopt.getopt(sys.argv[1:],
-			"hb:d:V:Qs:xp:P:e:E:f:F:",
+			"hb:d:V:Qs:xp:P:e:E:f:F:o:",
 			[ "help", "bitfile=", "device=", "verbose=", "noqueue",
 			  "read-sig=", "erase", "read-prog=", "write-prog=",
-			  "read-eeprom=", "write-eeprom=", "read-fuse=", "write-fuse=", ])
+			  "read-eeprom=", "write-eeprom=", "read-fuse=", "write-fuse=",
+			  "force=", ])
 		for (o, v) in opts:
 			if o in ("-h", "--help"):
 				usage()
@@ -465,6 +481,8 @@ def main(argv):
 					return 1
 			if o in ("-V", "--verbose"):
 				opt_verbose = int(v)
+			if o in ("-o", "--force"):
+				opt_forceLevel = int(v)
 			if o in ("-Q", "--noqueue"):
 				opt_noqueue = True
 			if o in ("-s", "--read-sig"):
@@ -501,7 +519,9 @@ def main(argv):
 		return 1
 
 	try:
-		top = TOP(opt_bitfile, opt_device, opt_verbose, opt_noqueue)
+		top = TOP(bitfileName = opt_bitfile, busDev = opt_device,
+			  verbose = opt_verbose, forceLevel = opt_forceLevel,
+			  noqueue = opt_noqueue)
 		if opt_action == "read-sig":
 			fileOut(opt_file, top.readSignature())
 		elif opt_action == "erase":

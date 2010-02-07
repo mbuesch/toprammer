@@ -37,6 +37,12 @@ class Chip:
 	def setTOP(self, top):
 		self.top = top
 
+	def printWarning(self, message, newline=True):
+		if self.printPrefix:
+			message = self.chipID + ": " + message
+		self.top.printWarning(message, newline)
+		self.printPrefix = newline
+
 	def printInfo(self, message, newline=True):
 		if self.printPrefix:
 			message = self.chipID + ": " + message

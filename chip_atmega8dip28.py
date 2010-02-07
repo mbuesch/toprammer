@@ -184,7 +184,11 @@ class ATMega8DIP28(Chip):
 		stat = self.top.cmdReadStatusReg32()
 		self.top.unblockCommands()
 		if stat != 0xFFFFFFC0:
-			self.throwError("Did not detect chip. Please check connections.")
+			msg = "Did not detect chip. Please check connections. (0x%08X)" % stat
+			if self.top.getForceLevel() >= 2:
+				self.printWarning(msg)
+			else:
+				self.throwError(msg)
 
 	def __initPins(self):
 		"""Initialize the pin voltages and logic."""
@@ -242,12 +246,16 @@ class ATMega8DIP28(Chip):
 
 		(signature, calibration) = self.__readSigAndCalib()
 		if signature != self.signature:
-			self.throwError("Unexpected device signature. " +\
-				"Want %02X%02X%02X, but got %02X%02X%02X" % \
+			msg = "Unexpected device signature. " +\
+			      "Want %02X%02X%02X, but got %02X%02X%02X" % \
 				(ord(self.signature[0]), ord(self.signature[1]),
 				 ord(self.signature[2]),
 				 ord(signature[0]), ord(signature[1]),
-				 ord(signature[2])))
+				 ord(signature[2]))
+			if self.top.getForceLevel() >= 1:
+				self.printWarning(msg)
+			else:
+				self.throwError(msg)
 
 	def __readWordToStatusReg(self):
 		"""Read a data word from the DUT into the status register."""
