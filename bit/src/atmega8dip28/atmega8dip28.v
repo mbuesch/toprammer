@@ -50,45 +50,90 @@ module atmega8dip28(data, ale, write, read, zif);
 	end
 
 	always @(posedge write) begin
-		if (address == 8'h12) begin
-//			if (data[6:0] == 1)
-//				TODO
-			if (data[6:0] == 2)
-				dut_oe <= data[7];
-			if (data[6:0] == 3)
-				dut_wr <= data[7];
-			if (data[6:0] == 4)
-				dut_bs1 <= data[7];
-			if (data[6:0] == 5)
-				dut_xa0 <= data[7];
-			if (data[6:0] == 6)
-				dut_xa1 <= data[7];
-			if (data[6:0] == 7)
-				dut_xtal <= data[7];
-//			if (data[6:0] == 8)
-				// Unused
-			if (data[6:0] == 9)
-				dut_pagel <= data[7];
-			if (data[6:0] == 10)
-				dut_bs2 <= data[7];
-		end
-		if (address == 8'h1B) begin
-			//TODO
-		end
-		if (address == 8'h1D) begin
-			//TODO
-		end
-		if (address == 8'h11) begin
-			//TODO
-		end
-		if (address == 8'h10) begin
+		case (address)
+		8'h10: begin
+			/* Data write */
 			dut_data <= data;
 		end
+		8'h11: begin
+			/* Nothing */
+		end
+		8'h12: begin
+			/* Control pin access */
+			case (data[6:0])
+			1: begin
+				/* Unused */
+			end
+			2: begin
+				dut_oe <= data[7];
+			end
+			3: begin
+				dut_wr <= data[7];
+			end
+			4: begin
+				dut_bs1 <= data[7];
+			end
+			5: begin
+				dut_xa0 <= data[7];
+			end
+			6: begin
+				dut_xa1 <= data[7];
+			end
+			7: begin
+				dut_xtal <= data[7];
+			end
+			8: begin
+				/* Unused */
+			end
+			9: begin
+				dut_pagel <= data[7];
+			end
+			10: begin
+				dut_bs2 <= data[7];
+			end
+			endcase
+		end
+		8'h1B: begin
+			/* Nothing */
+		end
+		8'h1D: begin
+			/* Nothing */
+		end
+		endcase
 	end
 
-	always @(read or address or zif) begin
-		read_data[5:0] <= zif[29:24];
-		read_data[7:6] <= zif[34:33];
+	always @(negedge read) begin
+		case (address)
+		8'h10: begin
+			/* Data read */
+			read_data[5:0] <= zif[29:24];
+			read_data[7:6] <= zif[34:33];
+		end
+		8'h16: begin
+			/* Raw ZIF pin read access */
+			read_data <= zif[8:1];
+		end
+		8'h17: begin
+			/* Raw ZIF pin read access */
+			read_data <= zif[16:9];
+		end
+		8'h18: begin
+			/* Raw ZIF pin read access */
+			read_data <= zif[24:17];
+		end
+		8'h19: begin
+			/* Raw ZIF pin read access */
+			read_data <= zif[32:25];
+		end
+		8'h1A: begin
+			/* Raw ZIF pin read access */
+			read_data <= zif[40:33];
+		end
+		8'h1B: begin
+			/* Raw ZIF pin read access */
+			read_data <= zif[48:41];
+		end
+		endcase
 	end
 
 	assign read_oe = !read && address[4];
