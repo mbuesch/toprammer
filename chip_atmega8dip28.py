@@ -175,16 +175,17 @@ class ATMega8DIP28(Chip):
 
 		self.top.blockCommands()
 		self.top.cmdFlush(2)
-		self.top.send("\x0B\x16")
-		self.top.send("\x0B\x17")
-		self.top.send("\x0B\x18")
-		self.top.send("\x0B\x19")
-		self.top.send("\x0B\x1A")
-		self.top.send("\x0B\x1B")
-		stat = self.top.cmdReadStatusReg32()
+		self.top.cmdFPGAReadRaw(0x16)
+		self.top.cmdFPGAReadRaw(0x17)
+		self.top.cmdFPGAReadRaw(0x18)
+		self.top.cmdFPGAReadRaw(0x19)
+		self.top.cmdFPGAReadRaw(0x1A)
+		self.top.cmdFPGAReadRaw(0x1B)
+		stat = self.top.cmdReadStatusReg48()
 		self.top.unblockCommands()
-		if stat != 0xFFFFFFC0:
-			msg = "Did not detect chip. Please check connections. (0x%08X)" % stat
+		if stat != 0x0303FFFFFFC0 and \
+		   (stat & 0x00FFFFFFFFFF) != 0x00031F800000:
+			msg = "Did not detect chip. Please check connections. (0x%012X)" % stat
 			if self.top.getForceLevel() >= 2:
 				self.printWarning(msg)
 			else:

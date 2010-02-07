@@ -158,7 +158,7 @@ class TOP:
 		if stat != 0x00020C69:
 			raise TOPException("Init: Unexpected status register (a): 0x%08X" % stat)
 
-		self.send("\x0A\x1B\xFF")
+		self.cmdFPGAWrite(0x1B, 0xFF)
 		self.cmdSetVPPVoltage(0)
 		self.cmdFlush()
 		self.cmdSetVPPVoltage(0)
@@ -171,7 +171,7 @@ class TOP:
 		self.cmdFlush()
 		self.cmdSetVCCXVoltage(0)
 		self.cmdFlush()
-		self.send("\x0A\x1D\x86")
+		self.cmdFPGAWrite(0x1D, 0x86)
 		self.cmdSetGNDPin(0)
 		self.cmdLoadVPPLayout(0)
 		self.cmdLoadVCCXLayout(0)
@@ -193,7 +193,7 @@ class TOP:
 	def __bitfileUpload(self):
 		self.printDebug("Uploading bitfile...")
 
-		self.send("\x0A\x1B\x00")
+		self.cmdFPGAWrite(0x1B, 0x00)
 		self.cmdFPGAInitiateConfig()
 		stat = self.cmdReadStatusReg32()
 		if stat != 0x00006801:
@@ -300,6 +300,11 @@ class TOP:
 	def cmdFPGAReadByte(self):
 		"""Read a byte from the FPGA data line into the status register."""
 		self.send("\x01")
+
+	def cmdFPGAReadRaw(self, address):
+		"""Read a byte from the FPGA at address into the status register."""
+		cmd = chr(0x0B) + chr(address)
+		self.send(cmd)
 
 	def cmdFPGAWrite(self, address, byte):
 		"""Write a byte to an FPGA address."""
