@@ -5,7 +5,7 @@ run
 -ifmt mixed
 -ofn atmega8dip28
 -ofmt NGC
--p xc2s15-6-vq100
+-p xc2s15-5-vq100
 -top atmega8dip28
 -opt_mode Speed
 -opt_level 1

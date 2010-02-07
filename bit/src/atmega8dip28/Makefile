@@ -5,9 +5,9 @@ NGDBUILD	= ngdbuild
 XST		= xst
 MKDIR		= mkdir
 
+PART		= 2s15vq100-5
 NAME		= atmega8dip28
 SRCS		= atmega8dip28.v
-PART		= 2s15vq100-6
 
 %.bit: %.ncd
 	$(BITGEN) -f `basename $< .ncd`.ut $<
