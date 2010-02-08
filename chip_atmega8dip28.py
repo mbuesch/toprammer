@@ -191,6 +191,28 @@ class ATMega8DIP28(Chip):
 		self.printInfo("100%")
 		return fuse
 
+	def writeFuse(self, image):
+		if len(image) != 2:
+			self.throwError("Invalid Fuses image size %d (expected %d)" %\
+				(len(image), 2))
+		self.__checkDUTPresence()
+		self.__initPins()
+
+		self.printInfo("Writing Fuse bits...", newline=False)
+		self.top.blockCommands()
+		self.__loadCommand(self.CMD_WRITEFUSE)
+		self.__setBS2(0)
+		self.__loadDataLow(ord(image[0]))
+		self.__pulseWR()
+		self.__waitForRDY()
+		self.__loadCommand(self.CMD_WRITEFUSE)
+		self.__loadDataLow(ord(image[1]))
+		self.__setBS1(1)
+		self.__pulseWR()
+		self.__waitForRDY()
+		self.top.unblockCommands()
+		self.printInfo("100%")
+
 	def __readSigAndCalib(self):
 		"""Reads the signature and calibration bytes and returns them.
 		This function expects a DUT present and pins initialized."""
