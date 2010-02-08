@@ -140,6 +140,7 @@ class ATMega8DIP28(Chip):
 			self.__pulseWR()
 			self.__waitForRDY()
 		self.top.unblockCommands()
+		self.printInfo("100%")
 
 	def readEEPROM(self):
 		self.__checkDUTPresence()
@@ -220,6 +221,32 @@ class ATMega8DIP28(Chip):
 		self.__loadCommand(self.CMD_WRITEFUSE)
 		self.__loadDataLow(ord(image[1]))
 		self.__setBS1(1)
+		self.__pulseWR()
+		self.__waitForRDY()
+		self.top.unblockCommands()
+		self.printInfo("100%")
+
+	def readLockbits(self):
+		self.__checkDUTPresence()
+		self.__initPins()
+
+		self.printInfo("Reading lock bits...", newline=False)
+		(fuses, lockbits) = self.__readFuseAndLockBits()
+		self.printInfo("100%")
+
+		return lockbits
+
+	def writeLockbits(self, image):
+		if len(image) != 1:
+			self.throwError("Invalid lock-bits image size %d (expected %d)" %\
+				(len(image), 1))
+		self.__checkDUTPresence()
+		self.__initPins()
+
+		self.printInfo("Writing lock bits...", newline=False)
+		self.top.blockCommands()
+		self.__loadCommand(self.CMD_WRITELOCK)
+		self.__loadDataLow(ord(image[0]))
 		self.__pulseWR()
 		self.__waitForRDY()
 		self.top.unblockCommands()

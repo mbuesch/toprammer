@@ -257,6 +257,19 @@ class TOP:
 		self.chip.writeFuse(image)
 		self.printDebug("Done writing image.")
 
+	def readLockbits(self):
+		"""Reads the Lock bits image and returns it."""
+		self.printDebug("Reading lock-bits from chip...")
+		image = self.chip.readLockbits()
+		self.printDebug("Done reading %d bytes." % len(image))
+		return image
+
+	def writeLockbits(self, image):
+		"""Writes a Lock bits image to the chip."""
+		self.printDebug("Writing %d bytes of lock-bits to chip..." % len(image))
+		self.chip.writeLockbits(image)
+		self.printDebug("Done writing image.")
+
 	def cmdFlush(self, count=1):
 		"""Send 'count' flush requests."""
 		assert(count >= 1)
@@ -434,6 +447,9 @@ def usage():
 	print " -f|--read-fuse FILE     Read the fuse bits"
 	print " -F|--write-fuse FILE    Write the fuse bits"
 	print ""
+	print " -l|--read-lock FILE     Read the lock bits"
+	print " -L|--write-lock FILE    Write the lock bits"
+	print ""
 	print "Optional:"
 	print " -d|--device BUS.DEV     Use the programmer at BUS.DEV"
 	print "                         First found programmer is used, if not given."
@@ -464,10 +480,11 @@ def main(argv):
 	opt_noqueue = False
 	try:
 		(opts, args) = getopt.getopt(sys.argv[1:],
-			"hb:d:V:Qs:xp:P:e:E:f:F:o:",
+			"hb:d:V:Qs:xp:P:e:E:f:F:o:l:L:",
 			[ "help", "bitfile=", "device=", "verbose=", "noqueue",
 			  "read-sig=", "erase", "read-prog=", "write-prog=",
 			  "read-eeprom=", "write-eeprom=", "read-fuse=", "write-fuse=",
+			  "read-lock=", "write-lock=",
 			  "force=", ])
 		for (o, v) in opts:
 			if o in ("-h", "--help"):
@@ -511,6 +528,12 @@ def main(argv):
 			if o in ("-f", "--read-fuse"):
 				opt_action = "read-fuse"
 				opt_file = v
+			if o in ("-l", "--read-lock"):
+				opt_action = "read-lock"
+				opt_file = v
+			if o in ("-L", "--write-lock"):
+				opt_action = "write-lock"
+				opt_file = v
 	except (getopt.GetoptError, ValueError), e:
 		usage()
 		return 1
@@ -541,6 +564,10 @@ def main(argv):
 			fileOut(opt_file, top.readFuse())
 		elif opt_action == "write-fuse":
 			top.writeFuse(fileIn(opt_file))
+		elif opt_action == "read-lock":
+			fileOut(opt_file, top.readLockbits())
+		elif opt_action == "write-lock":
+			top.writeLockbits(fileIn(opt_file))
 		else:
 			assert(0)
 		top.shutdown()

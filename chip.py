@@ -96,6 +96,14 @@ class Chip:
 		# Override me in the subclass, if required.
 		raise TOPException("Fuse writing not supported on " + self.chipID)
 
+	def readLockbits(self):
+		# Override me in the subclass, if required.
+		raise TOPException("Lockbit reading not supported on " + self.chipID)
+
+	def writeLockbits(self, image):
+		# Override me in the subclass, if required.
+		raise TOPException("Lockbit writing not supported on " + self.chipID)
+
 def chipFind(chipID):
 	for chip in supportedChips:
 		if chip.getID().lower() == chipID.lower():
