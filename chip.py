@@ -61,6 +61,9 @@ class Chip:
 	def initializeChip(self):
 		pass # Override me in the subclass, if required.
 
+	def shutdownChip(self):
+		pass # Override me in the subclass, if required.
+
 	def readSignature(self):
 		# Override me in the subclass, if required.
 		raise TOPException("Signature reading not supported on " + self.chipID)

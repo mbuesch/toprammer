@@ -115,6 +115,9 @@ class TOP:
 
 		self.__initializeHardware()
 
+	def shutdown(self):
+		self.chip.shutdownChip()
+
 	def getForceLevel(self):
 		return self.forceLevel
 
@@ -150,8 +153,7 @@ class TOP:
 	def __initializeHardware(self):
 		"Initialize the hardware"
 		ver = self.cmdRequestVersion()
-		self.printInfo("Detected a " + ver)
-		self.printDebug("Initializing hardware...")
+		self.printInfo("Initializing the '" + ver + "'...")
 
 		self.send("\x0D")
 		stat = self.cmdReadStatusReg32()
@@ -435,7 +437,7 @@ def usage():
 	print "Optional:"
 	print " -d|--device BUS.DEV     Use the programmer at BUS.DEV"
 	print "                         First found programmer is used, if not given."
-	print " -V|--verbose LEVEL      Set the verbosity level. Default = 2"
+	print " -V|--verbose LEVEL      Set the verbosity level. Default = 1"
 	print " -o|--force LEVEL        Set the force level. Default = 0"
 	print "                         Note that any value greater than 0 may brick devices"
 	print " -Q|--noqueue            Disable command queuing. Really slow!"
@@ -453,7 +455,7 @@ def fileIn(filename):
 		return file(filename, "rb").read()
 
 def main(argv):
-	opt_verbose = 2
+	opt_verbose = 1
 	opt_forceLevel = 0
 	opt_bitfile = None
 	opt_device = None
@@ -541,6 +543,7 @@ def main(argv):
 			top.writeFuse(fileIn(opt_file))
 		else:
 			assert(0)
+		top.shutdown()
 	except (TOPException, BitfileException, IOError), e:
 		print e
 		return 1

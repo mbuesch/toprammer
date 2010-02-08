@@ -41,12 +41,24 @@ class ATMega8DIP28(Chip):
 		self.signature = "\x1E\x93\x07" # The expected signature bytes
 
 	def initializeChip(self):
+		self.printDebug("Initializing chip")
 		self.top.cmdSetGNDPin(18)
 		self.top.cmdSetVCCXVoltage(5)
 		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(0)
 		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(12)
+
+	def shutdownChip(self):
+		self.printDebug("Shutdown chip")
+		self.top.cmdSetVCCXVoltage(5)
+		self.top.cmdFlush()
+		self.top.cmdSetVPPVoltage(5)
+		self.top.cmdFlush()
+		self.top.cmdLoadVCCXLayout(0)
+		self.top.cmdLoadVPPLayout(0)
+		self.top.cmdFlush()
+		self.top.cmdSetGNDPin(0)
 
 	def readSignature(self):
 		self.__checkDUTPresence()
