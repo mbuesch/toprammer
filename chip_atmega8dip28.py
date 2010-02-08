@@ -56,12 +56,7 @@ class ATMega8DIP28(Chip):
 		self.top.blockCommands()
 		self.__loadCommand(self.CMD_CHIPERASE)
 		self.__pulseWR()
-		self.top.unblockCommands()
-		time.sleep(0.1)
-		self.top.blockCommands()
-		while not self.__getRDY():
-			self.printInfo(".", newline=False)
-			time.sleep(0.1)
+		self.__waitForRDY()
 		self.top.unblockCommands()
 		self.printInfo("100%")
 
@@ -103,7 +98,28 @@ class ATMega8DIP28(Chip):
 		self.__checkDUTPresence()
 		self.__initPins()
 
-		#TODO
+		self.printInfo("Writing Flash ", newline=False)
+		self.top.blockCommands()
+		for chunk in range(0, 256, 2):
+			if chunk % 8 == 0:
+				percent = (chunk * 100 / 256)
+				if percent % 25 == 0:
+					self.printInfo("%d%%" % percent, newline=False)
+				else:
+					self.printInfo(".", newline=False)
+			for word in range(0, 32):
+				self.__loadCommand(self.CMD_WRITEFLASH)
+				addr = (chunk << 4) + word
+				self.__loadAddr(addr)
+				addr *= 2
+				data = image[addr : addr + 2]
+				self.__loadData(ord(data[0]) | (ord(data[1]) << 8))
+				self.__setBS1(1)
+				self.__pulsePAGEL()
+			self.__setBS1(0)
+			self.__pulseWR()
+			self.__waitForRDY()
+		self.top.unblockCommands()
 
 	def readEEPROM(self):
 		self.__checkDUTPresence()
@@ -304,6 +320,27 @@ class ATMega8DIP28(Chip):
 		self.__setOE(1)
 		self.__setReadMode(0)
 
+	def __loadData(self, data):
+		"""Load a data word."""
+		self.__loadDataLow(data)
+		self.__loadDataHigh(data >> 8)
+
+	def __loadDataLow(self, dataLow):
+		"""Load the low data byte."""
+		self.__setBS1(0)
+		self.__setXA0(1)
+		self.__setXA1(0)
+		self.top.cmdFPGAWrite(0x10, dataLow & 0xFF)
+		self.__pulseXTAL1()
+
+	def __loadDataHigh(self, dataHigh):
+		"""Load the high data byte."""
+		self.__setBS1(1)
+		self.__setXA0(1)
+		self.__setXA1(0)
+		self.top.cmdFPGAWrite(0x10, dataHigh & 0xFF)
+		self.__pulseXTAL1()
+
 	def __loadAddr(self, addr):
 		"""Load an address word."""
 		self.__loadAddrLow(addr)
@@ -341,6 +378,16 @@ class ATMega8DIP28(Chip):
 		if high:
 			value |= 0x80
 		self.top.cmdFPGAWrite(0x12, value)
+
+	def __waitForRDY(self):
+		"""Wait for the RDY pin to go high."""
+		self.top.flushCommands()
+		time.sleep(0.01)
+		for i in range(0, 50):
+			if self.__getRDY():
+				return
+			time.sleep(0.01)
+		self.throwError("Timeout waiting for READY signal from chip.")
 
 	def __getRDY(self):
 		"""Read the state of the RDY/BSY pin."""
@@ -411,6 +458,13 @@ class ATMega8DIP28(Chip):
 		if high:
 			value |= 0x80
 		self.top.cmdFPGAWrite(0x12, value)
+
+	def __pulsePAGEL(self, count=1):
+		"""Do a positive pulse on the PAGEL pin of the DUT"""
+		while count > 0:
+			self.__setPAGEL(1)
+			self.__setPAGEL(0)
+			count -= 1
 
 	def __setBS2(self, high):
 		"""Set the BS2 pin of the DUT"""

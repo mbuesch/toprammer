@@ -368,7 +368,7 @@ class TOP:
 	def receive(self, size):
 		"""Receive 'size' bytes on the bulk-in ep."""
 		# If there are blocked commands in the queue, send them now.
-		self.__flushCommands()
+		self.flushCommands()
 		try:
 			ep = self.bulkIn.address
 			data = ""
@@ -397,9 +397,9 @@ class TOP:
 			return
 		assert(self.commandsBlocked)
 		self.commandsBlocked = False
-		self.__flushCommands()
+		self.flushCommands()
 
-	def __flushCommands(self):
+	def flushCommands(self):
 		"""Flush the command queue, but don't unblock it."""
 		command = ""
 		for oneCommand in self.commandQueue:
