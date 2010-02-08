@@ -5,10 +5,20 @@
 >>>  Copyright (c) 2009-2010 Michael Buesch <mb@bu3sch.de>           <<<
 
 
+
 === DEPENDENCIES ===
 
 * Python 2.5 or Python 2.6 is required
 * python-usb module is required
+
+
+
+=== SUPPORTED CHIPS ===
+
+   Chip                               | State
+   -----------------------------------------------------------
+   Atmel Mega8 DIP28                  | Fully supported
+
 
 
 === INSTALLATION ===
@@ -16,20 +26,17 @@
 No installation is required. Just execute the "toprammer" file.
 
 
+
 === USAGE ===
 
 A .BIT file is always needed to do operations on the inserted chip.
 The .BIT file must match the chip. For example, do do operations on an
 Atmel Mega8 DIP microcontroller, the atmega8dip28.bit file is needed.
-Currently, the only way to get these files is to extract them from the
-Windows installation of the original "Topwin" software. Just go to the
-"Topwin" install directory (C:\Top\Topwin5\) and copy the "blib2"
-subdirectory to an USB stick (or something else) to transfer them
-to the Linux machine.
+Prebuilt .BIT files can be found in the "bit/" subdirectory.
+Sourcecode for these .BIT files is located in "bit/src/".
 
 The .BIT file basically is the firmware that runs on the FPGA in the
-TOP2049 programmer. An opensource alternative to these files is planned,
-but currently unavailable.
+TOP2049 programmer.
 
 See toprammer --help for device actions to read/write stuff from/to
 the chip.
