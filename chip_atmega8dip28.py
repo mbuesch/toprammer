@@ -48,6 +48,23 @@ class ATMega8DIP28(Chip):
 		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(12)
 
+	def erase(self):
+		self.__checkDUTPresence()
+		self.__initPins()
+
+		self.printInfo("Erasing chip ...", newline=False)
+		self.top.blockCommands()
+		self.__loadCommand(self.CMD_CHIPERASE)
+		self.__pulseWR()
+		self.top.unblockCommands()
+		time.sleep(0.1)
+		self.top.blockCommands()
+		while not self.__getRDY():
+			self.printInfo(".", newline=False)
+			time.sleep(0.1)
+		self.top.unblockCommands()
+		self.printInfo("100%")
+
 	def readProgmem(self):
 		self.__checkDUTPresence()
 		self.__initPins()
@@ -184,7 +201,7 @@ class ATMega8DIP28(Chip):
 		stat = self.top.cmdReadStatusReg48()
 		self.top.unblockCommands()
 		if stat != 0x0303FFFFFFC0 and \
-		   (stat & 0x00FFFFFFFFFF) != 0x00031F800000:
+		   (stat & 0x00FFFFFFFFFF) != 0x00031F801000:
 			msg = "Did not detect chip. Please check connections. (0x%012X)" % stat
 			if self.top.getForceLevel() >= 2:
 				self.printWarning(msg)
@@ -325,6 +342,13 @@ class ATMega8DIP28(Chip):
 			value |= 0x80
 		self.top.cmdFPGAWrite(0x12, value)
 
+	def __getRDY(self):
+		"""Read the state of the RDY/BSY pin."""
+		self.top.cmdFPGAReadRaw(0x17)
+		stat = self.top.cmdReadStatusReg()
+		stat = ord(stat[0])
+		return bool(stat & (1 << 4))
+
 	def __setOE(self, high):
 		"""Set the OE pin of the DUT"""
 		value = 0x02
@@ -338,6 +362,13 @@ class ATMega8DIP28(Chip):
 		if high:
 			value |= 0x80
 		self.top.cmdFPGAWrite(0x12, value)
+
+	def __pulseWR(self, count=1):
+		"""Do a negative pulse on the WR pin of the DUT"""
+		while count > 0:
+			self.__setWR(0)
+			self.__setWR(1)
+			count -= 1
 
 	def __setBS1(self, high):
 		"""Set the BS1 pin of the DUT"""
