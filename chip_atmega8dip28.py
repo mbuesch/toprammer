@@ -48,6 +48,14 @@ class ATMega8DIP28(Chip):
 		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(12)
 
+	def readSignature(self):
+		self.__checkDUTPresence()
+		self.__initPins()
+
+		(signature, calibration) = self.__readSigAndCalib()
+
+		return signature
+
 	def erase(self):
 		self.__checkDUTPresence()
 		self.__initPins()
@@ -125,21 +133,54 @@ class ATMega8DIP28(Chip):
 		self.__checkDUTPresence()
 		self.__initPins()
 
-		self.printInfo("Reading EEPROM", newline=False)
+		self.printInfo("Reading EEPROM ", newline=False)
 		image = ""
 		self.top.blockCommands()
-		for chunk in range(0, 16, 2):
-			if chunk % 4 == 0:
-				self.printInfo(".", newline=False)
-			for word in range(0, 32):
+		for chunk in range(0, 128):
+			if chunk % 8 == 0:
+				percent = (chunk * 100 / 128)
+				if percent % 25 == 0:
+					self.printInfo("%d%%" % percent, newline=False)
+				else:
+					self.printInfo(".", newline=False)
+			for byte in range(0, 4):
 				self.__loadCommand(self.CMD_READEEPROM)
-				self.__loadAddr((chunk << 4) + word)
-				self.__readWordToStatusReg()
+				self.__loadAddr((chunk << 2) + byte)
+				self.__readLowByteToStatusReg()
 			data = self.top.cmdReadStatusReg()
-			image += data
+			image += data[0:4]
 		self.top.unblockCommands()
 		self.printInfo("100%")
 		return image
+
+	def writeEEPROM(self, image):
+		if len(image) != 512:
+			self.throwError("Invalid EEPROM image size %d (expected %d)" %\
+				(len(image), 512))
+		self.__checkDUTPresence()
+		self.__initPins()
+
+		self.printInfo("Writing EEPROM ", newline=False)
+		self.top.blockCommands()
+		for chunk in range(0, 128):
+			if chunk % 8 == 0:
+				percent = (chunk * 100 / 128)
+				if percent % 25 == 0:
+					self.printInfo("%d%%" % percent, newline=False)
+				else:
+					self.printInfo(".", newline=False)
+			for byte in range(0, 4):
+				self.__loadCommand(self.CMD_WRITEEEPROM)
+				addr = (chunk << 2) + byte
+				self.__loadAddr(addr)
+				data = image[addr]
+				self.__loadDataLow(ord(data[0]))
+				self.__pulsePAGEL()
+			self.__setBS1(0)
+			self.__pulseWR()
+			self.__waitForRDY()
+		self.top.unblockCommands()
+		self.printInfo("100%")
 
 	def readFuse(self):
 		self.__checkDUTPresence()
