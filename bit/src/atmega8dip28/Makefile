@@ -31,6 +31,7 @@ clean:
 	rm -Rf __ngo __xst *.bgn *.bit *.bld *.drc *_map.mrp \
 		*_map.ncd *_map.ngm *.ncd *.ngc *.ngd *.ngr \
 		*.pad *_pad.csv *_pad.txt *.par *.pcf *.srp \
-		*.unroutes *_usage.xml *.xpi *_map.map *_summary.xml
+		*.unroutes *_usage.xml *.xpi *_map.map *_summary.xml \
+		*.twr
 
 

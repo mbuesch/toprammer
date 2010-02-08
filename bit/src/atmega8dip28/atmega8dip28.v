@@ -30,7 +30,7 @@ module atmega8dip28(data, ale, write, read, zif);
 	// Read output-enable
 	wire read_oe;
 	// Signals to/from the DUT
-	reg dut_oe, dut_wr, dut_xtal, dut_pagel, dut_busy;
+	reg dut_oe, dut_wr, dut_xtal, dut_pagel;
 	reg dut_bs1, dut_bs2;
 	reg dut_xa0, dut_xa1;
 	reg [7:0] dut_data;
@@ -38,12 +38,13 @@ module atmega8dip28(data, ale, write, read, zif);
 	reg [7:0] address;
 	// Cached read data
 	reg [7:0] read_data;
-	// Constant low
-	wire low;
+	// Constant lo/hi
+	wire low, high;
 	// Debugging
 	reg [7:0] test;
 
 	assign low = 0;
+	assign high = 1;
 
 	always @(negedge ale) begin
 		address <= data;
@@ -150,7 +151,7 @@ module atmega8dip28(data, ale, write, read, zif);
 	bufif0(zif[10], low, low);
 	bufif0(zif[11], low, low);
 	bufif0(zif[12], low, low);
-	bufif0(zif[13], low, low);
+	bufif0(zif[13], low, high);
 	bufif0(zif[14], dut_oe, low);
 	bufif0(zif[15], dut_wr, low);
 	bufif0(zif[16], dut_bs1, low);
