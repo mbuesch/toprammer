@@ -19,6 +19,10 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
+VERSION_MAJOR	= 0
+VERSION_MINOR	= 1
+VERSION = "%d.%d" % (VERSION_MAJOR, VERSION_MINOR)
+
 from bitfile import *
 from util import *
 
@@ -428,7 +432,7 @@ class TOP:
 		self.commandQueue = []
 
 def usage():
-	print "TOP2049 Open Source programming suite"
+	print "TOP2049 Open Source programming suite v%s" % VERSION
 	print ""
 	print "Usage: %s [OPTIONS]" % sys.argv[0]
 	print ""
