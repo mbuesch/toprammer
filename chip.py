@@ -26,13 +26,17 @@ from util import *
 supportedChips = []
 
 class Chip:
-	def __init__(self, chipID):
+	def __init__(self, chipID, broken=False):
 		"The chipID is the ID string from the bitfile."
 		self.chipID = chipID
+		self.broken = broken
 		self.printPrefix = True
 
 	def getID(self):
 		return self.chipID
+
+	def isBroken(self):
+		return self.broken
 
 	def setTOP(self, top):
 		self.top = top
