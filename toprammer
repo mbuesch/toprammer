@@ -549,7 +549,7 @@ class IO_ihex:
 				checksum = 0
 				ihex.append(":%02X%04X%02X" % (2, 0, self.TYPE_ELAR))
 				checksum += 2 + 0 + 0 + self.TYPE_ELAR
-				a = (addr >> 16) & 0xFF
+				a = (addr >> 16) & 0xFFFF
 				ihex.append("%04X" % a)
 				checksum += ((a >> 8) & 0xFF) + (a & 0xFF)
 				checksum = ((checksum ^ 0xFF) + 1) & 0xFF
