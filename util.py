@@ -26,22 +26,30 @@ import sys
 class TOPException(Exception): pass
 
 
-def dumpMem(mem):
+def parseHexdump(dump):
+	pass#TODO
+
+def generateHexdump(mem):
 	def toAscii(char):
 		if char >= 32 and char <= 126:
 			return chr(char)
 		return "."
 
+	ret = ""
 	ascii = ""
 	for i in range(0, len(mem)):
 		if i % 16 == 0 and i != 0:
-			sys.stdout.write("  " + ascii + "\n")
+			ret += "  " + ascii + "\n"
 			ascii = ""
 		if i % 16 == 0:
-			sys.stdout.write("0x%04X:  " % i)
+			ret += "0x%04X:  " % i
 		c = ord(mem[i])
-		sys.stdout.write("%02X" % c)
+		ret += "%02X" % c
 		if (i % 2 != 0):
-			sys.stdout.write(" ")
+			ret += " "
 		ascii += toAscii(c)
-	sys.stdout.write("  " + ascii + "\n\n")
+	ret += "  " + ascii + "\n\n"
+	return ret
+
+def dumpMem(mem):
+	sys.stdout.write(generateHexdump(mem))

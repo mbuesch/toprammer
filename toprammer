@@ -469,18 +469,161 @@ def usage():
 	print "                         Note that any value greater than 0 may brick devices"
 	print " -Q|--noqueue            Disable command queuing. Really slow!"
 	print " -B|--broken             Also use broken algorithms"
+	print " -I|--in-format FMT      Input file format. Default = autodetect"
+	print " -O|--out-format FMT     Output file format. Default = bin"
+	print ""
+	print "File formats (FMT):"
+	print " auto                    Autodetect. (input only)"
+	print " bin                     Raw binary data"
+	print " ihex                    Intel hex"
+	print " hex                     Human readable hex"
 
-def fileOut(filename, data):
+class IO_ihex:
+	TYPE_DATA = 0
+	TYPE_EOF  = 1
+	TYPE_ESAR = 2
+	TYPE_SSAR = 3
+	TYPE_ELAR = 4
+	TYPE_SLAR = 5
+
+	def autodetect(self, data):
+		try:
+			self.toBinary(data)
+		except (TOPException), e:
+			return False
+		return True
+
+	def toBinary(self, ihexData):
+		bin = []
+		try:
+			lines = ihexData.splitlines()
+			hiAddr = 0
+			for line in lines:
+				line = line.strip()
+				if len(line) == 0:
+					continue
+				if len(line) < 11 or (len(line) - 1) % 2 != 0:
+					raise TOPException("Invalid IHEX format (length error)")
+				if line[0] != ':':
+					raise TOPException("Invalid IHEX format (magic error)")
+				count = int(line[1:3], 16)
+				if len(line) != count * 2 + 11:
+					raise TOPException("Invalid IHEX format (count error)")
+				addr = (int(line[3:5], 16) << 8) | int(line[5:7], 16)
+				addr |= hiAddr << 16
+				type = int(line[7:9], 16)
+				checksum = 0
+				for i in range(1, len(line), 2):
+					byte = int(line[i:i+2], 16)
+					checksum = (checksum + byte) & 0xFF
+				checksum = checksum & 0xFF
+				if checksum != 0:
+					raise TOPException("Invalid IHEX format (checksum error)")
+
+				if type == self.TYPE_EOF:
+					break
+				if type == self.TYPE_ELAR:
+					if count != 2:
+						raise TOPException("Invalid IHEX format (inval ELAR)")
+					hiAddr = (int(line[9:11], 16) << 8) | int(line[11:13], 16)
+					continue
+				if type == self.TYPE_DATA:
+					if len(bin) < addr + count: # Reallocate
+						bin += ['\0'] * (addr + count - len(bin))
+					for i in range(9, 9 + count * 2, 2):
+						byte = chr(int(line[i:i+2], 16))
+						if bin[(i - 9) / 2 + addr] != '\0':
+							raise TOPException("Invalid IHEX format (corruption)")
+						bin[(i - 9) / 2 + addr] = byte
+					continue
+				raise TOPException("Invalid IHEX format (unsup type %d)" % type)
+		except ValueError:
+			raise TOPException("Invalid IHEX format (digit format)")
+		return "".join(bin)
+
+	def fromBinary(self, binData):
+		ihex = []
+		addr = 0
+		for i in range(0, len(binData), 16):
+			if addr > 0xFFFF:
+				checksum = 0
+				ihex.append(":%02X%04X%02X" % (2, 0, self.TYPE_ELAR))
+				checksum += 2 + 0 + 0 + self.TYPE_ELAR
+				a = (addr >> 16) & 0xFF
+				ihex.append("%04X" % a)
+				checksum += ((a >> 8) & 0xFF) + (a & 0xFF)
+				checksum = ((checksum ^ 0xFF) + 1) & 0xFF
+				ihex.append("%02X\n" % checksum)
+				addr -= 0xFFFF
+			checksum = 0
+			size = min(len(binData) - i, 16)
+			ihex.append(":%02X%04X%02X" % (size, addr, self.TYPE_DATA))
+			checksum += size + ((addr >> 8) & 0xFF) + (addr & 0xFF) + self.TYPE_DATA
+			for j in range(0, size):
+				data = ord(binData[i + j])
+				checksum = (checksum + data) & 0xFF
+				ihex.append("%02X" % data)
+			checksum = ((checksum ^ 0xFF) + 1) & 0xFF
+			ihex.append("%02X\n" % checksum)
+			addr += size
+		ihex.append(":00000001FF\n")
+		return "".join(ihex)
+
+class IO_hex:
+	def autodetect(self, data):
+		try:
+			self.toBinary(data)
+		except (TOPException), e:
+			return False
+		return True
+
+	def toBinary(self, data):
+		return parseHexdump(data)
+
+	def fromBinary(self, data):
+		return generateHexdump(data)
+
+class IO_binary:
+	def autodetect(self, data):
+		return True
+
+	def toBinary(self, data):
+		return data
+
+	def fromBinary(self, data):
+		return data
+
+IO_handlers = {
+	"bin"	: IO_binary,
+	"ihex"	: IO_ihex,
+	"hex"	: IO_hex,
+}
+
+def fileOut(filename, format, data):
+	handler = IO_handlers[format]()
+	data = handler.fromBinary(data)
 	if filename == "-":
-		dumpMem(data)
+		sys.stdout.write(data)
 	else:
 		file(filename, "w+b").write(data)
 
-def fileIn(filename):
+def fileIn(filename, format):
 	if filename == "-":
 		pass#TODO
 	else:
-		return file(filename, "rb").read()
+		data = file(filename, "rb").read()
+	if format == "auto":
+		if IO_ihex().autodetect(data):
+			format = "ihex"
+		elif IO_hex().autodetect(data):
+			format = "hex"
+		elif IO_binary().autodetect(data):
+			format = "bin"
+		else:
+			assert(0)
+	handler = IO_handlers[format]()
+	data = handler.toBinary(data)
+	return data
 
 def main(argv):
 	opt_verbose = 1
@@ -491,14 +634,16 @@ def main(argv):
 	opt_file = None
 	opt_noqueue = False
 	opt_usebroken = False
+	opt_informat = "auto"
+	opt_outformat = "bin"
 	try:
 		(opts, args) = getopt.getopt(sys.argv[1:],
-			"hb:d:V:Qs:xp:P:e:E:f:F:o:l:L:Bt",
+			"hb:d:V:Qs:xp:P:e:E:f:F:o:l:L:BtI:O:",
 			[ "help", "bitfile=", "device=", "verbose=", "noqueue",
 			  "read-sig=", "erase", "read-prog=", "write-prog=",
 			  "read-eeprom=", "write-eeprom=", "read-fuse=", "write-fuse=",
 			  "read-lock=", "write-lock=",
-			  "force=", "broken", "list", ])
+			  "force=", "broken", "list", "in-format=", "out-format=", ])
 		for (o, v) in opts:
 			if o in ("-h", "--help"):
 				usage()
@@ -524,6 +669,10 @@ def main(argv):
 				opt_noqueue = True
 			if o in ("-B", "--broken"):
 				opt_usebroken = True
+			if o in ("-I", "--in-format"):
+				opt_informat = v.lower()
+			if o in ("-O", "--out-format"):
+				opt_outformat = v.lower()
 			if o in ("-s", "--read-sig"):
 				opt_action = "read-sig"
 				opt_file = v
@@ -562,31 +711,37 @@ def main(argv):
 	if not opt_action:
 		print "An action is mandatory!"
 		return 1
+	if not opt_informat in ("auto", "bin", "ihex", "hex"):
+		print "Invalid -I|--in-format"
+		return 1
+	if not opt_outformat in ("bin", "ihex", "hex"):
+		print "Invalid -O|--out-format"
+		return 1
 
 	try:
 		top = TOP(bitfileName = opt_bitfile, busDev = opt_device,
 			  verbose = opt_verbose, forceLevel = opt_forceLevel,
 			  noqueue = opt_noqueue, usebroken = opt_usebroken)
 		if opt_action == "read-sig":
-			fileOut(opt_file, top.readSignature())
+			fileOut(opt_file, opt_outformat, top.readSignature())
 		elif opt_action == "erase":
 			top.eraseChip()
 		elif opt_action == "read-prog":
-			fileOut(opt_file, top.readProgmem())
+			fileOut(opt_file, opt_outformat, top.readProgmem())
 		elif opt_action == "write-prog":
-			top.writeProgmem(fileIn(opt_file))
+			top.writeProgmem(fileIn(opt_file, opt_informat))
 		elif opt_action == "read-eeprom":
-			fileOut(opt_file, top.readEEPROM())
+			fileOut(opt_file, opt_outformat, top.readEEPROM())
 		elif opt_action == "write-eeprom":
-			top.writeEEPROM(fileIn(opt_file))
+			top.writeEEPROM(fileIn(opt_file, opt_informat))
 		elif opt_action == "read-fuse":
-			fileOut(opt_file, top.readFuse())
+			fileOut(opt_file, opt_outformat, top.readFuse())
 		elif opt_action == "write-fuse":
-			top.writeFuse(fileIn(opt_file))
+			top.writeFuse(fileIn(opt_file, opt_informat))
 		elif opt_action == "read-lock":
-			fileOut(opt_file, top.readLockbits())
+			fileOut(opt_file, out_outformat, top.readLockbits())
 		elif opt_action == "write-lock":
-			top.writeLockbits(fileIn(opt_file))
+			top.writeLockbits(fileIn(opt_file, opt_informat))
 		else:
 			assert(0)
 		top.shutdown()
