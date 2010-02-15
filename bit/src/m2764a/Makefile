@@ -32,6 +32,6 @@ clean:
 		*_map.ncd *_map.ngm *.ncd *.ngc *.ngd *.ngr \
 		*.pad *_pad.csv *_pad.txt *.par *.pcf *.srp \
 		*.unroutes *_usage.xml *.xpi *_map.map *_summary.xml \
-		*.twr
+		*.twr *_details.xml
 
 
