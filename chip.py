@@ -140,3 +140,10 @@ def chipFind(chipID):
 		if chip.getID().lower() == chipID.lower():
 			return chip
 	return None
+
+def dumpSupportedChips(fd):
+	for chip in supportedChips:
+		broken = ""
+		if chip.isBroken():
+			broken = " (broken)"
+		fd.write("%20s%s\n" % (chip.getID(), broken))
