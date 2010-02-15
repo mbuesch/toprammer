@@ -3,7 +3,7 @@
 # Copyright (c) 2010 Michael Buesch <mb@bu3sch.de>
 # Licensed under the GNU/GPL v2+
 
-basedir="$(dirname $0)"
+basedir="$PWD/$(dirname $0)"
 srcdir="$basedir/src"
 bindir="$basedir"
 bitparser="python $basedir/../bitfile.py"
