@@ -38,6 +38,7 @@ except (ImportError), e:
 # Import the supported chip modules
 from chip_atmega8dip28 import *
 from chip_m8cissp import *
+from chip_m2764a import *
 
 
 class TOP:
