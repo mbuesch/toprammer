@@ -609,7 +609,7 @@ def fileOut(filename, format, data):
 
 def fileIn(filename, format):
 	if filename == "-":
-		pass#TODO
+		data = sys.stdin.read()
 	else:
 		data = file(filename, "rb").read()
 	if format == "auto":

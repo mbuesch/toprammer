@@ -27,6 +27,7 @@ class TOPException(Exception): pass
 
 
 def parseHexdump(dump):
+	raise TOPException()
 	pass#TODO
 
 def generateHexdump(mem):
