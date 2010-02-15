@@ -208,15 +208,15 @@ module m2764a(data, ale, write, read, osc_in, zif);
 	bufif0(zif[18], dut_addr[2], low);	/* A2 */
 	bufif0(zif[19], dut_addr[1], low);	/* A1 */
 	bufif0(zif[20], dut_addr[0], low);	/* A0 */
-	bufif0(zif[21], dut_data[0], dut_G);	/* Q0 */
-	bufif0(zif[22], dut_data[1], dut_G);	/* Q1 */
-	bufif0(zif[23], dut_data[2], dut_G);	/* Q2 */
+	bufif0(zif[21], dut_data[0], !dut_G);	/* Q0 */
+	bufif0(zif[22], dut_data[1], !dut_G);	/* Q1 */
+	bufif0(zif[23], dut_data[2], !dut_G);	/* Q2 */
 	bufif0(zif[24], low, low);		/* Vss */
-	bufif0(zif[25], dut_data[3], dut_G);	/* Q3 */
-	bufif0(zif[26], dut_data[4], dut_G);	/* Q4 */
-	bufif0(zif[27], dut_data[5], dut_G);	/* Q5 */
-	bufif0(zif[28], dut_data[6], dut_G);	/* Q6 */
-	bufif0(zif[29], dut_data[7], dut_G);	/* Q7 */
+	bufif0(zif[25], dut_data[3], !dut_G);	/* Q3 */
+	bufif0(zif[26], dut_data[4], !dut_G);	/* Q4 */
+	bufif0(zif[27], dut_data[5], !dut_G);	/* Q5 */
+	bufif0(zif[28], dut_data[6], !dut_G);	/* Q6 */
+	bufif0(zif[29], dut_data[7], !dut_G);	/* Q7 */
 	bufif0(zif[30], dut_E, low);		/* E */
 	bufif0(zif[31], dut_addr[10], low);	/* A10 */
 	bufif0(zif[32], dut_G, low);		/* G */
