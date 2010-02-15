@@ -164,9 +164,9 @@ class M2764A(Chip):
 	def __setEG(self, E, G):
 		data = 0
 		if E:
-			data |= 1;
+			data |= 1
 		if G:
-			data |= 2;
+			data |= 2
 		self.top.cmdFPGAWrite(0x16, data)
 
 	def __getStatusFlags(self):
