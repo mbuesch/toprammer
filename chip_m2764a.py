@@ -65,21 +65,15 @@ class M2764A(Chip):
 		self.top.cmdSetGNDPin(24)
 
 		image = ""
+		self.progressMeterInit("Reading EPROM", 0x2000)
 		self.top.blockCommands()
-		self.printInfo("Reading EPROM ", newline=False)
 		self.__setEG(E=1, G=1)
 		for addr in range(0, 0x2000):
-			if addr % 192 == 0:
-				percent = (addr * 100 / 0x2000)
-				if percent % 25 == 0:
-					self.printInfo("%d%%" % percent, newline=False)
-				else:
-					self.printInfo(".", newline=False)
-
+			self.progressMeter(addr)
 			image += self.__readData(addr)
 		self.__setEG(E=1, G=1)
 		self.top.unblockCommands()
-		self.printInfo("100%")
+		self.progressMeterFinish()
 
 		return image
 
@@ -97,20 +91,15 @@ class M2764A(Chip):
 		self.top.cmdFlush()
 		self.top.cmdSetGNDPin(24)
 
+		self.progressMeterInit("Writing EPROM", 0x2000)
 		self.top.blockCommands()
-		self.printInfo("Writing EPROM ", newline=False)
 		self.__setEG(E=1, G=1)
 		for addr in range(0, 0x2000):
-			if addr % 192 == 0:
-				percent = (addr * 100 / 0x2000)
-				if percent % 25 == 0:
-					self.printInfo("%d%%" % percent, newline=False)
-				else:
-					self.printInfo(".", newline=False)
+			self.progressMeter(addr)
 			self.__writeData(addr, ord(image[addr]))
 		self.__setEG(E=1, G=1)
 		self.top.unblockCommands()
-		self.printInfo("100%")
+		self.progressMeterFinish()
 
 	def __readData(self, addr):
 		self.__loadAddr(addr)

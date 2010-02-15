@@ -72,13 +72,13 @@ class ATMega8DIP28(Chip):
 		self.__checkDUTPresence()
 		self.__initPins()
 
-		self.printInfo("Erasing chip ...", newline=False)
+		self.progressMeterInit("Erasing chip", 0)
 		self.top.blockCommands()
 		self.__loadCommand(self.CMD_CHIPERASE)
 		self.__pulseWR()
 		self.__waitForRDY()
 		self.top.unblockCommands()
-		self.printInfo("100%")
+		self.progressMeterFinish()
 
 	def readProgmem(self):
 		self.__checkDUTPresence()
@@ -91,16 +91,11 @@ class ATMega8DIP28(Chip):
 		if stat != 0xB9C80101:
 			self.throwError("read: Unexpected status value 0x%08X" % stat)
 
-		self.printInfo("Reading Flash ", newline=False)
+		self.progressMeterInit("Reading Flash", 256)
 		image = ""
 		self.top.blockCommands()
 		for chunk in range(0, 256, 2):
-			if chunk % 8 == 0:
-				percent = (chunk * 100 / 256)
-				if percent % 25 == 0:
-					self.printInfo("%d%%" % percent, newline=False)
-				else:
-					self.printInfo(".", newline=False)
+			self.progressMeter(chunk)
 			for word in range(0, 32):
 				self.__loadCommand(self.CMD_READFLASH)
 				self.__loadAddr((chunk << 4) + word)
@@ -108,7 +103,7 @@ class ATMega8DIP28(Chip):
 			data = self.top.cmdReadStatusReg()
 			image += data
 		self.top.unblockCommands()
-		self.printInfo("100%")
+		self.progressMeterFinish()
 		return image
 
 	def writeProgmem(self, image):
@@ -118,15 +113,10 @@ class ATMega8DIP28(Chip):
 		self.__checkDUTPresence()
 		self.__initPins()
 
-		self.printInfo("Writing Flash ", newline=False)
+		self.progressMeterInit("Writing Flash", 256)
 		self.top.blockCommands()
 		for chunk in range(0, 256, 2):
-			if chunk % 8 == 0:
-				percent = (chunk * 100 / 256)
-				if percent % 25 == 0:
-					self.printInfo("%d%%" % percent, newline=False)
-				else:
-					self.printInfo(".", newline=False)
+			self.progressMeter(chunk)
 			for word in range(0, 32):
 				self.__loadCommand(self.CMD_WRITEFLASH)
 				addr = (chunk << 4) + word
@@ -140,22 +130,17 @@ class ATMega8DIP28(Chip):
 			self.__pulseWR()
 			self.__waitForRDY()
 		self.top.unblockCommands()
-		self.printInfo("100%")
+		self.progressMeterFinish()
 
 	def readEEPROM(self):
 		self.__checkDUTPresence()
 		self.__initPins()
 
-		self.printInfo("Reading EEPROM ", newline=False)
+		self.progressMeterInit("Reading EEPROM", 128)
 		image = ""
 		self.top.blockCommands()
 		for chunk in range(0, 128):
-			if chunk % 8 == 0:
-				percent = (chunk * 100 / 128)
-				if percent % 25 == 0:
-					self.printInfo("%d%%" % percent, newline=False)
-				else:
-					self.printInfo(".", newline=False)
+			self.progressMeter(chunk)
 			for byte in range(0, 4):
 				self.__loadCommand(self.CMD_READEEPROM)
 				self.__loadAddr((chunk << 2) + byte)
@@ -163,7 +148,7 @@ class ATMega8DIP28(Chip):
 			data = self.top.cmdReadStatusReg()
 			image += data[0:4]
 		self.top.unblockCommands()
-		self.printInfo("100%")
+		self.progressMeterFinish()
 		return image
 
 	def writeEEPROM(self, image):
@@ -173,15 +158,10 @@ class ATMega8DIP28(Chip):
 		self.__checkDUTPresence()
 		self.__initPins()
 
-		self.printInfo("Writing EEPROM ", newline=False)
+		self.progressMeterInit("Writing EEPROM", 128)
 		self.top.blockCommands()
 		for chunk in range(0, 128):
-			if chunk % 8 == 0:
-				percent = (chunk * 100 / 128)
-				if percent % 25 == 0:
-					self.printInfo("%d%%" % percent, newline=False)
-				else:
-					self.printInfo(".", newline=False)
+			self.progressMeter(chunk)
 			for byte in range(0, 4):
 				self.__loadCommand(self.CMD_WRITEEEPROM)
 				addr = (chunk << 2) + byte
@@ -193,15 +173,15 @@ class ATMega8DIP28(Chip):
 			self.__pulseWR()
 			self.__waitForRDY()
 		self.top.unblockCommands()
-		self.printInfo("100%")
+		self.progressMeterFinish()
 
 	def readFuse(self):
 		self.__checkDUTPresence()
 		self.__initPins()
 
-		self.printInfo("Reading Fuse bits...", newline=False)
+		self.progressMeterInit("Reading Fuse bits", 0)
 		(fuse, lock) = self.__readFuseAndLockBits()
-		self.printInfo("100%")
+		self.progressMeterFinish()
 		return fuse
 
 	def writeFuse(self, image):
@@ -211,7 +191,7 @@ class ATMega8DIP28(Chip):
 		self.__checkDUTPresence()
 		self.__initPins()
 
-		self.printInfo("Writing Fuse bits...", newline=False)
+		self.progressMeterInit("Writing Fuse bits", 0)
 		self.top.blockCommands()
 		self.__loadCommand(self.CMD_WRITEFUSE)
 		self.__setBS2(0)
@@ -224,15 +204,15 @@ class ATMega8DIP28(Chip):
 		self.__pulseWR()
 		self.__waitForRDY()
 		self.top.unblockCommands()
-		self.printInfo("100%")
+		self.progressMeterFinish()
 
 	def readLockbits(self):
 		self.__checkDUTPresence()
 		self.__initPins()
 
-		self.printInfo("Reading lock bits...", newline=False)
+		self.progressMeterInit("Reading lock bits", 0)
 		(fuses, lockbits) = self.__readFuseAndLockBits()
-		self.printInfo("100%")
+		self.progressMeterFinish()
 
 		return lockbits
 
@@ -243,14 +223,14 @@ class ATMega8DIP28(Chip):
 		self.__checkDUTPresence()
 		self.__initPins()
 
-		self.printInfo("Writing lock bits...", newline=False)
+		self.progressMeterInit("Writing lock bits", 0)
 		self.top.blockCommands()
 		self.__loadCommand(self.CMD_WRITELOCK)
 		self.__loadDataLow(ord(image[0]))
 		self.__pulseWR()
 		self.__waitForRDY()
 		self.top.unblockCommands()
-		self.printInfo("100%")
+		self.progressMeterFinish()
 
 	def __readSigAndCalib(self):
 		"""Reads the signature and calibration bytes and returns them.

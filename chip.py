@@ -62,6 +62,33 @@ class Chip:
 	def throwError(self, message):
 		raise TOPException(self.chipID + ": " + message)
 
+	def progressMeterInit(self, message, nrSteps):
+		self.progressNrSteps = nrSteps
+		self.progressHave25 = False
+		self.progressHave50 = False
+		self.progressHave75 = False
+		self.printInfo(message + " [0%", newline=False)
+
+	def progressMeterFinish(self):
+		if not self.progressNrSteps:
+			self.printInfo("...", newline=False)
+		self.printInfo("100%]")
+
+	def progressMeter(self, step):
+		if step % (self.progressNrSteps // 32) == 0:
+			percent = (step * 100 // self.progressNrSteps)
+			if percent >= 25 and not self.progressHave25:
+				self.printInfo("25%", newline=False)
+				self.progressHave25 = True
+			elif percent >= 50 and not self.progressHave50:
+				self.printInfo("50%", newline=False)
+				self.progressHave50 = True
+			elif percent >= 75 and not self.progressHave75:
+				self.printInfo("75%", newline=False)
+				self.progressHave75 = True
+			else:
+				self.printInfo(".", newline=False)
+
 	def initializeChip(self):
 		pass # Override me in the subclass, if required.
 
