@@ -21,14 +21,33 @@
 """
 
 import sys
+import re
 
 
 class TOPException(Exception): pass
 
 
+hexdump_re = re.compile(r"0x[0-9a-fA-F]+:\s+([0-9a-fA-F\s]+)\s+.+")
+
 def parseHexdump(dump):
-	raise TOPException()
-	pass#TODO
+	try:
+		bin = []
+		for line in dump.splitlines():
+			line = line.strip()
+			if not line:
+				continue
+			m = hexdump_re.match(line)
+			if not m:
+				raise TOPException("Invalid hexdump format (regex failure)")
+			bytes = m.group(1).replace(" ", "")
+			if len(bytes) % 2 != 0:
+				raise TOPException("Invalid hexdump format (odd bytestring len)")
+			for i in range(0, len(bytes), 2):
+				byte = int(bytes[i:i+2], 16)
+				bin.append(chr(byte))
+		return "".join(bin)
+	except (ValueError), e:
+		raise TOPException("Invalid hexdump format (Integer error)")
 
 def generateHexdump(mem):
 	def toAscii(char):
