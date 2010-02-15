@@ -6,6 +6,7 @@
 basedir="$(dirname $0)"
 srcdir="$basedir/src"
 bindir="$basedir"
+bitparser="python $basedir/../bitfile.py"
 
 function usage
 {
@@ -47,6 +48,15 @@ function should_build # $1=target
 	return 1
 }
 
+# Check if the payload of two bitfiles matches
+function bitfile_is_equal # $1=file1, $2=file2
+{
+	[ -r $1 -a -r $2 ] || return 1
+	sum1="$($bitparser $1 GETPAYLOAD | sha1sum - | cut -d' ' -f1)"
+	sum2="$($bitparser $2 GETPAYLOAD | sha1sum - | cut -d' ' -f1)"
+	[ "$sum1" = "$sum2" ]
+}
+
 for src in $srcdir/*; do
 	[ -d "$src" ] || continue
 
@@ -72,7 +82,14 @@ for src in $srcdir/*; do
 	else
 		make -C $src/ all
 	fi
-	cp -f $src/$srcname.bit $bindir/$srcname.bit
+
+	new="$src/$srcname.bit"
+	old="$bindir/$srcname.bit"
+	if bitfile_is_equal "$old" "$new"; then
+		echo "Bitfile for target $srcname did not change"
+	else
+		cp -f "$new" "$old"
+	fi
 	make -C $src/ clean >/dev/null
 	if [ $? -ne 0 ]; then
 		echo "FAILED to clean $srcname."

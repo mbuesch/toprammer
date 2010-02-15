@@ -109,9 +109,28 @@ class Bitfile:
 		return data[i + 4 : i + 4 + fieldLen]
 
 if __name__ == "__main__":
+	if len(sys.argv) != 3:
+		print "Usage: %s file.bit ACTION"
+		print ""
+		print "Actions:"
+		print " GETSRC       - print the src-file field to stdout"
+		print " GETFPGA      - print the fpga-type field to stdout"
+		print " GETDATE      - print the date field to stdout"
+		print " GETTIME      - print the time field to stdout"
+		print " GETPAYLOAD   - print the payload field to stdout"
+		sys.exit(1)
+	filename = sys.argv[1]
+	action = sys.argv[2].upper()
+
 	b = Bitfile()
-	b.parseFile(sys.argv[1])
-	print "Source file", b.getSrcFile()
-	print "FPGA", b.getFPGA()
-	print "Date", b.getDate()
-	print "Time", b.getTime()
+	b.parseFile(filename)
+	if action == "GETSRC":
+		sys.stdout.write(b.getSrcFile())
+	if action == "GETFPGA":
+		sys.stdout.write(b.getFPGA())
+	if action == "GETDATE":
+		sys.stdout.write(b.getDate())
+	if action == "GETTIME":
+		sys.stdout.write(b.getTime())
+	if action == "GETPAYLOAD":
+		sys.stdout.write(b.getPayload())
