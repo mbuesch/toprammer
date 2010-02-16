@@ -172,8 +172,8 @@ class M8C_ISSP(Chip):
 
 	def initializeChip(self):
 		self.printDebug("Initializing chip")
-		self.top.cmdLoadVCCXLayout(0)
-		self.top.cmdLoadVPPLayout(0)
+		self.top.vccx.setLayoutMask(0)
+		self.top.vpp.setLayoutMask(0)
 		self.top.cmdSetGNDPin(0)
 		self.top.cmdSetVCCXVoltage(5)
 		self.top.cmdFlush()
@@ -192,8 +192,8 @@ class M8C_ISSP(Chip):
 		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(5)
 		self.top.cmdFlush()
-		self.top.cmdLoadVCCXLayout(0)
-		self.top.cmdLoadVPPLayout(0)
+		self.top.vccx.setLayoutMask(0)
+		self.top.vpp.setLayoutMask(0)
 		self.top.cmdFlush()
 		self.top.cmdSetGNDPin(0)
 
@@ -209,7 +209,7 @@ class M8C_ISSP(Chip):
 		self.printDebug("Initializing supply power...")
 		self.top.cmdSetGNDPin(20)
 		self.top.cmdFlush()
-		self.top.cmdLoadVCCXLayout(17)
+		self.top.vccx.setLayoutPins( (21,) )
 		self.top.cmdFlush()
 		self.top.cmdSetVCCXVoltage(5)
 		self.top.cmdFlush()

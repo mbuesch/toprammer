@@ -55,8 +55,8 @@ class ATMega8DIP28(Chip):
 		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(5)
 		self.top.cmdFlush()
-		self.top.cmdLoadVCCXLayout(0)
-		self.top.cmdLoadVPPLayout(0)
+		self.top.vccx.setLayoutMask(0)
+		self.top.vpp.setLayoutMask(0)
 		self.top.cmdFlush()
 		self.top.cmdSetGNDPin(0)
 
@@ -273,8 +273,8 @@ class ATMega8DIP28(Chip):
 		self.top.unblockCommands()
 
 		self.top.cmdSetGNDPin(0)
-		self.top.cmdLoadVPPLayout(0)
-		self.top.cmdLoadVCCXLayout(0)
+		self.top.vpp.setLayoutMask(0)
+		self.top.vccx.setLayoutMask(0)
 
 		self.top.blockCommands()
 		self.top.cmdFlush(2)
@@ -286,7 +286,7 @@ class ATMega8DIP28(Chip):
 		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(5)
 		self.top.cmdFlush(21)
-		self.top.cmdLoadVPPLayout(14)
+		self.top.vpp.setLayoutPins( (5, 6, 7, 9, 11, 12, 13, 14, 15, 16, 18) )
 
 		self.top.blockCommands()
 		self.top.cmdFlush(2)
@@ -308,8 +308,8 @@ class ATMega8DIP28(Chip):
 
 	def __initPins(self):
 		"""Initialize the pin voltages and logic."""
-		self.top.cmdLoadVPPLayout(0)
-		self.top.cmdLoadVCCXLayout(0)
+		self.top.vpp.setLayoutMask(0)
+		self.top.vccx.setLayoutMask(0)
 		self.top.cmdFlush()
 		self.top.send("\x0E\x28\x01\x00")
 		self.top.cmdFPGAWrite(0x1B, 0x00)
@@ -330,7 +330,7 @@ class ATMega8DIP28(Chip):
 		self.top.unblockCommands()
 
 		self.top.cmdSetGNDPin(18)
-		self.top.cmdLoadVCCXLayout(13)
+		self.top.vccx.setLayoutPins( (17,) )
 
 		self.top.blockCommands()
 		self.top.cmdFlush()
@@ -351,7 +351,7 @@ class ATMega8DIP28(Chip):
 		self.top.send("\x19")
 		self.top.unblockCommands()
 
-		self.top.cmdLoadVPPLayout(7)
+		self.top.vpp.setLayoutPins( (5, 6, 7, 9, 11) )
 
 		self.top.blockCommands()
 		self.top.send("\x34")

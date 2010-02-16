@@ -130,8 +130,9 @@ class VCCXLayout(ShiftregLayout):
 		"1.6" : 25,	# Q21C
 	}
 
-	def __init__(self):
+	def __init__(self, top):
 		ShiftregLayout.__init__(self, 3)
+		self.top = top
 
 	def minVoltage(self):
 		"Get the min supported voltage"
@@ -141,12 +142,9 @@ class VCCXLayout(ShiftregLayout):
 		"Get the max supported voltage"
 		return 5
 
-	def supportedLayouts(self):
-		"""Returns a list of supported layouts.
-		Each entry is a tuple of (id, bitmask), where bitmask is
-		the ZIF layout. bit0 is ZIF-pin-1. A bit set means a hot pin."""
-		return self.layouts
+	def setLayoutID(self, id):
+		self.top.cmdLoadVCCXLayout(id)
 
 if __name__ == "__main__":
 	print "ZIF socket VCCX layouts"
-	print VCCXLayout()
+	print VCCXLayout(None)

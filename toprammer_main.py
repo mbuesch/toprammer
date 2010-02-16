@@ -128,9 +128,9 @@ class TOP:
 				"Hardware access will be _really_ slow.")
 
 		# For now we assume a TOP2049
-		self.vccx = top2049.vccx_layouts.VCCXLayout()
-		self.vpp = top2049.vpp_layouts.VPPLayout()
-		self.gnd = top2049.gnd_layouts.GNDLayout()
+		self.vccx = top2049.vccx_layouts.VCCXLayout(self)
+		self.vpp = top2049.vpp_layouts.VPPLayout(self)
+		self.gnd = top2049.gnd_layouts.GNDLayout(self)
 
 		self.__initializeHardware()
 

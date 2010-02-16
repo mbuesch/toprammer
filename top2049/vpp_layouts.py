@@ -139,8 +139,9 @@ class VPPLayout(ShiftregLayout):
 		# 25		
 	}
 
-	def __init__(self):
+	def __init__(self, top):
 		ShiftregLayout.__init__(self, 4)
+		self.top = top
 
 	def minVoltage(self):
 		"Get the min supported voltage"
@@ -150,12 +151,9 @@ class VPPLayout(ShiftregLayout):
 		"Get the max supported voltage"
 		return 21
 
-	def supportedLayouts(self):
-		"""Returns a list of supported layouts.
-		Each entry is a tuple of (id, bitmask), where bitmask is
-		the ZIF layout. bit0 is ZIF-pin-1. A bit set means a hot pin."""
-		return self.layouts
+	def setLayoutID(self, id):
+		self.top.cmdLoadVPPLayout(id)
 
 if __name__ == "__main__":
 	print "ZIF socket VPP layouts"
-	print VPPLayout()
+	print VPPLayout(None)

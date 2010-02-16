@@ -67,3 +67,32 @@ class ShiftregLayout:
 				res += "%s   | %2d | %2d |   %s\n" % (left, pin, 49 - pin, right)
 			res += "        o---------o\n\n"
 		return res
+
+	def supportedLayouts(self):
+		"""Returns a list of supported layouts.
+		Each entry is a tuple of (id, bitmask), where bitmask is
+		the ZIF layout. bit0 is ZIF-pin-1. A bit set means a hot pin."""
+		return self.layouts
+
+	def setLayoutPins(self, zifPinsList):
+		"""Load a layout. zifPinsList is a list of hot ZIF pins.
+		The first ZIF pin is 1."""
+		zifMask = 0
+		for zifPin in zifPinsList:
+			assert(zifPin >= 1)
+			zifMask |= (1 << (zifPin - 1))
+		return self.setLayoutMask(zifMask)
+
+	def setLayoutMask(self, zifMask):
+		"Load a ZIF mask."
+		for (layoutId, layoutMask) in self.layouts:
+			if layoutMask == zifMask:
+				self.setLayoutID(layoutId)
+				return True
+		raise Exception()
+		#return False
+
+	def setLayoutID(self, id):
+		"Load a specific layout ID."
+		# Reimplement me in the subclass
+		raise Exception()

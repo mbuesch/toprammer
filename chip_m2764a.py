@@ -34,8 +34,8 @@ class M2764A(Chip):
 
 	def initializeChip(self):
 		self.printDebug("Initializing chip")
-		self.top.cmdLoadVCCXLayout(0)
-		self.top.cmdLoadVPPLayout(0)
+		self.top.vccx.setLayoutMask(0)
+		self.top.vpp.setLayoutMask(0)
 		self.top.cmdSetGNDPin(0)
 		self.top.cmdSetVCCXVoltage(5)
 		self.top.cmdFlush()
@@ -49,8 +49,8 @@ class M2764A(Chip):
 		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(5)
 		self.top.cmdFlush()
-		self.top.cmdLoadVCCXLayout(0)
-		self.top.cmdLoadVPPLayout(0)
+		self.top.vccx.setLayoutMask(0)
+		self.top.vpp.setLayoutMask(0)
 		self.top.cmdFlush()
 		self.top.cmdSetGNDPin(0)
 
@@ -59,8 +59,8 @@ class M2764A(Chip):
 		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(5)
 		self.top.cmdFlush()
-		self.top.cmdLoadVCCXLayout(34)
-		self.top.cmdLoadVPPLayout(7)
+		self.top.vccx.setLayoutPins( (38,) )
+		self.top.vpp.setLayoutPins( (5, 6, 7, 9, 11) )
 		self.top.cmdFlush()
 		self.top.cmdSetGNDPin(24)
 
@@ -86,8 +86,8 @@ class M2764A(Chip):
 		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(12)
 		self.top.cmdFlush()
-		self.top.cmdLoadVCCXLayout(34)
-		self.top.cmdLoadVPPLayout(7)
+		self.top.vccx.setLayoutPins( (38,) )
+		self.top.vpp.setLayoutPins( (5, 6, 7, 9, 11) )
 		self.top.cmdFlush()
 		self.top.cmdSetGNDPin(24)
 
