@@ -108,6 +108,19 @@ class Bitfile:
 			   (ord(data[i + 2]) << 8) | ord(data[i + 3])
 		return data[i + 4 : i + 4 + fieldLen]
 
+def bitfileFind(filename):
+	"Search some standard paths for a bitfile"
+	paths = ( ".", "./bit", "/usr/share/toprammer/bit",
+		"/usr/local/share/toprammer/bit", )
+	for path in paths:
+		fullpath = path + "/" + filename
+		try:
+			file(fullpath, "rb")
+			return fullpath
+		except (IOError), e:
+			pass
+	return None
+
 if __name__ == "__main__":
 	if len(sys.argv) != 3:
 		print "Usage: %s file.bit ACTION"

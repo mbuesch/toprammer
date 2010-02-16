@@ -1,0 +1,65 @@
+#!/usr/bin/env python
+"""
+#    TOP2049 Open Source programming suite
+#
+#    Universal Device Tester
+#
+#    Copyright (c) 2010 Michael Buesch <mb@bu3sch.de>
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License along
+#    with this program; if not, write to the Free Software Foundation, Inc.,
+#    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+
+from toprammer_main import *
+from PyQt4.QtCore import *
+from PyQt4.QtGui import *
+
+
+class MainWidget(QWidget):
+	def __init__(self, mainwnd):
+		QWidget.__init__(self, mainwnd)
+		self.mainwnd = mainwnd
+
+		self.bitpath = bitfileFind("unitest.bit")
+		if not self.bitpath:
+			QMessageBox.critical(self, self.tr("Bitfile not found"),
+				self.tr("Could not find the Bitfile unitest.bit"))
+			raise TOPException()
+		try:
+			self.top = TOP(bitfileName=self.bitpath, verbose=2)
+		except (TOPException), e:
+			QMessageBox.critical(self, self.tr("TOP init failed"),
+				self.tr("Initialization of TOP device failed:\n") +\
+				str(e))
+			raise
+
+class MainWindow(QMainWindow):
+	def __init__(self, parent=None):
+		QMainWindow.__init__(self, parent)
+
+		self.setWindowTitle(self.tr("Toprammer - Universal tester"))
+		self.setCentralWidget(MainWidget(self))
+
+def main(argv):
+	try:
+		app = QApplication(argv)
+		mainwnd = MainWindow()
+		mainwnd.show()
+		return app.exec_()
+	except (TOPException), e:
+		print e
+		return 1
+
+if __name__ == "__main__":
+	sys.exit(main(sys.argv))
