@@ -193,7 +193,7 @@ class TOP:
 		self.cmdSetVCCXVoltage(0)
 		self.cmdFlush()
 		self.cmdFPGAWrite(0x1D, 0x86)
-		self.cmdSetGNDPin(0)
+		self.cmdLoadGNDLayout(0)
 		self.cmdLoadVPPLayout(0)
 		self.cmdLoadVCCXLayout(0)
 		self.cmdFlush()
@@ -345,14 +345,9 @@ class TOP:
 		cmd = chr(0x0A) + chr(address) + chr(byte)
 		self.send(cmd)
 
-	def cmdSetGNDPin(self, zifPin):
-		"""Assign GND to a ZIF socket pin. 0=none"""
-		valid = (0, 5, 14, 15, 16, 17, 18, 19, 20, 24, 26, 27,
-			 28, 29, 33, 34, 35)
-		assert(zifPin in valid)
-		if zifPin != 0:
-			zifPin -= 4
-		cmd = chr(0x0E) + chr(0x16) + chr(zifPin) + chr(0)
+	def cmdLoadGNDLayout(self, layout):
+		"""Load the GND configuration into the H/L shiftregisters."""
+		cmd = chr(0x0E) + chr(0x16) + chr(layout) + chr(0)
 		self.send(cmd)
 		time.sleep(0.15)
 

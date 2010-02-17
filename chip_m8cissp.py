@@ -174,7 +174,7 @@ class M8C_ISSP(Chip):
 		self.printDebug("Initializing chip")
 		self.top.vccx.setLayoutMask(0)
 		self.top.vpp.setLayoutMask(0)
-		self.top.cmdSetGNDPin(0)
+		self.top.gnd.setLayoutPins( [] )
 		self.top.cmdSetVCCXVoltage(5)
 		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(0)
@@ -195,7 +195,7 @@ class M8C_ISSP(Chip):
 		self.top.vccx.setLayoutMask(0)
 		self.top.vpp.setLayoutMask(0)
 		self.top.cmdFlush()
-		self.top.cmdSetGNDPin(0)
+		self.top.gnd.setLayoutPins( [] )
 
 	def __powerDown(self):
 		"Turn the power to the device off"
@@ -207,7 +207,7 @@ class M8C_ISSP(Chip):
 	def __powerOnReset(self):
 		"Perform a complete power-on-reset and initialization"
 		self.printDebug("Initializing supply power...")
-		self.top.cmdSetGNDPin(20)
+		self.top.gnd.setLayoutPins( (20,) )
 		self.top.cmdFlush()
 		self.top.vccx.setLayoutPins( (21,) )
 		self.top.cmdFlush()

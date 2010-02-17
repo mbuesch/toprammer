@@ -21,17 +21,20 @@
 """
 
 class GNDLayout:
-	# A list of valid IDs
-	validIDs = (0, 5, 14, 15, 16, 17, 18, 19, 20, 24, 26, 27,
+	# A list of valid ZIF GND pins (0=none)
+	validPins = (0, 5, 14, 15, 16, 17, 18, 19, 20, 24, 26, 27,
 		28, 29, 33, 34, 35)
 
 	def __init__(self, top):
 		self.top = top
 		self.layouts = []
-		for id in self.validIDs:
+		for pin in self.validPins:
+			id = pin
+			if id != 0:
+				id -= 4
 			mask = 0
-			if id:
-				mask |= (1 << (id - 1))
+			if pin != 0:
+				mask |= (1 << (pin - 1))
 			self.layouts.append( (id, mask) )
 
 	def supportedLayouts(self):
@@ -39,3 +42,25 @@ class GNDLayout:
 		Each entry is a tuple of (id, bitmask), where bitmask is
 		the ZIF layout. bit0 is ZIF-pin-1. A bit set means a hot pin."""
 		return self.layouts
+
+	def setLayoutPins(self, zifPinsList):
+		"""Load a layout. zifPinsList is a list of hot ZIF pins.
+		The first ZIF pin is 1."""
+		zifMask = 0
+		for zifPin in zifPinsList:
+			assert(zifPin >= 1)
+			zifMask |= (1 << (zifPin - 1))
+		return self.setLayoutMask(zifMask)
+
+	def setLayoutMask(self, zifMask):
+		"Load a ZIF mask."
+		for (layoutId, layoutMask) in self.layouts:
+			if layoutMask == zifMask:
+				self.setLayoutID(layoutId)
+				return True
+		raise Exception()
+		#return False
+
+	def setLayoutID(self, id):
+		"Load a specific layout ID."
+		self.top.cmdLoadGNDLayout(id)

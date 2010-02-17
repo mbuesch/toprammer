@@ -36,9 +36,9 @@ class Chip_Unitest(Chip):
 		self.__reset()
 
 	def __reset(self):
-		self.top.cmdLoadVCCXLayout(0)
-		self.top.cmdLoadVPPLayout(0)
-		self.top.cmdSetGNDPin(0)
+		self.top.vccx.setLayoutPins( [] )
+		self.top.vpp.setLayoutPins( [] )
+		self.top.gnd.setLayoutPins( [] )
 		self.top.cmdSetVCCXVoltage(5)
 		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(0)

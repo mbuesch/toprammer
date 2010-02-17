@@ -36,7 +36,7 @@ class M2764A(Chip):
 		self.printDebug("Initializing chip")
 		self.top.vccx.setLayoutMask(0)
 		self.top.vpp.setLayoutMask(0)
-		self.top.cmdSetGNDPin(0)
+		self.top.gnd.setLayoutPins( [] )
 		self.top.cmdSetVCCXVoltage(5)
 		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(0)
@@ -52,7 +52,7 @@ class M2764A(Chip):
 		self.top.vccx.setLayoutMask(0)
 		self.top.vpp.setLayoutMask(0)
 		self.top.cmdFlush()
-		self.top.cmdSetGNDPin(0)
+		self.top.gnd.setLayoutPins( [] )
 
 	def readEEPROM(self):
 		self.top.cmdSetVCCXVoltage(5)
@@ -62,7 +62,7 @@ class M2764A(Chip):
 		self.top.vccx.setLayoutPins( (38,) )
 		self.top.vpp.setLayoutPins( (5, 6, 7, 9, 11) )
 		self.top.cmdFlush()
-		self.top.cmdSetGNDPin(24)
+		self.top.gnd.setLayoutPins( (24,) )
 
 		image = ""
 		self.progressMeterInit("Reading EPROM", 0x2000)
@@ -89,7 +89,7 @@ class M2764A(Chip):
 		self.top.vccx.setLayoutPins( (38,) )
 		self.top.vpp.setLayoutPins( (5, 6, 7, 9, 11) )
 		self.top.cmdFlush()
-		self.top.cmdSetGNDPin(24)
+		self.top.gnd.setLayoutPins( (24,) )
 
 		self.progressMeterInit("Writing EPROM", 0x2000)
 		self.top.blockCommands()

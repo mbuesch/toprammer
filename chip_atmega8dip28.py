@@ -42,7 +42,7 @@ class ATMega8DIP28(Chip):
 
 	def initializeChip(self):
 		self.printDebug("Initializing chip")
-		self.top.cmdSetGNDPin(18)
+		self.top.gnd.setLayoutPins( (18,) )
 		self.top.cmdSetVCCXVoltage(5)
 		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(0)
@@ -58,7 +58,7 @@ class ATMega8DIP28(Chip):
 		self.top.vccx.setLayoutMask(0)
 		self.top.vpp.setLayoutMask(0)
 		self.top.cmdFlush()
-		self.top.cmdSetGNDPin(0)
+		self.top.gnd.setLayoutPins( [] )
 
 	def readSignature(self):
 		self.__checkDUTPresence()
@@ -272,7 +272,7 @@ class ATMega8DIP28(Chip):
 		self.top.cmdFPGAWrite(0x1D, 0x86)
 		self.top.unblockCommands()
 
-		self.top.cmdSetGNDPin(0)
+		self.top.gnd.setLayoutPins( [] )
 		self.top.vpp.setLayoutMask(0)
 		self.top.vccx.setLayoutMask(0)
 
@@ -317,7 +317,7 @@ class ATMega8DIP28(Chip):
 		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(12)
 		self.top.cmdFlush()
-		self.top.cmdSetGNDPin(18)
+		self.top.gnd.setLayoutPins( (18,) )
 		self.top.cmdFlush()
 		self.top.cmdSetVCCXVoltage(4.4)
 		self.top.cmdFlush()
@@ -329,7 +329,7 @@ class ATMega8DIP28(Chip):
 		self.__setWR(0)
 		self.top.unblockCommands()
 
-		self.top.cmdSetGNDPin(18)
+		self.top.gnd.setLayoutPins( (18,) )
 		self.top.vccx.setLayoutPins( (17,) )
 
 		self.top.blockCommands()
