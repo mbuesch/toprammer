@@ -40,55 +40,47 @@ class Chip_Unitest(Chip):
 		self.top.vpp.setLayoutPins( [] )
 		self.top.gnd.setLayoutPins( [] )
 		self.top.cmdSetVCCXVoltage(5)
-		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(0)
-		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(5)
 		self.setOutputEnableMask(0)
 		self.setOutputs(0)
 
 	def setVCCX(self, voltage, layout):
-		self.top.blockCommands()
 		self.top.cmdSetVCCXVoltage(0)
 		self.top.cmdLoadVCCXLayout(layout)
 		self.top.cmdSetVCCXVoltage(voltage)
-		self.top.unblockCommands()
+		self.top.flushCommands()
 
 	def setVPP(self, voltage, layout):
-		self.top.blockCommands()
 		self.top.cmdSetVPPVoltage(0)
 		self.top.cmdLoadVPPLayout(layout)
 		self.top.cmdSetVPPVoltage(voltage)
-		self.top.unblockCommands()
+		self.top.flushCommands()
 		#TODO: Disable outen on these pins
 
 	def setGND(self, pin):
-		self.top.blockCommands()
 		self.top.cmdSetGNDPin(pin)
-		self.top.unblockCommands()
+		self.top.flushCommands()
 
 	def setOutputEnableMask(self, mask):
-		self.top.blockCommands()
 		self.top.cmdFPGAWrite(0x12, mask & 0xFF)
 		self.top.cmdFPGAWrite(0x13, (mask >> 8) & 0xFF)
 		self.top.cmdFPGAWrite(0x14, (mask >> 16) & 0xFF)
 		self.top.cmdFPGAWrite(0x15, (mask >> 24) & 0xFF)
 		self.top.cmdFPGAWrite(0x16, (mask >> 32) & 0xFF)
 		self.top.cmdFPGAWrite(0x17, (mask >> 40) & 0xFF)
-		self.top.unblockCommands()
+		self.top.flushCommands()
 
 	def setOutputs(self, mask):
-		self.top.blockCommands()
 		self.top.cmdFPGAWrite(0x18, mask & 0xFF)
 		self.top.cmdFPGAWrite(0x19, (mask >> 8) & 0xFF)
 		self.top.cmdFPGAWrite(0x1A, (mask >> 16) & 0xFF)
 		self.top.cmdFPGAWrite(0x1B, (mask >> 24) & 0xFF)
 		self.top.cmdFPGAWrite(0x1C, (mask >> 32) & 0xFF)
 		self.top.cmdFPGAWrite(0x1D, (mask >> 40) & 0xFF)
-		self.top.unblockCommands()
+		self.top.flushCommands()
 
 	def getInputs(self):
-		self.top.blockCommands()
 		self.top.cmdFPGAReadRaw(0x18)
 		self.top.cmdFPGAReadRaw(0x19)
 		self.top.cmdFPGAReadRaw(0x1A)
@@ -96,7 +88,6 @@ class Chip_Unitest(Chip):
 		self.top.cmdFPGAReadRaw(0x1C)
 		self.top.cmdFPGAReadRaw(0x1D)
 		inputs = self.top.cmdReadStatusReg48()
-		self.top.unblockCommands()
 		return inputs
 
 supportedChips.append(Chip_Unitest())

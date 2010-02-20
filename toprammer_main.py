@@ -56,7 +56,6 @@ class TOP:
 		self.noqueue = noqueue
 		self.usebroken = usebroken
 
-		self.commandsBlocked = False
 		self.commandQueue = []
 
 		self.bitfile = Bitfile()
@@ -136,12 +135,14 @@ class TOP:
 
 	def shutdown(self):
 		self.chip.shutdownChip()
+		self.flushCommands()
 
 	def getForceLevel(self):
 		return self.forceLevel
 
 	def printWarning(self, message, newline=True):
 		if self.verbose >= 0:
+			self.flushCommands()
 			if newline:
 				print message
 			else:
@@ -150,6 +151,7 @@ class TOP:
 
 	def printInfo(self, message, newline=True):
 		if self.verbose >= 1:
+			self.flushCommands()
 			if newline:
 				print message
 			else:
@@ -158,6 +160,7 @@ class TOP:
 
 	def printDebug(self, message, newline=True):
 		if self.verbose >= 2:
+			self.flushCommands()
 			if newline:
 				print message
 			else:
@@ -174,36 +177,28 @@ class TOP:
 		ver = self.cmdRequestVersion()
 		self.printInfo("Initializing the '" + ver + "'...")
 
-		self.send("\x0D")
+		self.queueCommand("\x0D")
 		stat = self.cmdReadStatusReg32()
 		if stat != 0x00020C69:
 			raise TOPException("Init: Unexpected status register (a): 0x%08X" % stat)
 
 		self.cmdFPGAWrite(0x1B, 0xFF)
 		self.cmdSetVPPVoltage(0)
-		self.cmdFlush()
 		self.cmdSetVPPVoltage(0)
-		self.cmdFlush()
 		self.cmdSetVPPVoltage(0)
-		self.cmdFlush()
 		self.cmdSetVPPVoltage(12)
-		self.cmdFlush()
-		self.send("\x0E\x20\x00\x00")
+		self.queueCommand("\x0E\x20\x00\x00")
 		self.cmdFlush()
 		self.cmdSetVCCXVoltage(0)
-		self.cmdFlush()
 		self.cmdFPGAWrite(0x1D, 0x86)
 		self.cmdLoadGNDLayout(0)
 		self.cmdLoadVPPLayout(0)
 		self.cmdLoadVCCXLayout(0)
-		self.cmdFlush()
 		self.cmdSetVPPVoltage(0)
-		self.cmdFlush()
 		self.cmdSetVPPVoltage(12)
+		self.queueCommand("\x0E\x20\x00\x00")
 		self.cmdFlush()
-		self.send("\x0E\x20\x00\x00")
-		self.cmdFlush()
-		self.send("\x0E\x25\x00\x00")
+		self.queueCommand("\x0E\x25\x00\x00")
 		stat = self.cmdReadStatusReg32()
 		if stat != 0x0000686C:
 			raise TOPException("Init: Unexpected status register (b): 0x%08X" % stat)
@@ -224,6 +219,7 @@ class TOP:
 		data = self.bitfile.getPayload()
 		for i in range(0, len(data), 60):
 			self.cmdFPGAUploadConfig(data[i : i + 60])
+		self.flushCommands()
 
 	def readSignature(self):
 		"""Reads the device signature and returns it."""
@@ -292,11 +288,13 @@ class TOP:
 	def cmdFlush(self, count=1):
 		"""Send 'count' flush requests."""
 		assert(count >= 1)
-		self.send(chr(0x1B) * count)
+		self.flushCommands()
+		self.queueCommand(chr(0x1B) * count)
+		self.flushCommands()
 
 	def cmdReadStatusReg(self):
 		"""Read the status register. Returns 64 bytes."""
-		self.send(chr(0x07))
+		self.queueCommand(chr(0x07))
 		return self.receive(64)
 
 	def cmdReadStatusReg32(self):
@@ -316,64 +314,69 @@ class TOP:
 
 	def cmdRequestVersion(self):
 		"""Returns the device ID and versioning string."""
-		self.send("\x0E\x11\x00\x00")
+		self.queueCommand("\x0E\x11\x00\x00")
 		data = self.cmdReadStatusReg()
 		return data[0:16].strip()
 
 	def cmdFPGAInitiateConfig(self):
 		"""Initiate a configuration sequence on the FPGA."""
-		self.send("\x0E\x21\x00\x00")
+		self.queueCommand("\x0E\x21\x00\x00")
 
 	def cmdFPGAUploadConfig(self, data):
 		"""Upload configuration data into the FPGA."""
 		assert(len(data) <= 60)
 		cmd = "\x0E\x22\x00\x00" + data
 		cmd += "\x00" * (64 - len(cmd)) # padding
-		self.send(cmd)
+		self.queueCommand(cmd)
 
 	def cmdFPGAReadByte(self):
 		"""Read a byte from the FPGA data line into the status register."""
-		self.send("\x01")
+		self.queueCommand("\x01")
 
 	def cmdFPGAReadRaw(self, address):
 		"""Read a byte from the FPGA at address into the status register."""
 		cmd = chr(0x0B) + chr(address)
-		self.send(cmd)
+		self.queueCommand(cmd)
 
 	def cmdFPGAWrite(self, address, byte):
 		"""Write a byte to an FPGA address."""
 		cmd = chr(0x0A) + chr(address) + chr(byte)
-		self.send(cmd)
+		self.queueCommand(cmd)
 
 	def cmdLoadGNDLayout(self, layout):
 		"""Load the GND configuration into the H/L shiftregisters."""
 		cmd = chr(0x0E) + chr(0x16) + chr(layout) + chr(0)
-		self.send(cmd)
-		time.sleep(0.15)
+		self.queueCommand(cmd)
+		self.delay(0.15)
+		self.cmdFlush()
 
 	def cmdSetVPPVoltage(self, voltage):
 		"""Set the VPP voltage. voltage is a floating point voltage number."""
 		centivolt = int(voltage * 10)
 		cmd = chr(0x0E) + chr(0x12) + chr(centivolt) + chr(0)
-		self.send(cmd)
+		self.queueCommand(cmd)
+		self.cmdFlush()
 
 	def cmdLoadVPPLayout(self, layout):
 		"""Load the VPP configuration into the shift registers."""
 		cmd = chr(0x0E) + chr(0x14) + chr(layout) + chr(0)
-		self.send(cmd)
-		time.sleep(0.15)
+		self.queueCommand(cmd)
+		self.delay(0.15)
+		self.cmdFlush()
 
 	def cmdSetVCCXVoltage(self, voltage):
 		"""Set the VCCX voltage. voltage is a floating point voltage number."""
 		centivolt = int(voltage * 10)
 		cmd = chr(0x0E) + chr(0x13) + chr(centivolt) + chr(0)
-		self.send(cmd)
+		self.queueCommand(cmd)
+		self.cmdFlush()
 
 	def cmdLoadVCCXLayout(self, layout):
 		"""Load the VCCX configuration into the shift registers."""
 		cmd = chr(0x0E) + chr(0x15) + chr(layout) + chr(0)
-		self.send(cmd)
-		time.sleep(0.15)
+		self.queueCommand(cmd)
+		self.delay(0.15)
+		self.cmdFlush()
 
 	def __doSend(self, command):
 		try:
@@ -386,13 +389,15 @@ class TOP:
 		except (usb.USBError), e:
 			raise TOPException("USB bulk write error: " + str(e))
 
-	def send(self, command):
-		"""Send a raw command."""
+	def queueCommand(self, command):
+		"""Queue a raw command for transmission."""
 		assert(len(command) <= 64)
-		if self.commandsBlocked:
-			self.commandQueue.append(command)
-		else:
+		if self.noqueue:
 			self.__doSend(command)
+		else:
+			self.commandQueue.append(command)
+			if len(self.commandQueue) >= 128:
+				self.flushCommands()
 
 	def receive(self, size):
 		"""Receive 'size' bytes on the bulk-in ep."""
@@ -410,24 +415,6 @@ class TOP:
 			raise TOPException("USB bulk read error: " + str(e))
 		return data
 
-	def blockCommands(self):
-		"""Each succeeding command will be queued in software instead
-		of writing it to the device. The queue will be flushed and sent to
-		the device on a call to unblockCommands() or receive()."""
-		if self.noqueue:
-			return
-		assert(not self.commandsBlocked)
-		self.commandsBlocked = True
-
-	def unblockCommands(self):
-		"""Flush and unblock the software command queue and send the
-		queued commands to the device."""
-		if self.noqueue:
-			return
-		assert(self.commandsBlocked)
-		self.commandsBlocked = False
-		self.flushCommands()
-
 	def flushCommands(self):
 		"""Flush the command queue, but don't unblock it."""
 		command = ""
@@ -440,3 +427,8 @@ class TOP:
 		if command:
 			self.__doSend(command)
 		self.commandQueue = []
+
+	def delay(self, seconds):
+		"""Flush all commands and delay for 'seconds'"""
+		self.flushCommands()
+		time.sleep(seconds)

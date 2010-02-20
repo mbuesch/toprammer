@@ -21,7 +21,6 @@
 """
 
 from chip import *
-import time
 
 
 class M2764A(Chip):
@@ -38,41 +37,31 @@ class M2764A(Chip):
 		self.top.vpp.setLayoutMask(0)
 		self.top.gnd.setLayoutPins( [] )
 		self.top.cmdSetVCCXVoltage(5)
-		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(0)
-		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(5)
 
 	def shutdownChip(self):
 		self.printDebug("Shutdown chip")
 		self.top.cmdSetVCCXVoltage(5)
-		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(5)
-		self.top.cmdFlush()
 		self.top.vccx.setLayoutMask(0)
 		self.top.vpp.setLayoutMask(0)
-		self.top.cmdFlush()
 		self.top.gnd.setLayoutPins( [] )
 
 	def readEEPROM(self):
 		self.top.cmdSetVCCXVoltage(5)
-		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(5)
-		self.top.cmdFlush()
 		self.top.vccx.setLayoutPins( (38,) )
 		self.top.vpp.setLayoutPins( (5, 6, 7, 9, 11) )
-		self.top.cmdFlush()
 		self.top.gnd.setLayoutPins( (24,) )
 
 		image = ""
 		self.progressMeterInit("Reading EPROM", 0x2000)
-		self.top.blockCommands()
 		self.__setEG(E=1, G=1)
 		for addr in range(0, 0x2000):
 			self.progressMeter(addr)
 			image += self.__readData(addr)
 		self.__setEG(E=1, G=1)
-		self.top.unblockCommands()
 		self.progressMeterFinish()
 
 		return image
@@ -83,22 +72,17 @@ class M2764A(Chip):
 				(len(image), 0x2000))
 
 		self.top.cmdSetVCCXVoltage(5)
-		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(12)
-		self.top.cmdFlush()
 		self.top.vccx.setLayoutPins( (38,) )
 		self.top.vpp.setLayoutPins( (5, 6, 7, 9, 11) )
-		self.top.cmdFlush()
 		self.top.gnd.setLayoutPins( (24,) )
 
 		self.progressMeterInit("Writing EPROM", 0x2000)
-		self.top.blockCommands()
 		self.__setEG(E=1, G=1)
 		for addr in range(0, 0x2000):
 			self.progressMeter(addr)
 			self.__writeData(addr, ord(image[addr]))
 		self.__setEG(E=1, G=1)
-		self.top.unblockCommands()
 		self.progressMeterFinish()
 
 	def __readData(self, addr):
@@ -170,7 +154,7 @@ class M2764A(Chip):
 		for i in range(0, 100):
 			if not self.__busy():
 				return
-			time.sleep(0.01)
+			self.top.delay(0.01)
 		self.throwError("Timeout in busywait.")
 
 supportedChips.append(M2764A())

@@ -21,7 +21,6 @@
 """
 
 from chip import *
-import time
 
 
 class ATMega8DIP28(Chip):
@@ -44,20 +43,15 @@ class ATMega8DIP28(Chip):
 		self.printDebug("Initializing chip")
 		self.top.gnd.setLayoutPins( (18,) )
 		self.top.cmdSetVCCXVoltage(5)
-		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(0)
-		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(12)
 
 	def shutdownChip(self):
 		self.printDebug("Shutdown chip")
 		self.top.cmdSetVCCXVoltage(5)
-		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(5)
-		self.top.cmdFlush()
 		self.top.vccx.setLayoutMask(0)
 		self.top.vpp.setLayoutMask(0)
-		self.top.cmdFlush()
 		self.top.gnd.setLayoutPins( [] )
 
 	def readSignature(self):
@@ -73,11 +67,9 @@ class ATMega8DIP28(Chip):
 		self.__initPins()
 
 		self.progressMeterInit("Erasing chip", 0)
-		self.top.blockCommands()
 		self.__loadCommand(self.CMD_CHIPERASE)
 		self.__pulseWR()
 		self.__waitForRDY()
-		self.top.unblockCommands()
 		self.progressMeterFinish()
 
 	def readProgmem(self):
@@ -85,15 +77,14 @@ class ATMega8DIP28(Chip):
 		self.__initPins()
 
 		self.top.cmdFlush(10)
-		self.top.send("\x0E\x1F\x00\x00")
-		time.sleep(0.1)
+		self.top.queueCommand("\x0E\x1F\x00\x00")
+		self.top.delay(0.1)
 		stat = self.top.cmdReadStatusReg32()
 		if stat != 0xB9C80101:
 			self.throwError("read: Unexpected status value 0x%08X" % stat)
 
 		self.progressMeterInit("Reading Flash", 256)
 		image = ""
-		self.top.blockCommands()
 		for chunk in range(0, 256, 2):
 			self.progressMeter(chunk)
 			for word in range(0, 32):
@@ -102,7 +93,6 @@ class ATMega8DIP28(Chip):
 				self.__readWordToStatusReg()
 			data = self.top.cmdReadStatusReg()
 			image += data
-		self.top.unblockCommands()
 		self.progressMeterFinish()
 		return image
 
@@ -114,7 +104,6 @@ class ATMega8DIP28(Chip):
 		self.__initPins()
 
 		self.progressMeterInit("Writing Flash", 256)
-		self.top.blockCommands()
 		for chunk in range(0, 256, 2):
 			self.progressMeter(chunk)
 			for word in range(0, 32):
@@ -129,7 +118,6 @@ class ATMega8DIP28(Chip):
 			self.__setBS1(0)
 			self.__pulseWR()
 			self.__waitForRDY()
-		self.top.unblockCommands()
 		self.progressMeterFinish()
 
 	def readEEPROM(self):
@@ -138,7 +126,6 @@ class ATMega8DIP28(Chip):
 
 		self.progressMeterInit("Reading EEPROM", 128)
 		image = ""
-		self.top.blockCommands()
 		for chunk in range(0, 128):
 			self.progressMeter(chunk)
 			for byte in range(0, 4):
@@ -147,7 +134,6 @@ class ATMega8DIP28(Chip):
 				self.__readLowByteToStatusReg()
 			data = self.top.cmdReadStatusReg()
 			image += data[0:4]
-		self.top.unblockCommands()
 		self.progressMeterFinish()
 		return image
 
@@ -159,7 +145,6 @@ class ATMega8DIP28(Chip):
 		self.__initPins()
 
 		self.progressMeterInit("Writing EEPROM", 128)
-		self.top.blockCommands()
 		for chunk in range(0, 128):
 			self.progressMeter(chunk)
 			for byte in range(0, 4):
@@ -172,7 +157,6 @@ class ATMega8DIP28(Chip):
 			self.__setBS1(0)
 			self.__pulseWR()
 			self.__waitForRDY()
-		self.top.unblockCommands()
 		self.progressMeterFinish()
 
 	def readFuse(self):
@@ -192,7 +176,6 @@ class ATMega8DIP28(Chip):
 		self.__initPins()
 
 		self.progressMeterInit("Writing Fuse bits", 0)
-		self.top.blockCommands()
 		self.__loadCommand(self.CMD_WRITEFUSE)
 		self.__setBS2(0)
 		self.__loadDataLow(ord(image[0]))
@@ -203,7 +186,6 @@ class ATMega8DIP28(Chip):
 		self.__setBS1(1)
 		self.__pulseWR()
 		self.__waitForRDY()
-		self.top.unblockCommands()
 		self.progressMeterFinish()
 
 	def readLockbits(self):
@@ -224,12 +206,10 @@ class ATMega8DIP28(Chip):
 		self.__initPins()
 
 		self.progressMeterInit("Writing lock bits", 0)
-		self.top.blockCommands()
 		self.__loadCommand(self.CMD_WRITELOCK)
 		self.__loadDataLow(ord(image[0]))
 		self.__pulseWR()
 		self.__waitForRDY()
-		self.top.unblockCommands()
 		self.progressMeterFinish()
 
 	def __readSigAndCalib(self):
@@ -237,7 +217,6 @@ class ATMega8DIP28(Chip):
 		This function expects a DUT present and pins initialized."""
 		signature = ""
 		calibration = ""
-		self.top.blockCommands()
 		for addr in range(0, 4):
 			self.__loadCommand(self.CMD_READSIG)
 			self.__loadAddr(addr)
@@ -246,13 +225,11 @@ class ATMega8DIP28(Chip):
 			if addr <= 2:
 				signature += data[0]
 			calibration += data[1]
-		self.top.unblockCommands()
 		return (signature, calibration)
 
 	def __readFuseAndLockBits(self):
 		"""Reads the Fuse and Lock bits and returns them.
 		This function expects a DUT present and pins initialized."""
-		self.top.blockCommands()
 		self.__loadCommand(self.CMD_READFUSELOCK)
 		self.__setBS2(0)
 		self.__readWordToStatusReg()
@@ -260,35 +237,30 @@ class ATMega8DIP28(Chip):
 		self.__readWordToStatusReg()
 		self.__setBS2(0)
 		data = self.top.cmdReadStatusReg()
-		self.top.unblockCommands()
 		fuses = data[0] + data[3]
 		lock = data[1]
 		return (fuses, lock)
 
 	def __checkDUTPresence(self):
 		"""Check if a Device Under Test (DUT) is inserted into the ZIF."""
-		self.top.blockCommands()
 		self.top.cmdFlush()
 		self.top.cmdFPGAWrite(0x1D, 0x86)
-		self.top.unblockCommands()
+		self.top.flushCommands()
 
 		self.top.gnd.setLayoutPins( [] )
 		self.top.vpp.setLayoutMask(0)
 		self.top.vccx.setLayoutMask(0)
 
-		self.top.blockCommands()
 		self.top.cmdFlush(2)
 		self.top.cmdFPGAWrite(0x1B, 0xFF)
-		self.top.unblockCommands()
+		self.top.flushCommands()
 
-		self.top.send("\x0E\x28\x00\x00")
+		self.top.queueCommand("\x0E\x28\x00\x00")
 		self.top.cmdSetVPPVoltage(0)
-		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(5)
 		self.top.cmdFlush(21)
 		self.top.vpp.setLayoutPins( (5, 6, 7, 9, 11, 12, 13, 14, 15, 16, 18) )
 
-		self.top.blockCommands()
 		self.top.cmdFlush(2)
 		self.top.cmdFPGAReadRaw(0x16)
 		self.top.cmdFPGAReadRaw(0x17)
@@ -297,7 +269,6 @@ class ATMega8DIP28(Chip):
 		self.top.cmdFPGAReadRaw(0x1A)
 		self.top.cmdFPGAReadRaw(0x1B)
 		stat = self.top.cmdReadStatusReg48()
-		self.top.unblockCommands()
 		if stat != 0x0303FFFFFFC0 and \
 		   (stat & 0x00FFFFFFFFFF) != 0x00031F801000:
 			msg = "Did not detect chip. Please check connections. (0x%012X)" % stat
@@ -310,33 +281,25 @@ class ATMega8DIP28(Chip):
 		"""Initialize the pin voltages and logic."""
 		self.top.vpp.setLayoutMask(0)
 		self.top.vccx.setLayoutMask(0)
-		self.top.cmdFlush()
-		self.top.send("\x0E\x28\x01\x00")
+		self.top.queueCommand("\x0E\x28\x01\x00")
 		self.top.cmdFPGAWrite(0x1B, 0x00)
 		self.top.cmdSetVPPVoltage(0)
-		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(12)
-		self.top.cmdFlush()
 		self.top.gnd.setLayoutPins( (18,) )
-		self.top.cmdFlush()
 		self.top.cmdSetVCCXVoltage(4.4)
-		self.top.cmdFlush()
 
-		self.top.blockCommands()
 		self.__setXA0(0)
 		self.__setXA1(0)
 		self.__setBS1(0)
 		self.__setWR(0)
-		self.top.unblockCommands()
+		self.top.flushCommands()
 
 		self.top.gnd.setLayoutPins( (18,) )
 		self.top.vccx.setLayoutPins( (17,) )
 
-		self.top.blockCommands()
-		self.top.cmdFlush()
-		self.top.send("\x19")
+		self.top.queueCommand("\x19")
 		self.__setReadMode(0)
-		self.top.send("\x34")
+		self.top.queueCommand("\x34")
 		self.__setReadMode(0)
 		self.__setOE(0)
 		self.__setWR(1)
@@ -348,17 +311,15 @@ class ATMega8DIP28(Chip):
 		self.__setBS2(0)
 		self.__setPAGEL(0)
 		self.__pulseXTAL1(10)
-		self.top.send("\x19")
-		self.top.unblockCommands()
+		self.top.queueCommand("\x19")
+		self.top.flushCommands()
 
 		self.top.vpp.setLayoutPins( (5, 6, 7, 9, 11) )
 
-		self.top.blockCommands()
-		self.top.send("\x34")
+		self.top.queueCommand("\x34")
 		self.top.cmdFPGAWrite(0x12, 0x88)
 		self.__setOE(1)
 		self.top.cmdFlush()
-		self.top.unblockCommands()
 
 		(signature, calibration) = self.__readSigAndCalib()
 		if signature != self.signature:
@@ -446,9 +407,9 @@ class ATMega8DIP28(Chip):
 
 	def __loadCommand(self, command):
 		"""Load a command into the device."""
-		self.top.send("\x34")
+		self.top.queueCommand("\x34")
 		self.__setBS1(0)
-		self.top.send("\x34")
+		self.top.queueCommand("\x34")
 		self.__setXA0(0)
 		self.__setXA1(1)
 		self.top.cmdFPGAWrite(0x10, command)
@@ -463,12 +424,11 @@ class ATMega8DIP28(Chip):
 
 	def __waitForRDY(self):
 		"""Wait for the RDY pin to go high."""
-		self.top.flushCommands()
-		time.sleep(0.01)
+		self.top.delay(0.01)
 		for i in range(0, 50):
 			if self.__getRDY():
 				return
-			time.sleep(0.01)
+			self.top.delay(0.01)
 		self.throwError("Timeout waiting for READY signal from chip.")
 
 	def __getRDY(self):
