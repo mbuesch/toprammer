@@ -207,7 +207,7 @@ class TOP:
 		self.chip.initializeChip()
 
 	def __bitfileUpload(self):
-		self.printDebug("Uploading bitfile...")
+		self.printDebug("Uploading bitfile %s..." % self.bitfile.getFilename())
 
 		self.cmdFPGAWrite(0x1B, 0x00)
 		self.cmdFPGAInitiateConfig()

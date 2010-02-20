@@ -30,7 +30,10 @@ def usage():
 	print ""
 	print "Usage: %s [OPTIONS]" % sys.argv[0]
 	print ""
-	print " -b|--bitfile            Path to the *.bit file (mandatory)"
+	print " -b|--bitfile            The *.bit file (mandatory)"
+	print "    A full path to the bitfile is not required. Specifying the"
+	print "    chip-ID (see --list) usually is sufficient. The .bit file will"
+	print "    be searched for in the standard paths then."
 	print ""
 	print "Actions:"
 	print " -s|--read-sig FILE      Read the signature bytes"
@@ -307,7 +310,12 @@ def main(argv):
 		return 1
 
 	try:
-		top = TOP(bitfileName = opt_bitfile, busDev = opt_device,
+		bitfile = bitfileFind(opt_bitfile)
+		if not bitfile:
+			print "Bitfile " + opt_bitfile + " not found"
+			print "See --list for a list of supported devices"
+			return 1
+		top = TOP(bitfileName = bitfile, busDev = opt_device,
 			  verbose = opt_verbose, forceLevel = opt_forceLevel,
 			  noqueue = opt_noqueue, usebroken = opt_usebroken)
 		if opt_action == "read-sig":

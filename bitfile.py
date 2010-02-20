@@ -33,11 +33,15 @@ class Bitfile:
 	FIELD_PAYLOAD	= 0x65
 
 	def __init__(self):
+		self.filename = ""
 		self.srcfile = ""
 		self.fpga = ""
 		self.date = ""
 		self.time = ""
 		self.payload = ""
+
+	def getFilename(self):
+		return self.filename
 
 	def getSrcFile(self):
 		return self.srcfile
@@ -59,6 +63,7 @@ class Bitfile:
 			data = file(filename, "rb").read()
 		except (IOError), e:
 			raise BitfileException("Failed to read \"" + filename + "\": " + e.strerror)
+		self.filename = filename
 		self.__parse(data)
 
 	def __parse(self, data):
@@ -108,17 +113,26 @@ class Bitfile:
 			   (ord(data[i + 2]) << 8) | ord(data[i + 3])
 		return data[i + 4 : i + 4 + fieldLen]
 
+def __probeFile(fullpath):
+	try:
+		file(fullpath, "rb")
+	except (IOError), e:
+		return False
+	return True
+
 def bitfileFind(filename):
 	"Search some standard paths for a bitfile"
+	filename = filename.lower()
+	if not filename.endswith(".bit"):
+		filename += ".bit"
+	if __probeFile(filename):
+		return filename
 	paths = ( ".", "./bit", "/usr/share/toprammer/bit",
 		"/usr/local/share/toprammer/bit", )
 	for path in paths:
 		fullpath = path + "/" + filename
-		try:
-			file(fullpath, "rb")
+		if __probeFile(fullpath):
 			return fullpath
-		except (IOError), e:
-			pass
 	return None
 
 if __name__ == "__main__":
