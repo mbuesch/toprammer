@@ -335,7 +335,7 @@ def main(argv):
 		elif opt_action == "write-fuse":
 			top.writeFuse(fileIn(opt_file, opt_informat))
 		elif opt_action == "read-lock":
-			fileOut(opt_file, out_outformat, top.readLockbits())
+			fileOut(opt_file, opt_outformat, top.readLockbits())
 		elif opt_action == "write-lock":
 			top.writeLockbits(fileIn(opt_file, opt_informat))
 		else:

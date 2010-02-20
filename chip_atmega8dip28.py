@@ -76,13 +76,6 @@ class ATMega8DIP28(Chip):
 		self.__checkDUTPresence()
 		self.__initPins()
 
-		self.top.cmdFlush(10)
-		self.top.queueCommand("\x0E\x1F\x00\x00")
-		self.top.delay(0.1)
-		stat = self.top.cmdReadStatusReg32()
-		if stat != 0xB9C80101:
-			self.throwError("read: Unexpected status value 0x%08X" % stat)
-
 		self.progressMeterInit("Reading Flash", 256)
 		image = ""
 		for chunk in range(0, 256, 2):
@@ -333,6 +326,13 @@ class ATMega8DIP28(Chip):
 				self.printWarning(msg)
 			else:
 				self.throwError(msg)
+
+		self.top.cmdFlush(10)
+		self.top.queueCommand("\x0E\x1F\x00\x00")
+		self.top.delay(0.1)
+		stat = self.top.cmdReadStatusReg32()
+		if stat != 0xB9C80101:
+			self.throwError("read: Unexpected status value 0x%08X" % stat)
 
 	def __readWordToStatusReg(self):
 		"""Read a data word from the DUT into the status register."""
