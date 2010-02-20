@@ -40,10 +40,12 @@ done
 
 function should_build # $1=target
 {
+	target="$1"
+	[ "$target" = "template" ] && return 1
 	[ $nr_targets -eq 0 ] && return 0
 	let end=nr_targets-1
 	for i in $(seq 0 $end); do
-		[ ${targets[i]} = "$1" ] && return 0
+		[ ${targets[i]} = "$target" ] && return 0
 	done
 	return 1
 }
