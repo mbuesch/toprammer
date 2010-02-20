@@ -36,6 +36,7 @@ class M2764A(Chip):
 		self.top.vccx.setLayoutMask(0)
 		self.top.vpp.setLayoutMask(0)
 		self.top.gnd.setLayoutPins( [] )
+		self.top.queueCommand("\x0E\x28\x01\x00")
 		self.top.cmdSetVCCXVoltage(5)
 		self.top.cmdSetVPPVoltage(0)
 		self.top.cmdSetVPPVoltage(5)
