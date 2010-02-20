@@ -122,7 +122,6 @@ def __probeFile(fullpath):
 
 def bitfileFind(filename):
 	"Search some standard paths for a bitfile"
-	filename = filename.lower()
 	if not filename.endswith(".bit"):
 		filename += ".bit"
 	if __probeFile(filename):
