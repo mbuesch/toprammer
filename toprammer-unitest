@@ -21,7 +21,7 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from toprammer_main import *
+from libtoprammer.toprammer_main import *
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 

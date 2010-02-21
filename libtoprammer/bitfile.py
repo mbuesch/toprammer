@@ -19,6 +19,7 @@
 """
 
 import sys
+import pkg_resources
 
 class BitfileException(Exception): pass
 
@@ -126,12 +127,14 @@ def bitfileFind(filename):
 		filename += ".bit"
 	if __probeFile(filename):
 		return filename
-	paths = ( ".", "./bit", "/usr/share/toprammer/bit",
-		"/usr/local/share/toprammer/bit", )
+	paths = ( ".", "./libtoprammer/bit", )
 	for path in paths:
 		fullpath = path + "/" + filename
 		if __probeFile(fullpath):
 			return fullpath
+	fullpath = pkg_resources.resource_filename("libtoprammer", "bit/" + filename)
+	if __probeFile(fullpath):
+		return fullpath
 	return None
 
 if __name__ == "__main__":

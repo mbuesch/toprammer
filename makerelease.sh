@@ -4,9 +4,10 @@ set -e
 project="toprammer"
 
 
-origin="$(pwd)"
-version_major="$(cat $origin/toprammer | grep -e VERSION_MAJOR | head -n1 | cut -d'=' -f2)"
-version_minor="$(cat $origin/toprammer | grep -e VERSION_MINOR | head -n1 | cut -d'=' -f2)"
+origin="$PWD/$(dirname $0)"
+
+version_major="$(cat $origin/libtoprammer/toprammer_main.py | grep -e VERSION_MAJOR | head -n1 | cut -d'=' -f2)"
+version_minor="$(cat $origin/libtoprammer/toprammer_main.py | grep -e VERSION_MINOR | head -n1 | cut -d'=' -f2)"
 version="$(printf %d.%d $version_major $version_minor)"
 if [ -z "$version" ]; then
 	echo "Could not determine version!"

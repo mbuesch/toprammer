@@ -26,7 +26,9 @@ m2764a EPROM              | uncertain    |
 
 === INSTALLATION ===
 
-No installation is required. Just execute the "toprammer" file.
+Just execute
+	python setup.py install
+as root inside of the toprammer distribution package's root directory.
 
 
 
@@ -35,8 +37,8 @@ No installation is required. Just execute the "toprammer" file.
 A .BIT file is always needed to do operations on the inserted chip.
 The .BIT file must match the chip. For example, do do operations on an
 Atmel Mega8 DIP microcontroller, the atmega8dip28.bit file is needed.
-Prebuilt .BIT files can be found in the "bit/" subdirectory.
-Sourcecode for these .BIT files is located in "bit/src/".
+Prebuilt .BIT files can be found in the "libtoprammer/bit/" subdirectory.
+Sourcecode for these .BIT files is located in "libtoprammer/bit/src/".
 However, the full path to the .BIT file doesn't need to be specified to
 the toprammer tool. If you just pass the chip-name, toprammer will search
 for a matching .BIT file in some standard search paths.
@@ -76,12 +78,12 @@ for the top-half.
 --- Bottom-half FPGA implementation ---
 
 To create a new sourcecode template fileset for a new chip, go to the
-bit/src/ subdirectory and execute the "create.sh" script:
+libtoprammer/bit/src/ subdirectory and execute the "create.sh" script:
 	./create.sh name_of_chip
 where "name_of_chip" is the name of the new chip.
-Now go to bit/src/name_of_chip/ and implement the bottom-half algorithm
+Now go to libtoprammer/bit/src/name_of_chip/ and implement the bottom-half algorithm
 in the name_of_chip.v Verilog file.
-To build the .BIT file from the Verilog sources, go to the bit/ directory
+To build the .BIT file from the Verilog sources, go to the libtoprammer/bit/ directory
 and execute:
 	./build.sh name_of_chip
 (if you omit the chipname, all chips will be rebuilt).
