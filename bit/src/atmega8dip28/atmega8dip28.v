@@ -40,8 +40,6 @@ module atmega8dip28(data, ale, write, read, zif);
 	reg [7:0] read_data;
 	// Constant lo/hi
 	wire low, high;
-	// Debugging
-	reg [7:0] test;
 
 	assign low = 0;
 	assign high = 1;
@@ -110,6 +108,11 @@ module atmega8dip28(data, ale, write, read, zif);
 			read_data[5:0] <= zif[29:24];
 			read_data[7:6] <= zif[34:33];
 		end
+		8'h12: begin
+			/* Status read */
+			read_data[0] <= zif[13];	/* RDY */
+			read_data[7:1] <= 0;
+		end
 		8'h16: begin
 			/* Raw ZIF pin read access */
 			read_data <= zif[8:1];
@@ -149,7 +152,7 @@ module atmega8dip28(data, ale, write, read, zif);
 	bufif0(zif[8], low, low);
 	bufif0(zif[9], low, low);
 	bufif0(zif[10], low, low);
-	bufif0(zif[11], low, low);
+	bufif0(zif[11], low, high);
 	bufif0(zif[12], low, low);
 	bufif0(zif[13], low, high);
 	bufif0(zif[14], dut_oe, low);
@@ -179,14 +182,14 @@ module atmega8dip28(data, ale, write, read, zif);
 	bufif0(zif[38], low, low);
 	bufif0(zif[39], low, low);
 	bufif0(zif[40], low, low);
-	bufif0(zif[41], test[0], low);
-	bufif0(zif[42], test[1], low);
-	bufif0(zif[43], test[2], low);
-	bufif0(zif[44], test[3], low);
-	bufif0(zif[45], test[4], low);
-	bufif0(zif[46], test[5], low);
-	bufif0(zif[47], test[6], low);
-	bufif0(zif[48], test[7], low);
+	bufif0(zif[41], low, low);
+	bufif0(zif[42], low, low);
+	bufif0(zif[43], low, low);
+	bufif0(zif[44], low, low);
+	bufif0(zif[45], low, low);
+	bufif0(zif[46], low, low);
+	bufif0(zif[47], low, low);
+	bufif0(zif[48], low, low);
 
 	bufif1(data[0], read_data[0], read_oe);
 	bufif1(data[1], read_data[1], read_oe);

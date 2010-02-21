@@ -1,7 +1,7 @@
 /*
  *   TOP2049 Open Source programming suite
  *
- *   Atmel Mega88 DIP28
+ *   Atmel Mega32 DIP40
  *   FPGA bottomhalf implementation
  *
  *   Copyright (c) 2010 Michael Buesch <mb@bu3sch.de>
@@ -21,7 +21,7 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-module atmega88dip28(data, ale, write, read, zif);
+module atmega32dip40(data, ale, write, read, zif);
 	inout [7:0] data;
 	input ale;
 	input write;
@@ -106,12 +106,11 @@ module atmega88dip28(data, ale, write, read, zif);
 		case (address)
 		8'h10: begin
 			/* Data read */
-			read_data[5:0] <= zif[29:24];
-			read_data[7:6] <= zif[34:33];
+			read_data <= zif[32:25];
 		end
 		8'h12: begin
 			/* Status read */
-			read_data[0] <= zif[13];	/* RDY */
+			read_data[0] <= zif[39];	/* RDY */
 			read_data[7:1] <= 0;
 		end
 		8'h16: begin
@@ -147,7 +146,7 @@ module atmega88dip28(data, ale, write, read, zif);
 	bufif0(zif[2], low, low);
 	bufif0(zif[3], low, low);
 	bufif0(zif[4], low, low);
-	bufif0(zif[5], low, low);
+	bufif0(zif[5], dut_pagel, low);
 	bufif0(zif[6], low, low);
 	bufif0(zif[7], low, low);
 	bufif0(zif[8], low, low);
@@ -155,38 +154,38 @@ module atmega88dip28(data, ale, write, read, zif);
 	bufif0(zif[10], low, low);
 	bufif0(zif[11], low, low);
 	bufif0(zif[12], low, low);
-	bufif0(zif[13], low, high);
-	bufif0(zif[14], dut_oe, low);
-	bufif0(zif[15], dut_wr, low);
-	bufif0(zif[16], dut_bs1, low);
+	bufif0(zif[13], low, low);
+	bufif0(zif[14], low, low);
+	bufif0(zif[15], low, low);
+	bufif0(zif[16], low, low);
 	bufif0(zif[17], low, low);
 	bufif0(zif[18], low, low);
-	bufif0(zif[19], dut_xtal, low);
+	bufif0(zif[19], low, low);
 	bufif0(zif[20], low, low);
-	bufif0(zif[21], dut_xa0, low);
-	bufif0(zif[22], dut_xa1, low);
-	bufif0(zif[23], dut_pagel, low);
-	bufif0(zif[24], dut_data[0], !dut_oe);
-	bufif0(zif[25], dut_data[1], !dut_oe);
-	bufif0(zif[26], dut_data[2], !dut_oe);
-	bufif0(zif[27], dut_data[3], !dut_oe);
-	bufif0(zif[28], dut_data[4], !dut_oe);
-	bufif0(zif[29], dut_data[5], !dut_oe);
-	bufif0(zif[30], low, low);
-	bufif0(zif[31], low, low);
-	bufif0(zif[32], low, low);
-	bufif0(zif[33], dut_data[6], !dut_oe);
-	bufif0(zif[34], dut_data[7], !dut_oe);
-	bufif0(zif[35], dut_bs2, low);
+	bufif0(zif[21], low, low);
+	bufif0(zif[22], low, low);
+	bufif0(zif[23], low, low);
+	bufif0(zif[24], dut_bs2, low);
+	bufif0(zif[25], dut_data[0], !dut_oe);
+	bufif0(zif[26], dut_data[1], !dut_oe);
+	bufif0(zif[27], dut_data[2], !dut_oe);
+	bufif0(zif[28], dut_data[3], !dut_oe);
+	bufif0(zif[29], dut_data[4], !dut_oe);
+	bufif0(zif[30], dut_data[5], !dut_oe);
+	bufif0(zif[31], dut_data[6], !dut_oe);
+	bufif0(zif[32], dut_data[7], !dut_oe);
+	bufif0(zif[33], low, high);
+	bufif0(zif[34], low, high);
+	bufif0(zif[35], low, low);
 	bufif0(zif[36], low, low);
-	bufif0(zif[37], low, low);
+	bufif0(zif[37], dut_xtal, low);
 	bufif0(zif[38], low, low);
-	bufif0(zif[39], low, low);
-	bufif0(zif[40], low, low);
-	bufif0(zif[41], low, low);
-	bufif0(zif[42], low, low);
-	bufif0(zif[43], low, low);
-	bufif0(zif[44], low, low);
+	bufif0(zif[39], low, high);
+	bufif0(zif[40], dut_oe, low);
+	bufif0(zif[41], dut_wr, low);
+	bufif0(zif[42], dut_bs1, low);
+	bufif0(zif[43], dut_xa0, low);
+	bufif0(zif[44], dut_xa1, low);
 	bufif0(zif[45], low, low);
 	bufif0(zif[46], low, low);
 	bufif0(zif[47], low, low);

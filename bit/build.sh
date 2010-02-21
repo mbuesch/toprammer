@@ -8,6 +8,14 @@ srcdir="$basedir/src"
 bindir="$basedir"
 bitparser="python $basedir/../bitfile.py"
 
+function terminate
+{
+	echo "Interrupted."
+	exit 1
+}
+
+trap terminate TERM INT
+
 function usage
 {
 	echo "Usage: build.sh [OPTIONS] [TARGETS]"

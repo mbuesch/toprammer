@@ -35,14 +35,9 @@ module template(data, ale, write, read, osc_in, zif);
 	reg [7:0] read_data;	/* Cached read data */
 
 	wire low, high;		/* Constant lo/hi */
-	reg [7:0] test;		/* Debugging */
 
 	assign low = 0;
 	assign high = 1;
-
-	initial begin
-		test <= 0;
-	end
 
 	/* The delay counter. Based on the 12MHz input clock. */
 	reg [15:0] delay_count;
@@ -143,14 +138,14 @@ module template(data, ale, write, read, osc_in, zif);
 	bufif0(zif[38], low, low);
 	bufif0(zif[39], low, low);
 	bufif0(zif[40], low, low);
-	bufif0(zif[41], test[0], low);
-	bufif0(zif[42], test[1], low);
-	bufif0(zif[43], test[2], low);
-	bufif0(zif[44], test[3], low);
-	bufif0(zif[45], test[4], low);
-	bufif0(zif[46], test[5], low);
-	bufif0(zif[47], test[6], low);
-	bufif0(zif[48], test[7], low);
+	bufif0(zif[41], low, low);
+	bufif0(zif[42], low, low);
+	bufif0(zif[43], low, low);
+	bufif0(zif[44], low, low);
+	bufif0(zif[45], low, low);
+	bufif0(zif[46], low, low);
+	bufif0(zif[47], low, low);
+	bufif0(zif[48], low, low);
 
 	bufif1(data[0], read_data[0], read_oe);
 	bufif1(data[1], read_data[1], read_oe);
