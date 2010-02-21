@@ -55,3 +55,41 @@ Example:
 	Reading the flash of an Atmel Mega8 DIP to the file flash.img:
 	toprammer --bitfile atmega8dip28 --read-prog flash.img
 
+
+
+=== ADD SUPPORT FOR NEW CHIPS ===
+
+To add support for new chips, two things are required:
+The bottom-half FPGA implementation of the programming algorithm and
+the top-half Python implementation.
+
+For the FPGA part you need to get the Xilinx development suite (ISE)
+version 9.2i. It can be downloaded as "WebPACK" for free from the Xilinx
+homepage in the "archive" section.
+Linux 32bit:	http://www.xilinx.com/support/download/i92linwp.htm
+Windows 32bit:	http://www.xilinx.com/support/download/i92winwp.htm
+
+The top-half Python implementation must be put into a chip_xxx.py file.
+That file also needs to be imported from toprammer_main.py. That's all
+for the top-half.
+
+--- Bottom-half FPGA implementation ---
+
+To create a new sourcecode template fileset for a new chip, go to the
+bit/src/ subdirectory and execute the "create.sh" script:
+	./create.sh name_of_chip
+where "name_of_chip" is the name of the new chip.
+Now go to bit/src/name_of_chip/ and implement the bottom-half algorithm
+in the name_of_chip.v Verilog file.
+To build the .BIT file from the Verilog sources, go to the bit/ directory
+and execute:
+	./build.sh name_of_chip
+(if you omit the chipname, all chips will be rebuilt).
+
+--- Top-half Python implementation ---
+
+You basically need to create a new chip_nameofchip.py file with a class in
+it. This class has to be derived from the "Chip" class from chip.py.
+Re-implement all required methods from the "Chip" class in your subclass.
+Finally add an instance of the new class to the "supportedChips" array:
+	supportedChips.append(Chip_nameofchip())
