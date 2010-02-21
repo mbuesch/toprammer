@@ -39,6 +39,7 @@ import top2049.vpp_layouts
 import top2049.gnd_layouts
 
 # Import the supported chip modules
+from chip_atmega32dip40 import *
 from chip_atmega8dip28 import *
 from chip_atmega88dip28 import *
 from chip_m8cissp import *

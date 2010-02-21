@@ -15,9 +15,12 @@
 
 === SUPPORTED CHIPS ===
 
-   Chip                               | State
-   -----------------------------------------------------------
-   Atmel Mega8 DIP28                  | Fully supported
+Chip                      | State        | Note
+-------------------------------------------------------------------------------
+Atmel Mega32 DIP40        | supported    | Insert chip upside-down into ZIF
+Atmel Mega8 DIP28         | supported    |
+Atmel Mega88 DIP28        | supported    |
+m2764a EPROM              | uncertain    |
 
 
 
@@ -34,6 +37,9 @@ The .BIT file must match the chip. For example, do do operations on an
 Atmel Mega8 DIP microcontroller, the atmega8dip28.bit file is needed.
 Prebuilt .BIT files can be found in the "bit/" subdirectory.
 Sourcecode for these .BIT files is located in "bit/src/".
+However, the full path to the .BIT file doesn't need to be specified to
+the toprammer tool. If you just pass the chip-name, toprammer will search
+for a matching .BIT file in some standard search paths.
 
 The .BIT file basically is the firmware that runs on the FPGA in the
 TOP2049 programmer.
@@ -43,6 +49,9 @@ the chip.
 
 Example:
 
+	Checking which chips are supported:
+	toprammer --list
+
 	Reading the flash of an Atmel Mega8 DIP to the file flash.img:
-	toprammer --bitfile atmega8dip28.bit --read-prog flash.img
+	toprammer --bitfile atmega8dip28 --read-prog flash.img
 

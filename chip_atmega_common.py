@@ -36,12 +36,14 @@ class Chip_ATMega_common(Chip):
 	CMD_READEEPROM		= 0x03 # Read EEPROM
 
 	def __init__(self, chipID, signature,
+		     presenceCheckLayout,
 		     GNDLayout, VCCXLayout, VPPLayout,
 		     flashPageSize, flashPages,
 		     eepromPageSize, eepromPages,
 		    ):
 		Chip.__init__(self, chipID)
 		self.signature = signature
+		self.presenceCheckLayout = presenceCheckLayout
 		self.GNDLayout = GNDLayout		# List of GND ZIF pins
 		self.VCCXLayout = VCCXLayout		# List of VCCX ZIF pins
 		self.VPPLayout = VPPLayout		# List of VPP ZIF pins
@@ -50,7 +52,6 @@ class Chip_ATMega_common(Chip):
 		self.eepromPageSize = eepromPageSize	# EEPROM page size, in bytes
 		self.eepromPages = eepromPages		# Nr of EEPROM pages
 		assert(eepromPageSize <= 64)
-		assert(flashPageSize == 32) #FIXME
 
 	def initializeChip(self):
 		self.printDebug("Initializing chip")
@@ -92,12 +93,18 @@ class Chip_ATMega_common(Chip):
 		image = ""
 		for page in range(0, self.flashPages):
 			self.progressMeter(page)
-			for word in range(0, 32):
+			readWords = 0
+			for word in range(0, self.flashPageSize):
 				self.__loadCommand(self.CMD_READFLASH)
-				self.__loadAddr((page * 32) + word)
+				self.__loadAddr((page * self.flashPageSize) + word)
 				self.__readWordToStatusReg()
-			data = self.top.cmdReadStatusReg()
-			image += data
+				readWords += 1
+				if readWords >= 32:
+					image += self.top.cmdReadStatusReg()
+					readWords = 0
+			if readWords:
+				data = self.top.cmdReadStatusReg()
+				image += data[0:readWords]
 		self.progressMeterFinish()
 		return image
 
@@ -111,9 +118,9 @@ class Chip_ATMega_common(Chip):
 		self.progressMeterInit("Writing Flash", self.flashPages)
 		for page in range(0, self.flashPages):
 			self.progressMeter(page)
-			for word in range(0, 32):
+			for word in range(0, self.flashPageSize):
 				self.__loadCommand(self.CMD_WRITEFLASH)
-				addr = (page * 32) + word
+				addr = (page * self.flashPageSize) + word
 				self.__loadAddr(addr)
 				addr *= 2
 				data = image[addr : addr + 2]
@@ -268,7 +275,7 @@ class Chip_ATMega_common(Chip):
 		self.top.cmdFPGAReadRaw(0x1A)
 		self.top.cmdFPGAReadRaw(0x1B)
 		stat = self.top.cmdReadStatusReg48()
-		if (stat & 0x00FFFFFFFFFF) != 0x00031F801000:
+		if stat != self.presenceCheckLayout:
 			msg = "Did not detect chip. Please check connections. (0x%012X)" % stat
 			if self.top.getForceLevel() >= 2:
 				self.printWarning(msg)
@@ -418,10 +425,13 @@ class Chip_ATMega_common(Chip):
 
 	def __getRDY(self):
 		"""Read the state of the RDY/BSY pin."""
-		self.top.cmdFPGAReadRaw(0x17)
+		return bool(self.__getStatus() & 0x01)
+
+	def __getStatus(self):
+		"""Read the programmer status register"""
+		self.top.cmdFPGAReadRaw(0x12)
 		stat = self.top.cmdReadStatusReg()
-		stat = ord(stat[0])
-		return bool(stat & (1 << 4))
+		return ord(stat[0])
 
 	def __setOE(self, high):
 		"""Set the OE pin of the DUT"""

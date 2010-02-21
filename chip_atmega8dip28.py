@@ -28,6 +28,7 @@ class Chip_ATMega8DIP28(Chip_ATMega_common):
 		Chip_ATMega_common.__init__(self,
 			chipID = "atmega8dip28",
 			signature = "\x1E\x93\x07",
+			presenceCheckLayout = 0x00031F801000,
 			GNDLayout = (18,),
 			VCCXLayout = (17,),
 			VPPLayout = (5, 6, 7, 9, 11),

@@ -1,7 +1,7 @@
 """
 #    TOP2049 Open Source programming suite
 #
-#    Atmel Mega88 DIP28 support
+#    Atmel Mega32 DIP40 support
 #
 #    Copyright (c) 2009-2010 Michael Buesch <mb@bu3sch.de>
 #
@@ -22,19 +22,20 @@
 
 from chip_atmega_common import *
 
+# Note: Chip has to be inserted upside-down into the ZIF
 
-class Chip_ATMega88DIP28(Chip_ATMega_common):
+class Chip_ATMega32DIP40(Chip_ATMega_common):
 	def __init__(self):
 		Chip_ATMega_common.__init__(self,
-			chipID = "atmega88dip28",
-			signature = "\x1E\x93\x0A",
-			presenceCheckLayout = 0x00031F801000,
-			GNDLayout = (18,),
-			VCCXLayout = (17,),
-			VPPLayout = (5, 6, 7, 9, 11),
-			flashPageSize = 32,
-			flashPages = 128,
+			chipID = "atmega32dip40",
+			signature = "\x1E\x95\x02",
+			presenceCheckLayout = 0x0043FF000000,
+			GNDLayout = (35,),
+			VCCXLayout = (34,),
+			VPPLayout = (5, 6, 7, 9, 11, 12, 13, 14, 15, 16, 18, 19, 24, 26, 30, 31, 32, 33),
+			flashPageSize = 64,
+			flashPages = 256,
 			eepromPageSize = 4,
-			eepromPages = 128)
+			eepromPages = 256)
 
-supportedChips.append(Chip_ATMega88DIP28())
+supportedChips.append(Chip_ATMega32DIP40())
