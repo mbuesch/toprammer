@@ -19,7 +19,12 @@
 """
 
 import sys
-import pkg_resources
+try:
+	import xpkg_resources
+except ImportError:
+	print "Failed to import the 'pkg_resources' Python module."
+	print "On Debian Linux run:  apt-get install python-pkg-resources"
+	sys.exit(1)
 
 class BitfileException(Exception): pass
 

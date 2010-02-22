@@ -10,6 +10,7 @@
 
 * Python 2.5 or Python 2.6 is required
 * python-usb module is required
+* python-pkg-resources module is required
 
 
 
