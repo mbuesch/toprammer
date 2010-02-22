@@ -20,7 +20,7 @@
 
 import sys
 try:
-	import xpkg_resources
+	import pkg_resources
 except ImportError:
 	print "Failed to import the 'pkg_resources' Python module."
 	print "On Debian Linux run:  apt-get install python-pkg-resources"
