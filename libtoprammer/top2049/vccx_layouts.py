@@ -130,7 +130,7 @@ class VCCXLayout(ShiftregLayout):
 		"1.6" : 25,	# Q21C
 	}
 
-	def __init__(self, top):
+	def __init__(self, top=None):
 		ShiftregLayout.__init__(self, 3)
 		self.top = top
 
@@ -147,4 +147,4 @@ class VCCXLayout(ShiftregLayout):
 
 if __name__ == "__main__":
 	print "ZIF socket VCCX layouts"
-	print VCCXLayout(None)
+	print VCCXLayout()

@@ -1,7 +1,7 @@
 """
 #    TOP2049 Open Source programming suite
 #
-#    Atmel Mega common support
+#    Implements the Atmel Mega MCU parallel HV programming algorithm
 #
 #    Copyright (c) 2009-2010 Michael Buesch <mb@bu3sch.de>
 #

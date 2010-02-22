@@ -25,7 +25,7 @@ class GNDLayout:
 	validPins = (0, 5, 14, 15, 16, 17, 18, 19, 20, 24, 26, 27,
 		28, 29, 33, 34, 35)
 
-	def __init__(self, top):
+	def __init__(self, top=None):
 		self.top = top
 		self.layouts = []
 		for pin in self.validPins:

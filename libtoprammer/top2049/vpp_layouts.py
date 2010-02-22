@@ -139,7 +139,7 @@ class VPPLayout(ShiftregLayout):
 		# 25		
 	}
 
-	def __init__(self, top):
+	def __init__(self, top=None):
 		ShiftregLayout.__init__(self, 4)
 		self.top = top
 

@@ -1,0 +1,100 @@
+#!/usr/bin/env python
+"""
+#    TOP2049 Open Source programming suite
+#
+#    ZIF socket layout generator
+#
+#    Copyright (c) 2010 Michael Buesch <mb@bu3sch.de>
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License along
+#    with this program; if not, write to the Free Software Foundation, Inc.,
+#    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+
+from libtoprammer.layout_generator import *
+import getopt
+
+
+def usage():
+	print "Toprammer ZIF socket layout generator v%s" % VERSION
+	print ""
+	print "Usage: %s [OPTIONS]" % sys.argv[0]
+	print ""
+	print "Mandatory options:"
+	print " -d|--device TOPxxxx    The TOPxxxx device that is used."
+	print "                        Possible choices are: TOP2049"
+	print " -p|--package DIPxx     The package type of the DUT."
+	print " -v|--vccx PIN          Set VCCX pin, relative to the package."
+	print " -P|--vpp PIN           Set VPP pin, relative to the package."
+	print " -g|--gnd PIN           Set GND pin, relative to the package."
+	print ""
+	print "Optional:"
+	print " -h|--help              Print this help text"
+
+def main(argv):
+	programmer = None
+	generator = None
+	vccxPin = None
+	vppPin = None
+	gndPin = None
+	try:
+		(opts, args) = getopt.getopt(argv[1:],
+			"d:p:hv:P:g:",
+			[ "help", "device=", "package=", "vccx=", "vpp=", "gnd=", ])
+		for (o, v) in opts:
+			if o in ("-h", "--help"):
+				usage()
+				return 0
+			if o in ("-d", "--device"):
+				programmer = v
+			if o in ("-p", "--package"):
+				if v.upper().startswith("DIP"):
+					nrPins = int(v[3:])
+					generator = LayoutGeneratorDIP(nrPins)
+				else:
+					print "Unknown package type\n"
+					raise ValueError()
+			if o in ("-v", "--vccx"):
+				vccxPin = int(v)
+			if o in ("-P", "--vpp"):
+				vppPin = int(v)
+			if o in ("-g", "--gnd"):
+				gndPin = int(v)
+		if not programmer:
+			print "-d|--device is mandatory!\n"
+			raise ValueError()
+		if not generator:
+			print "-p|--package is mandatory!\n"
+			raise ValueError()
+		if vccxPin is None or vppPin is None or gndPin is None:
+			print "-v|--vccx,  -p|--vpp  and  -g|--gnd  are mandatory!\n"
+			raise ValueError()
+	except (getopt.GetoptError, ValueError, KeyError), e:
+		usage()
+		return 1
+	except (TOPException), e:
+		print e
+		return 1
+	try:
+		generator.setProgrammerType(programmer.upper())
+		generator.setPins(vccxPin, vppPin, gndPin)
+		generator.recalculate()
+		print "Chip insert layout:\n"
+		print generator.zifLayoutAsciiArt()
+	except (TOPException), e:
+		print e
+		return 1
+	return 0
+
+if __name__ == "__main__":
+	sys.exit(main(sys.argv))
