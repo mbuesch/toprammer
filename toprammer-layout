@@ -91,6 +91,8 @@ def main(argv):
 		generator.recalculate()
 		print "Chip insert layout:\n"
 		print generator.zifLayoutAsciiArt()
+		print "\nSupply voltage pins on the ZIF:\n"
+		print generator.zifPinAssignments()
 	except (TOPException), e:
 		print e
 		return 1

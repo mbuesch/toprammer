@@ -95,3 +95,25 @@ it. This class has to be derived from the "Chip" class from chip.py.
 Re-implement all required methods from the "Chip" class in your subclass.
 Finally add an instance of the new class to the "supportedChips" array:
 	supportedChips.append(Chip_nameofchip())
+
+
+
+=== ZIF SOCKET LAYOUT GENERATOR ===
+
+The ZIF socket layout generator "toprammer-layout" will try to generate a chip-insert
+layout with the given parameters and print it as ASCII-art to the console.
+
+For example, if you have a DIP28 packaged chip, that needs VCC on pin 7,
+VPP on pin 1 and GND on pin 8, you'd issue the following command:
+
+	toprammer-layout -d top2049 --package DIP28 --vccx 7 --vpp 1 --gnd 8
+
+This will show you a layout of how to insert the chip into the programmer.
+It will also show which pins of the ZIF are powered. This will hopefully match
+your request. :)
+Alternatively, it will yield an error message, if it was unable to find a layout
+that fits the contraints.
+Note that the --vccx, --vpp and --gnd pins specified on the commandline are
+with respect to the package (_not_ the ZIF socket). The whole purpose of the
+tool is to map the package and its pin layout to the ZIF socket, while obeying
+the programmer constraints.

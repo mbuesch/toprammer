@@ -69,6 +69,10 @@ class LayoutGenerator:
 		"Returns nice ascii ART of the mapped ZIF socket"
 		raise TOPException("Reimplement me")
 
+	def zifPinAssignments(self):
+		"Returns a string describing the pin assignments"
+		raise TOPException("Reimplement me")
+
 	def recalculate(self):
 		"Redo the mapping calculation"
 		for upsideDown in (False, True):
@@ -171,4 +175,19 @@ class LayoutGeneratorDIP(LayoutGenerator):
 					ret += "%2d |-- o######o --| %2d\n" %\
 						(zp, self.zifPins + 1 - zp)
 		ret += "   o==============o\n"
+		return ret
+
+	def zifPinAssignments(self):
+		ret =  "VCCX ZIF pins: " + self.__bitmask2zifList(self.result_vccxBitmask) + "\n"
+		ret += "VPP ZIF pins:  " + self.__bitmask2zifList(self.result_vppBitmask) + "\n"
+		ret += "GND ZIF pins:  " + self.__bitmask2zifList(self.result_gndBitmask) + "\n"
+		return ret
+
+	def __bitmask2zifList(self, bitmask):
+		ret = ""
+		for bit in range(0, self.zifPins):
+			if bitmask & (1 << bit):
+				if ret:
+					ret += ","
+				ret += str(bit + 1)
 		return ret
