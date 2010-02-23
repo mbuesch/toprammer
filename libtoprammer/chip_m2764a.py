@@ -86,7 +86,9 @@ class M2764A(Chip):
 		self.__setEG(E=1, G=1)
 		for addr in range(0, 0x2000):
 			self.progressMeter(addr)
-			self.__writeData(addr, ord(image[addr]))
+			data = ord(image[addr])
+			if data != 0xFF:
+				self.__writeData(addr, data)
 		self.__setEG(E=1, G=1)
 		self.progressMeterFinish()
 
