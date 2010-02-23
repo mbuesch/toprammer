@@ -72,8 +72,8 @@ class M2764A(Chip):
 		return image
 
 	def writeEEPROM(self, image):
-		if len(image) != 0x2000:
-			self.throwError("Invalid EPROM image size %d (expected %d)" %\
+		if len(image) > 0x2000:
+			self.throwError("Invalid EPROM image size %d (expected <=%d)" %\
 				(len(image), 0x2000))
 
 		self.top.cmdSetVCCXVoltage(5)
@@ -82,9 +82,9 @@ class M2764A(Chip):
 		self.applyVPP(True)
 		self.applyGND(True)
 
-		self.progressMeterInit("Writing EPROM", 0x2000)
+		self.progressMeterInit("Writing EPROM", len(image))
 		self.__setEG(E=1, G=1)
-		for addr in range(0, 0x2000):
+		for addr in range(0, len(image)):
 			self.progressMeter(addr)
 			data = ord(image[addr])
 			if data != 0xFF:
