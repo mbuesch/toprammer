@@ -22,7 +22,9 @@
 """
 
 from libtoprammer.layout_generator import *
+from libtoprammer.toprammer_main import *
 import getopt
+import sys
 
 
 def usage():

@@ -20,7 +20,8 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from toprammer_main import *
+from util import *
+from top_xxxx import *
 
 
 class LayoutGenerator:

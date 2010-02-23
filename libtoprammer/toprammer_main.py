@@ -33,10 +33,7 @@ except (ImportError), e:
 	print "Python USB support module not found. Please install python-usb."
 	sys.exit(1)
 
-# TOP2049 specific stuff
-import top2049.vccx_layouts
-import top2049.vpp_layouts
-import top2049.gnd_layouts
+from top_xxxx import *
 
 # Import the supported chip modules
 from chip_atmega32dip40 import *
