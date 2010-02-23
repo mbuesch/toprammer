@@ -21,16 +21,33 @@
 """
 
 from util import *
+from layout_generator import *
 
 
 supportedChips = []
 
 class Chip:
-	def __init__(self, chipID, broken=False):
-		"The chipID is the ID string from the bitfile."
+	def __init__(self, chipID,
+		     chipPackage=None, chipPinVCCX=None, chipPinVPP=None, chipPinGND=None,
+		     broken=False):
+		"""The chipID is the ID string from the bitfile.
+		chipPackage is the ID string for the package.
+		chipPinVCCX is the required VCCX pin on the package.
+		chipPinVPP is the required VPP pin on the package.
+		chipPinGND is the required GND pin on the package."""
+
 		self.chipID = chipID
 		self.broken = broken
 		self.printPrefix = True
+
+		if chipPackage:
+			# Initialize auto-layout
+			self.generator = createLayoutGenerator(chipPackage)
+			self.generator.setProgrammerType("TOP2049")#XXX Currently the only supported programmer
+			self.generator.setPins(vccxPin=chipPinVCCX,
+					       vppPin=chipPinVPP,
+					       gndPin=chipPinGND)
+			self.generator.recalculate()
 
 	def getID(self):
 		return self.chipID
@@ -61,6 +78,39 @@ class Chip:
 
 	def throwError(self, message):
 		raise TOPException(self.chipID + ": " + message)
+
+	def applyVCCX(self, on=True):
+		"Turn VCCX on, using the auto-layout."
+		if on:
+			try:
+				(vccxBitmask, vppBitmask, gndBitmask) = self.generator.getBitmasks()
+			except (AttributeError), e:
+				self.throwError("BUG: Using auto-layout, but did not initialize it.")
+		else:
+			vccxBitmask = 0
+		self.top.vccx.setLayoutMask(vccxBitmask)
+
+	def applyVPP(self, on=True):
+		"Turn VPP on, using the auto-layout."
+		if on:
+			try:
+				(vccxBitmask, vppBitmask, gndBitmask) = self.generator.getBitmasks()
+			except (AttributeError), e:
+				self.throwError("BUG: Using auto-layout, but did not initialize it.")
+		else:
+			vppBitmask = 0
+		self.top.vpp.setLayoutMask(vppBitmask)
+
+	def applyGND(self, on=True):
+		"Turn GND on, using the auto-layout."
+		if on:
+			try:
+				(vccxBitmask, vppBitmask, gndBitmask) = self.generator.getBitmasks()
+			except (AttributeError), e:
+				self.throwError("BUG: Using auto-layout, but did not initialize it.")
+		else:
+			gndBitmask = 0
+		self.top.gnd.setLayoutMask(gndBitmask)
 
 	def progressMeterInit(self, message, nrSteps):
 		self.progressNrSteps = nrSteps

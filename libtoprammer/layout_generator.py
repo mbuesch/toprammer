@@ -86,6 +86,12 @@ class LayoutGenerator:
 				return
 		raise TOPException("Did not find a possible valid layout for the setup")
 
+	def getBitmasks(self):
+		"Returns a tuple of (vccxBitmask, vppBitmask, gndBitmask)."
+		return (self.result_vccxBitmask,
+			self.result_vppBitmask,
+			self.result_gndBitmask)
+
 class LayoutGeneratorDIP(LayoutGenerator):
 	"Layout generator for DIP packages."
 
@@ -191,3 +197,14 @@ class LayoutGeneratorDIP(LayoutGenerator):
 					ret += ","
 				ret += str(bit + 1)
 		return ret
+
+def createLayoutGenerator(package):
+	p = package.upper()
+	try:
+		if p.startswith("DIP"):
+			nrPins = int(p[3:])
+			return LayoutGeneratorDIP(nrPins)
+		else:
+			raise ValueError()
+	except (ValueError), e:
+		raise TOPException("Unknown package type " + package)

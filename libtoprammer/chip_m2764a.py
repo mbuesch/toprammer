@@ -29,13 +29,18 @@ class M2764A(Chip):
 	STAT_BUSY	= 0x01 # Programmer is running a command
 
 	def __init__(self):
-		Chip.__init__(self, "m2764a", broken=True)
+		Chip.__init__(self, "m2764a",
+			      chipPackage = "DIP28",
+			      chipPinVCCX = 28,
+			      chipPinVPP = 1,
+			      chipPinGND = 14,
+			      broken=True)
 
 	def initializeChip(self):
 		self.printDebug("Initializing chip")
-		self.top.vccx.setLayoutMask(0)
-		self.top.vpp.setLayoutMask(0)
-		self.top.gnd.setLayoutPins( [] )
+		self.applyVCCX(False)
+		self.applyVPP(False)
+		self.applyGND(False)
 		self.top.queueCommand("\x0E\x28\x01\x00")
 		self.top.cmdSetVCCXVoltage(5)
 		self.top.cmdSetVPPVoltage(0)
@@ -45,16 +50,16 @@ class M2764A(Chip):
 		self.printDebug("Shutdown chip")
 		self.top.cmdSetVCCXVoltage(5)
 		self.top.cmdSetVPPVoltage(5)
-		self.top.vccx.setLayoutMask(0)
-		self.top.vpp.setLayoutMask(0)
-		self.top.gnd.setLayoutPins( [] )
+		self.applyVCCX(False)
+		self.applyVPP(False)
+		self.applyGND(False)
 
 	def readEEPROM(self):
 		self.top.cmdSetVCCXVoltage(5)
 		self.top.cmdSetVPPVoltage(5)
-		self.top.vccx.setLayoutPins( (38,) )
-		self.top.vpp.setLayoutPins( (5, 6, 7, 9, 11) )
-		self.top.gnd.setLayoutPins( (24,) )
+		self.applyVCCX(True)
+		self.applyVPP(True)
+		self.applyGND(True)
 
 		image = ""
 		self.progressMeterInit("Reading EPROM", 0x2000)
@@ -74,9 +79,9 @@ class M2764A(Chip):
 
 		self.top.cmdSetVCCXVoltage(5)
 		self.top.cmdSetVPPVoltage(12)
-		self.top.vccx.setLayoutPins( (38,) )
-		self.top.vpp.setLayoutPins( (5, 6, 7, 9, 11) )
-		self.top.gnd.setLayoutPins( (24,) )
+		self.applyVCCX(True)
+		self.applyVPP(True)
+		self.applyGND(True)
 
 		self.progressMeterInit("Writing EPROM", 0x2000)
 		self.__setEG(E=1, G=1)

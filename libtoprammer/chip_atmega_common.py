@@ -35,18 +35,20 @@ class Chip_ATMega_common(Chip):
 	CMD_READFLASH		= 0x02 # Read Flash
 	CMD_READEEPROM		= 0x03 # Read EEPROM
 
-	def __init__(self, chipID, signature,
+	def __init__(self, chipID,
+		     chipPackage, chipPinVCCX, chipPinVPP, chipPinGND,
+		     signature,
 		     presenceCheckLayout,
-		     GNDLayout, VCCXLayout, VPPLayout,
 		     flashPageSize, flashPages,
 		     eepromPageSize, eepromPages,
 		    ):
-		Chip.__init__(self, chipID)
+		Chip.__init__(self, chipID = chipID,
+			      chipPackage = chipPackage,
+			      chipPinVCCX = chipPinVCCX,
+			      chipPinVPP = chipPinVPP,
+			      chipPinGND = chipPinGND)
 		self.signature = signature
 		self.presenceCheckLayout = presenceCheckLayout
-		self.GNDLayout = GNDLayout		# List of GND ZIF pins
-		self.VCCXLayout = VCCXLayout		# List of VCCX ZIF pins
-		self.VPPLayout = VPPLayout		# List of VPP ZIF pins
 		self.flashPageSize = flashPageSize	# Flash page size, in words
 		self.flashPages = flashPages		# Nr of flash pages
 		self.eepromPageSize = eepromPageSize	# EEPROM page size, in bytes
@@ -55,9 +57,9 @@ class Chip_ATMega_common(Chip):
 
 	def initializeChip(self):
 		self.printDebug("Initializing chip")
-		self.top.gnd.setLayoutPins(self.GNDLayout)
-		self.top.vccx.setLayoutPins( [] )
-		self.top.vpp.setLayoutPins( [] )
+		self.applyGND(True)
+		self.applyVCCX(False)
+		self.applyVPP(False)
 		self.top.cmdSetVCCXVoltage(5)
 		self.top.cmdSetVPPVoltage(0)
 		self.top.cmdSetVPPVoltage(12)
@@ -66,9 +68,9 @@ class Chip_ATMega_common(Chip):
 		self.printDebug("Shutdown chip")
 		self.top.cmdSetVCCXVoltage(5)
 		self.top.cmdSetVPPVoltage(5)
-		self.top.vccx.setLayoutPins( [] )
-		self.top.vpp.setLayoutPins( [] )
-		self.top.gnd.setLayoutPins( [] )
+		self.applyVCCX(False)
+		self.applyVPP(False)
+		self.applyGND(False)
 
 	def readSignature(self):
 		self.__initPins()
@@ -250,13 +252,13 @@ class Chip_ATMega_common(Chip):
 
 	def __initPins(self):
 		"""Initialize the pin voltages and logic."""
-		self.top.vpp.setLayoutPins( [] )
-		self.top.vccx.setLayoutPins( [] )
+		self.applyVPP(False)
+		self.applyVCCX(False)
 		self.top.queueCommand("\x0E\x28\x01\x00")
 		self.top.cmdFPGAWrite(0x1B, 0x00)
 		self.top.cmdSetVPPVoltage(0)
 		self.top.cmdSetVPPVoltage(12)
-		self.top.gnd.setLayoutPins(self.GNDLayout)
+		self.applyGND(True)
 		self.top.cmdSetVCCXVoltage(4.4)
 
 		self.__setXA0(0)
@@ -265,8 +267,8 @@ class Chip_ATMega_common(Chip):
 		self.__setWR(0)
 		self.top.flushCommands()
 
-		self.top.gnd.setLayoutPins(self.GNDLayout)
-		self.top.vccx.setLayoutPins(self.VCCXLayout)
+		self.applyGND(True)
+		self.applyVCCX(True)
 
 		self.top.cmdFPGAReadRaw(0x16)
 		self.top.cmdFPGAReadRaw(0x17)
@@ -299,7 +301,7 @@ class Chip_ATMega_common(Chip):
 		self.top.queueCommand("\x19")
 		self.top.flushCommands()
 
-		self.top.vpp.setLayoutPins(self.VPPLayout)
+		self.applyVPP(True)
 
 		self.top.queueCommand("\x34")
 		self.top.cmdFPGAWrite(0x12, 0x88)

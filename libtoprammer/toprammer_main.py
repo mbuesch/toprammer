@@ -42,8 +42,9 @@ import top2049.gnd_layouts
 from chip_atmega32dip40 import *
 from chip_atmega8dip28 import *
 from chip_atmega88dip28 import *
-from chip_m8cissp import *
+from chip_attiny26dip20 import *
 from chip_m2764a import *
+from chip_m8cissp import *
 from chip_unitest import *
 
 
@@ -286,6 +287,10 @@ class TOP:
 		self.printDebug("Writing %d bytes of lock-bits to chip..." % len(image))
 		self.chip.writeLockbits(image)
 		self.printDebug("Done writing image.")
+
+	def printZIFLayout(self):
+		"""Prints the required ZIF layout."""
+		print self.chip.generator.zifLayoutAsciiArt()
 
 	def cmdFlush(self, count=1):
 		"""Send 'count' flush requests."""

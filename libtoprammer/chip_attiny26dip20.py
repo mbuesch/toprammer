@@ -1,7 +1,7 @@
 """
 #    TOP2049 Open Source programming suite
 #
-#    Atmel Mega8 DIP28 support
+#    Atmel Tiny26 DIP20 support
 #
 #    Copyright (c) 2009-2010 Michael Buesch <mb@bu3sch.de>
 #
@@ -23,19 +23,19 @@
 from chip_atmega_common import *
 
 
-class Chip_ATMega8DIP28(Chip_ATMega_common):
+class Chip_ATTiny26DIP20(Chip_ATMega_common):
 	def __init__(self):
 		Chip_ATMega_common.__init__(self,
-			chipID = "atmega8dip28",
-			chipPackage = "DIP28",
-			chipPinVCCX = 7,
-			chipPinVPP = 1,
-			chipPinGND = 8,
-			signature = "\x1E\x93\x07",
-			presenceCheckLayout = 0x00031F801000,
-			flashPageSize = 32,
-			flashPages = 128,
+			chipID = "attiny26dip20",
+			chipPackage = "DIP20",
+			chipPinVCCX = 5,
+			chipPinVPP = 10,
+			chipPinGND = 6,
+			signature = "\x1E\x91\x09",
+			presenceCheckLayout = 0x00031F801000,#FIXME
+			flashPageSize = 16,
+			flashPages = 64,
 			eepromPageSize = 4,
-			eepromPages = 128)
+			eepromPages = 32)
 
-supportedChips.append(Chip_ATMega8DIP28())
+supportedChips.append(Chip_ATTiny26DIP20())

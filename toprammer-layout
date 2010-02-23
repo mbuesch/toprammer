@@ -58,12 +58,7 @@ def main(argv):
 			if o in ("-d", "--device"):
 				programmer = v
 			if o in ("-p", "--package"):
-				if v.upper().startswith("DIP"):
-					nrPins = int(v[3:])
-					generator = LayoutGeneratorDIP(nrPins)
-				else:
-					print "Unknown package type\n"
-					raise ValueError()
+				generator = createLayoutGenerator(v)
 			if o in ("-v", "--vccx"):
 				vccxPin = int(v)
 			if o in ("-P", "--vpp"):

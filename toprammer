@@ -51,6 +51,9 @@ def usage():
 	print " -l|--read-lock FILE     Read the lock bits"
 	print " -L|--write-lock FILE    Write the lock bits"
 	print ""
+	print " -a|--layout-ascii-art   Print an ascii-art of how to insert the"
+	print "                         chip into the programmer."
+	print ""
 	print "Optional:"
 	print " -t|--list               Print a list of supported chips and exit"
 	print " -d|--device BUS.DEV     Use the programmer at BUS.DEV"
@@ -229,11 +232,11 @@ def main(argv):
 	opt_outformat = "bin"
 	try:
 		(opts, args) = getopt.getopt(sys.argv[1:],
-			"hb:d:V:Qs:xp:P:e:E:f:F:o:l:L:BtI:O:",
+			"hb:d:V:Qs:xp:P:e:E:f:F:o:l:L:BtI:O:a",
 			[ "help", "bitfile=", "device=", "verbose=", "noqueue",
 			  "read-sig=", "erase", "read-prog=", "write-prog=",
 			  "read-eeprom=", "write-eeprom=", "read-fuse=", "write-fuse=",
-			  "read-lock=", "write-lock=",
+			  "read-lock=", "write-lock=", "layout-ascii-art",
 			  "force=", "broken", "list", "in-format=", "out-format=", ])
 		for (o, v) in opts:
 			if o in ("-h", "--help"):
@@ -293,6 +296,8 @@ def main(argv):
 			if o in ("-L", "--write-lock"):
 				opt_action = "write-lock"
 				opt_file = v
+			if o in ("-a", "--layout-ascii-art"):
+				opt_action = "print-layout"
 	except (getopt.GetoptError, ValueError), e:
 		usage()
 		return 1
@@ -338,6 +343,8 @@ def main(argv):
 			fileOut(opt_file, opt_outformat, top.readLockbits())
 		elif opt_action == "write-lock":
 			top.writeLockbits(fileIn(opt_file, opt_informat))
+		elif opt_action == "print-layout":
+			top.printZIFLayout()
 		else:
 			assert(0)
 		top.shutdown()
