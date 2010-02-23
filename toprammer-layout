@@ -23,6 +23,7 @@
 
 from libtoprammer.layout_generator import *
 from libtoprammer.toprammer_main import *
+from libtoprammer.chip import *
 import getopt
 import sys
 
@@ -36,6 +37,8 @@ def usage():
 	print " -d|--device TOPxxxx    The TOPxxxx device that is used."
 	print "                        Possible choices are: TOP2049"
 	print " -p|--package DIPxx     The package type of the DUT."
+	print "                        Package may also be the name of a supported chip."
+	print "                        In this case, --vccx, --vpp and --gnd are ignored."
 	print " -v|--vccx PIN          Set VCCX pin, relative to the package."
 	print " -P|--vpp PIN           Set VPP pin, relative to the package."
 	print " -g|--gnd PIN           Set GND pin, relative to the package."
@@ -46,6 +49,7 @@ def usage():
 def main(argv):
 	programmer = None
 	generator = None
+	chip = None
 	vccxPin = None
 	vppPin = None
 	gndPin = None
@@ -60,7 +64,9 @@ def main(argv):
 			if o in ("-d", "--device"):
 				programmer = v
 			if o in ("-p", "--package"):
-				generator = createLayoutGenerator(v)
+				chip = chipFind(v)
+				if not chip:
+					generator = createLayoutGenerator(v)
 			if o in ("-v", "--vccx"):
 				vccxPin = int(v)
 			if o in ("-P", "--vpp"):
@@ -70,12 +76,14 @@ def main(argv):
 		if not programmer:
 			print "-d|--device is mandatory!\n"
 			raise ValueError()
-		if not generator:
+		if not generator and not chip:
 			print "-p|--package is mandatory!\n"
 			raise ValueError()
-		if vccxPin is None or vppPin is None or gndPin is None:
-			print "-v|--vccx,  -p|--vpp  and  -g|--gnd  are mandatory!\n"
-			raise ValueError()
+		if generator:
+			if vccxPin is None or vppPin is None or gndPin is None:
+				print "-v|--vccx,  -p|--vpp  and  -g|--gnd  " +\
+					"are mandatory, if a package type is specified.\n"
+				raise ValueError()
 	except (getopt.GetoptError, ValueError, KeyError), e:
 		usage()
 		return 1
@@ -83,9 +91,12 @@ def main(argv):
 		print e
 		return 1
 	try:
-		generator.setProgrammerType(programmer.upper())
-		generator.setPins(vccxPin, vppPin, gndPin)
-		generator.recalculate()
+		if chip:
+			generator = chip.generator
+		else:
+			generator.setProgrammerType(programmer.upper())
+			generator.setPins(vccxPin, vppPin, gndPin)
+			generator.recalculate()
 		print "Chip insert layout:\n"
 		print generator.zifLayoutAsciiArt()
 		print "\nSupply voltage pins on the ZIF:\n"
