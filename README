@@ -9,8 +9,14 @@
 === DEPENDENCIES ===
 
 * Python 2.5 or Python 2.6 is required
+  http://python.org/
+
 * python-usb module is required
+  http://sourceforge.net/apps/mediawiki/pyusb/index.php?title=Main_Page
+
 * python-pkg-resources module is required
+  'pkg_resources' is part of the Python 'setuptools' package.
+  http://pypi.python.org/pypi/setuptools
 
 
 

@@ -23,6 +23,7 @@ try:
 	import pkg_resources
 except ImportError:
 	print "Failed to import the 'pkg_resources' Python module."
+	print "'pkg_resources' is part of the Python 'setuptools' package."
 	print "On Debian Linux run:  apt-get install python-pkg-resources"
 	sys.exit(1)
 
