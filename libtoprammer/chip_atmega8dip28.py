@@ -32,7 +32,7 @@ class Chip_ATMega8DIP28(Chip_ATMega_common):
 			chipPinVPP = 1,
 			chipPinGND = 8,
 			signature = "\x1E\x93\x07",
-			presenceCheckLayout = 0x00031F801000,
+			presenceCheckLayout = 0x00031F801400,
 			flashPageSize = 32,
 			flashPages = 128,
 			eepromPageSize = 4,

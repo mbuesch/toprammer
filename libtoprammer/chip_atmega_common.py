@@ -254,7 +254,7 @@ class Chip_ATMega_common(Chip):
 		"""Initialize the pin voltages and logic."""
 		self.applyVPP(False)
 		self.applyVCCX(False)
-		self.top.queueCommand("\x0E\x28\x01\x00")
+		self.top.queueCommand("\x0E\x28\x00\x00")
 		self.top.cmdFPGAWrite(0x1B, 0x00)
 		self.top.cmdSetVPPVoltage(0)
 		self.top.cmdSetVPPVoltage(12)
@@ -267,6 +267,7 @@ class Chip_ATMega_common(Chip):
 		self.__setWR(0)
 		self.top.flushCommands()
 
+		self.top.queueCommand("\x0E\x28\x01\x00")
 		self.applyGND(True)
 		self.applyVCCX(True)
 
@@ -284,6 +285,7 @@ class Chip_ATMega_common(Chip):
 			else:
 				self.throwError(msg)
 
+		self.top.queueCommand("\x0E\x28\x00\x00")
 		self.top.queueCommand("\x19")
 		self.__setReadMode(0)
 		self.top.queueCommand("\x34")
@@ -302,6 +304,7 @@ class Chip_ATMega_common(Chip):
 		self.top.flushCommands()
 
 		self.applyVPP(True)
+		self.top.queueCommand("\x0E\x28\x01\x00")
 
 		self.top.queueCommand("\x34")
 		self.top.cmdFPGAWrite(0x12, 0x88)
