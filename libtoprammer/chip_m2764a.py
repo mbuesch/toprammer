@@ -33,8 +33,7 @@ class M2764A(Chip):
 			      chipPackage = "DIP28",
 			      chipPinVCCX = 28,
 			      chipPinVPP = 1,
-			      chipPinGND = 14,
-			      broken=True)
+			      chipPinGND = 14)
 
 	def initializeChip(self):
 		self.printDebug("Initializing chip")
