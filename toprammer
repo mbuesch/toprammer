@@ -89,6 +89,8 @@ class IO_ihex:
 
 	def toBinary(self, ihexData):
 		bin = []
+		checksumWarned = False
+		doublewriteWarned = False
 		try:
 			lines = ihexData.splitlines()
 			hiAddr = 0
@@ -111,8 +113,9 @@ class IO_ihex:
 					byte = int(line[i:i+2], 16)
 					checksum = (checksum + byte) & 0xFF
 				checksum = checksum & 0xFF
-				if checksum != 0:
-					raise TOPException("Invalid IHEX format (checksum error)")
+				if checksum != 0 and not checksumWarned:
+					checksumWarned = True
+					print "WARNING: Invalid IHEX format (checksum error)"
 
 				if type == self.TYPE_EOF:
 					break
@@ -123,11 +126,13 @@ class IO_ihex:
 					continue
 				if type == self.TYPE_DATA:
 					if len(bin) < addr + count: # Reallocate
-						bin += ['\0'] * (addr + count - len(bin))
+						bin += ['\xFF'] * (addr + count - len(bin))
 					for i in range(9, 9 + count * 2, 2):
 						byte = chr(int(line[i:i+2], 16))
-						if bin[(i - 9) / 2 + addr] != '\0':
-							raise TOPException("Invalid IHEX format (corruption)")
+						if bin[(i - 9) / 2 + addr] != '\xFF' and \
+						   not doublewriteWarned:
+							doublewriteWarned = True
+							print "Invalid IHEX format (Wrote twice to same location)"
 						bin[(i - 9) / 2 + addr] = byte
 					continue
 				raise TOPException("Invalid IHEX format (unsup type %d)" % type)
