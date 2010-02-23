@@ -106,7 +106,7 @@ class Chip_ATMega_common(Chip):
 					readWords = 0
 			if readWords:
 				data = self.top.cmdReadStatusReg()
-				image += data[0:readWords]
+				image += data[0:readWords*2]
 		self.progressMeterFinish()
 		return image
 
