@@ -1,0 +1,10 @@
+#!/bin/bash
+
+function test_run
+{
+	# Run some very basic tests
+	toprammer -h
+	toprammer --help
+	toprammer -t
+	toprammer --list
+}
