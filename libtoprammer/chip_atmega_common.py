@@ -41,12 +41,14 @@ class Chip_ATMega_common(Chip):
 		     presenceCheckLayout,
 		     flashPageSize, flashPages,
 		     eepromPageSize, eepromPages,
+		     broken=False
 		    ):
 		Chip.__init__(self, chipID = chipID,
 			      chipPackage = chipPackage,
 			      chipPinVCCX = chipPinVCCX,
 			      chipPinVPP = chipPinVPP,
-			      chipPinGND = chipPinGND)
+			      chipPinGND = chipPinGND,
+			      broken = broken)
 		self.signature = signature
 		self.presenceCheckLayout = presenceCheckLayout
 		self.flashPageSize = flashPageSize	# Flash page size, in words
