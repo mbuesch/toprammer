@@ -45,6 +45,8 @@ def usage():
 	print ""
 	print "Optional:"
 	print " -h|--help              Print this help text"
+	print " -I|--only-insert       Only show insert-layout"
+	print " -S|--only-supply       Only show supply-layout"
 
 def main(argv):
 	programmer = None
@@ -53,10 +55,13 @@ def main(argv):
 	vccxPin = None
 	vppPin = None
 	gndPin = None
+	showInsert = True
+	showSupply = True
 	try:
 		(opts, args) = getopt.getopt(argv[1:],
-			"d:p:hv:P:g:",
-			[ "help", "device=", "package=", "vccx=", "vpp=", "gnd=", ])
+			"d:p:hv:P:g:IS",
+			[ "help", "device=", "package=", "vccx=", "vpp=", "gnd=",
+			  "only-insert", "only-supply", ])
 		for (o, v) in opts:
 			if o in ("-h", "--help"):
 				usage()
@@ -73,6 +78,12 @@ def main(argv):
 				vppPin = int(v)
 			if o in ("-g", "--gnd"):
 				gndPin = int(v)
+			if o in ("-I", "--only-insert"):
+				showInsert = True
+				showSupply = False
+			if o in ("-S", "--only-supply"):
+				showInsert = False
+				showSupply = True
 		if not programmer:
 			print "-d|--device is mandatory!\n"
 			raise ValueError()
@@ -97,10 +108,12 @@ def main(argv):
 			generator.setProgrammerType(programmer.upper())
 			generator.setPins(vccxPin, vppPin, gndPin)
 			generator.recalculate()
-		print "Chip insert layout:\n"
-		print generator.zifLayoutAsciiArt()
-		print "\nSupply voltage pins on the ZIF:\n"
-		print generator.zifPinAssignments()
+		if showInsert:
+			print "Chip insert layout:\n"
+			print generator.zifLayoutAsciiArt()
+		if showSupply:
+			print "\nSupply voltage pins on the ZIF:\n"
+			print generator.zifPinAssignments()
 	except (TOPException), e:
 		print e
 		return 1
