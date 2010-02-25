@@ -20,6 +20,9 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
+from libtoprammer.util import *
+
+
 class ShiftregLayout:
 	def __init__(self, nrShiftRegs):
 		assert(nrShiftRegs <= 4)
@@ -81,16 +84,15 @@ class ShiftregLayout:
 		for zifPin in zifPinsList:
 			assert(zifPin >= 1)
 			zifMask |= (1 << (zifPin - 1))
-		return self.setLayoutMask(zifMask)
+		self.setLayoutMask(zifMask)
 
 	def setLayoutMask(self, zifMask):
 		"Load a ZIF mask."
 		for (layoutId, layoutMask) in self.layouts:
 			if layoutMask == zifMask:
 				self.setLayoutID(layoutId)
-				return True
-		raise Exception()
-		#return False
+				return
+		raise TOPException("Layout mask impossible due to hardware constraints")
 
 	def setLayoutID(self, id):
 		"Load a specific layout ID."
