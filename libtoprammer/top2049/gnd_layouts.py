@@ -40,6 +40,22 @@ class GNDLayout:
 				mask |= (1 << (pin - 1))
 			self.layouts.append( (id, mask) )
 
+	def __repr__(self):
+		res = ""
+		for (id, zif_mask) in self.supportedLayouts():
+			res += "Layout %d:\n" % id
+			res += "        o---------o\n"
+			for pin in range(1, 25):
+				left = "     "
+				right = ""
+				if (1 << (pin - 1)) & zif_mask:
+					left = "HOT >"
+				if (1 << (49 - pin - 1)) & zif_mask:
+					right = "< HOT"
+				res += "%s   | %2d | %2d |   %s\n" % (left, pin, 49 - pin, right)
+			res += "        o---------o\n\n"
+		return res
+
 	def supportedLayouts(self):
 		"""Returns a list of supported layouts.
 		Each entry is a tuple of (id, bitmask), where bitmask is
@@ -66,3 +82,7 @@ class GNDLayout:
 	def setLayoutID(self, id):
 		"Load a specific layout ID."
 		self.top.cmdLoadGNDLayout(id)
+
+if __name__ == "__main__":
+	print "ZIF socket GND layouts"
+	print GNDLayout()
