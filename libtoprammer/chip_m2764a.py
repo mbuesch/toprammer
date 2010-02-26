@@ -63,9 +63,15 @@ class M2764A(Chip):
 		image = ""
 		self.progressMeterInit("Reading EPROM", 0x2000)
 		self.__setEG(E=1, G=1)
+		byteCount = 0
 		for addr in range(0, 0x2000):
 			self.progressMeter(addr)
-			image += self.__readData(addr)
+			self.__readDataToStatusReg(addr)
+			byteCount += 1
+			if byteCount == 64:
+				image += self.top.cmdReadStatusReg()
+				byteCount = 0
+		assert(byteCount == 0)
 		self.__setEG(E=1, G=1)
 		self.progressMeterFinish()
 
@@ -92,12 +98,10 @@ class M2764A(Chip):
 		self.__setEG(E=1, G=1)
 		self.progressMeterFinish()
 
-	def __readData(self, addr):
+	def __readDataToStatusReg(self, addr):
 		self.__loadAddr(addr)
 		self.__setEG(E=0, G=0)
 		self.top.cmdFPGAReadByte()
-		stat = self.top.cmdReadStatusReg()
-		return stat[0]
 
 	def __writeData(self, addr, data):
 		self.__setEG(E=0, G=1)
@@ -106,7 +110,9 @@ class M2764A(Chip):
 		self.__loadPPulseLen(1)
 		self.__runCommandSync(self.PROGCMD_PPULSE)
 		for i in range(0, 25):
-			r = ord(self.__readData(addr))
+			self.__readDataToStatusReg(addr)
+			stat = self.top.cmdReadStatusReg()
+			r = ord(stat[0])
 			if r == data:
 				break
 			self.__setEG(E=0, G=1)
