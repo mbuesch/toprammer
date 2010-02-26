@@ -1,7 +1,7 @@
 """
 #    TOP2049 Open Source programming suite
 #
-#    TOP2049 Shiftregister based layout definitions
+#    Generic ZIF socket voltage layout
 #
 #    Copyright (c) 2010 Michael Buesch <mb@bu3sch.de>
 #
@@ -23,51 +23,24 @@
 from libtoprammer.util import *
 
 
-class ShiftregLayout:
-	def __init__(self, nrShiftRegs):
-		assert(nrShiftRegs <= 4)
-		self.nrShiftRegs = nrShiftRegs
-		self.layouts = []
-		for id in range(0, len(self.shiftreg_masks)):
-			shreg_mask = self.shiftreg_masks[id]
-			zif_mask = 0
-			for bit in range(0, self.nrShiftRegs * 8):
-				if (shreg_mask & (1 << bit)) == 0:
-					continue
-				regId = self.__bitnr2shregId(bit)
-				zifPin = self.shreg2zif_map[regId]
-				zif_mask |= (1 << (zifPin - 1))
-			if id == 0 or zif_mask != 0:
-				self.layouts.append( (id, zif_mask) )
-
-	def __bitnr2shregId(self, bitNr):
-		if bitNr >= 24:
-			register = 3
-			pin = bitNr - 24
-		elif bitNr >= 16:
-			register = 2
-			pin = bitNr - 16
-		elif bitNr >= 8:
-			register = 1
-			pin = bitNr - 8
-		else:
-			register = 0
-			pin = bitNr
-		return "%d.%d" % (register, pin)
+class GenericLayout:
+	def __init__(self, nrZifPins):
+		self.nrZifPins = nrZifPins
 
 	def __repr__(self):
 		res = ""
 		for (id, zif_mask) in self.supportedLayouts():
 			res += "Layout %d:\n" % id
 			res += "        o---------o\n"
-			for pin in range(1, 25):
+			for pin in range(1, self.nrZifPins // 2 + 1):
 				left = "     "
 				right = ""
 				if (1 << (pin - 1)) & zif_mask:
 					left = "HOT >"
-				if (1 << (49 - pin - 1)) & zif_mask:
+				if (1 << (self.nrZifPins - pin)) & zif_mask:
 					right = "< HOT"
-				res += "%s   | %2d | %2d |   %s\n" % (left, pin, 49 - pin, right)
+				res += "%s   | %2d | %2d |   %s\n" % \
+					(left, pin, self.nrZifPins + 1 - pin, right)
 			res += "        o---------o\n\n"
 		return res
 
@@ -75,7 +48,8 @@ class ShiftregLayout:
 		"""Returns a list of supported layouts.
 		Each entry is a tuple of (id, bitmask), where bitmask is
 		the ZIF layout. bit0 is ZIF-pin-1. A bit set means a hot pin."""
-		return self.layouts
+		# Reimplement me in the subclass
+		raise Exception()
 
 	def setLayoutPins(self, zifPinsList):
 		"""Load a layout. zifPinsList is a list of hot ZIF pins.
@@ -88,7 +62,7 @@ class ShiftregLayout:
 
 	def setLayoutMask(self, zifMask):
 		"Load a ZIF mask."
-		for (layoutId, layoutMask) in self.layouts:
+		for (layoutId, layoutMask) in self.supportedLayouts():
 			if layoutMask == zifMask:
 				self.setLayoutID(layoutId)
 				return

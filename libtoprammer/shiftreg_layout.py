@@ -1,7 +1,7 @@
 """
 #    TOP2049 Open Source programming suite
 #
-#    TOP2049 GND layout definitions
+#    TOP2049 Shiftregister based layout definitions
 #
 #    Copyright (c) 2010 Michael Buesch <mb@bu3sch.de>
 #
@@ -20,36 +20,41 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-import sys
-if __name__ == "__main__":
-	sys.path.insert(0, sys.path[0] + "/../..")
 from libtoprammer.generic_layout import *
 
 
-class GNDLayout(GenericLayout):
-	# A list of valid ZIF GND pins (0=none)
-	validPins = (0, 5, 14, 15, 16, 17, 18, 19, 20, 24, 26, 27,
-		28, 29, 33, 34, 35)
-
-	def __init__(self, top=None):
-		GenericLayout.__init__(self, nrZifPins=48)
-		self.top = top
+class ShiftregLayout(GenericLayout):
+	def __init__(self, nrZifPins, nrShiftRegs):
+		GenericLayout.__init__(self, nrZifPins)
+		assert(nrShiftRegs <= 4)
+		self.nrShiftRegs = nrShiftRegs
 		self.layouts = []
-		for pin in self.validPins:
-			id = pin
-			if id != 0:
-				id -= 4
-			mask = 0
-			if pin != 0:
-				mask |= (1 << (pin - 1))
-			self.layouts.append( (id, mask) )
+		for id in range(0, len(self.shiftreg_masks)):
+			shreg_mask = self.shiftreg_masks[id]
+			zif_mask = 0
+			for bit in range(0, self.nrShiftRegs * 8):
+				if (shreg_mask & (1 << bit)) == 0:
+					continue
+				regId = self.__bitnr2shregId(bit)
+				zifPin = self.shreg2zif_map[regId]
+				zif_mask |= (1 << (zifPin - 1))
+			if id == 0 or zif_mask != 0:
+				self.layouts.append( (id, zif_mask) )
+
+	def __bitnr2shregId(self, bitNr):
+		if bitNr >= 24:
+			register = 3
+			pin = bitNr - 24
+		elif bitNr >= 16:
+			register = 2
+			pin = bitNr - 16
+		elif bitNr >= 8:
+			register = 1
+			pin = bitNr - 8
+		else:
+			register = 0
+			pin = bitNr
+		return "%d.%d" % (register, pin)
 
 	def supportedLayouts(self):
 		return self.layouts
-
-	def setLayoutID(self, id):
-		self.top.cmdLoadGNDLayout(id)
-
-if __name__ == "__main__":
-	print "ZIF socket GND layouts"
-	print GNDLayout()

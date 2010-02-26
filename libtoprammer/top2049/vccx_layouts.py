@@ -20,7 +20,11 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from shiftreg_layout import *
+import sys
+if __name__ == "__main__":
+	sys.path.insert(0, sys.path[0] + "/../..")
+from libtoprammer.shiftreg_layout import *
+
 
 class VCCXLayout(ShiftregLayout):
 	# "shiftreg_masks" is a dump of the VCCX shiftregister states. The array index
@@ -131,7 +135,7 @@ class VCCXLayout(ShiftregLayout):
 	}
 
 	def __init__(self, top=None):
-		ShiftregLayout.__init__(self, 3)
+		ShiftregLayout.__init__(self, nrZifPins=48, nrShiftRegs=3)
 		self.top = top
 
 	def minVoltage(self):
