@@ -48,10 +48,14 @@ class LayoutGenerator:
 		self.gndLayout = gnd_layouts.GNDLayout()
 		self.zifPins = zifPins
 
-	def setPins(self, vccxPin, vppPin, gndPin):
-		"Load the supply pin locations"
+	def setPins(self, vccxPin, vppPins, gndPin):
+		"""Load the supply pin locations.
+		vppPins may either be one pin number or a list of pin numbers."""
 		self.vccxPin = vccxPin
-		self.vppPin = vppPin
+		try:
+			self.vppPins = list(vppPins)
+		except TypeError:
+			self.vppPins = [ vppPins, ]
 		self.gndPin = gndPin
 		self.verifyPins()
 
@@ -106,8 +110,9 @@ class LayoutGeneratorDIP(LayoutGenerator):
 			raise TOPException("Invalid DIP package")
 		if self.vccxPin < 1 or self.vccxPin > self.nrPins:
 			raise TOPException("Invalid VCCX pin number for the selected package")
-		if self.vppPin < 1 or self.vppPin > self.nrPins:
-			raise TOPException("Invalid VPP pin number for the selected package")
+		for vppPin in self.vppPins:
+			if vppPin < 1 or vppPin > self.nrPins:
+				raise TOPException("Invalid VPP pin number for the selected package")
 		if self.gndPin < 1 or self.gndPin > self.nrPins:
 			raise TOPException("Invalid GND pin number for the selected package")
 
@@ -119,7 +124,10 @@ class LayoutGeneratorDIP(LayoutGenerator):
 			raise self.MapError()
 		#print "Probing offset " + str(offset) + " upside-down=" + str(upsideDown)
 		zifVccx = self.__pin2zif(self.vccxPin, offset, upsideDown)
-		zifVpp = self.__pin2zif(self.vppPin, offset, upsideDown)
+		zifVppMask = 0
+		for vppPin in self.vppPins:
+			pin = self.__pin2zif(vppPin, offset, upsideDown)
+			zifVppMask |= (1 << (pin - 1))
 		zifGnd = self.__pin2zif(self.gndPin, offset, upsideDown)
 		for (id, vccxBitmask) in self.vccxLayout.supportedLayouts():
 			if (1 << (zifVccx - 1)) == vccxBitmask:
@@ -127,7 +135,7 @@ class LayoutGeneratorDIP(LayoutGenerator):
 		else:
 			raise self.MapError()
 		for (id, vppBitmask) in self.vppLayout.supportedLayouts():
-			if (1 << (zifVpp - 1)) & vppBitmask:
+			if (vppBitmask & zifVppMask) == zifVppMask:
 				break
 		else:
 			raise self.MapError()

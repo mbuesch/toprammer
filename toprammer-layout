@@ -40,7 +40,8 @@ def usage():
 	print "                        Package may also be the name of a supported chip."
 	print "                        In this case, --vccx, --vpp and --gnd are ignored."
 	print " -v|--vccx PIN          Set VCCX pin, relative to the package."
-	print " -P|--vpp PIN           Set VPP pin, relative to the package."
+	print " -P|--vpp PIN(s)        Set VPP pin(s), relative to the package."
+	print "                        May be one pin or a comma separated list of pins."
 	print " -g|--gnd PIN           Set GND pin, relative to the package."
 	print ""
 	print "Optional:"
@@ -53,7 +54,7 @@ def main(argv):
 	generator = None
 	chip = None
 	vccxPin = None
-	vppPin = None
+	vppPins = None
 	gndPin = None
 	showInsert = True
 	showSupply = True
@@ -75,7 +76,9 @@ def main(argv):
 			if o in ("-v", "--vccx"):
 				vccxPin = int(v)
 			if o in ("-P", "--vpp"):
-				vppPin = int(v)
+				vppPins = []
+				for v in v.split(","):
+					vppPins.append(int(v))
 			if o in ("-g", "--gnd"):
 				gndPin = int(v)
 			if o in ("-I", "--only-insert"):
@@ -91,7 +94,7 @@ def main(argv):
 			print "-p|--package is mandatory!\n"
 			raise ValueError()
 		if generator:
-			if vccxPin is None or vppPin is None or gndPin is None:
+			if vccxPin is None or not vppPins or gndPin is None:
 				print "-v|--vccx,  -p|--vpp  and  -g|--gnd  " +\
 					"are mandatory, if a package type is specified.\n"
 				raise ValueError()
@@ -106,7 +109,7 @@ def main(argv):
 			generator = chip.generator
 		else:
 			generator.setProgrammerType(programmer.upper())
-			generator.setPins(vccxPin, vppPin, gndPin)
+			generator.setPins(vccxPin, vppPins, gndPin)
 			generator.recalculate()
 		if showInsert:
 			print "Chip insert layout:\n"

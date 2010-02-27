@@ -28,7 +28,7 @@ supportedChips = []
 
 class Chip:
 	def __init__(self, chipID,
-		     chipPackage=None, chipPinVCCX=None, chipPinVPP=None, chipPinGND=None,
+		     chipPackage=None, chipPinVCCX=None, chipPinsVPP=None, chipPinGND=None,
 		     broken=False):
 		"""The chipID is the ID string from the bitfile.
 		chipPackage is the ID string for the package.
@@ -45,7 +45,7 @@ class Chip:
 			self.generator = createLayoutGenerator(chipPackage)
 			self.generator.setProgrammerType("TOP2049")#XXX Currently the only supported programmer
 			self.generator.setPins(vccxPin=chipPinVCCX,
-					       vppPin=chipPinVPP,
+					       vppPins=chipPinsVPP,
 					       gndPin=chipPinGND)
 			self.generator.recalculate()
 

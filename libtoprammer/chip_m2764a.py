@@ -32,7 +32,7 @@ class M2764A(Chip):
 		Chip.__init__(self, "m2764a",
 			      chipPackage = "DIP28",
 			      chipPinVCCX = 28,
-			      chipPinVPP = 1,
+			      chipPinsVPP = 1,
 			      chipPinGND = 14)
 
 	def initializeChip(self):

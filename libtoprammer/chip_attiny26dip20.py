@@ -29,7 +29,7 @@ class Chip_ATTiny26DIP20(Chip_ATMega_common):
 			chipID = "attiny26dip20",
 			chipPackage = "DIP20",
 			chipPinVCCX = 5,
-			chipPinVPP = 10,
+			chipPinsVPP = 10,
 			chipPinGND = 6,
 			signature = "\x1E\x91\x09",
 			presenceCheckLayout = 0x00031F801000,#FIXME

@@ -36,7 +36,7 @@ class Chip_ATMega_common(Chip):
 	CMD_READEEPROM		= 0x03 # Read EEPROM
 
 	def __init__(self, chipID,
-		     chipPackage, chipPinVCCX, chipPinVPP, chipPinGND,
+		     chipPackage, chipPinVCCX, chipPinsVPP, chipPinGND,
 		     signature,
 		     presenceCheckLayout,
 		     flashPageSize, flashPages,
@@ -46,7 +46,7 @@ class Chip_ATMega_common(Chip):
 		Chip.__init__(self, chipID = chipID,
 			      chipPackage = chipPackage,
 			      chipPinVCCX = chipPinVCCX,
-			      chipPinVPP = chipPinVPP,
+			      chipPinsVPP = chipPinsVPP,
 			      chipPinGND = chipPinGND,
 			      broken = broken)
 		self.signature = signature

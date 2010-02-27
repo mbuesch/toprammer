@@ -30,7 +30,7 @@ class Chip_ATMega32DIP40(Chip_ATMega_common):
 			chipID = "atmega32dip40",
 			chipPackage = "DIP40",
 			chipPinVCCX = 10,
-			chipPinVPP = 9,
+			chipPinsVPP = 9,
 			chipPinGND = 11,
 			signature = "\x1E\x95\x02",
 			presenceCheckLayout = 0x0043FF000000,

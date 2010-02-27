@@ -29,7 +29,7 @@ class Chip_ATMega8DIP28(Chip_ATMega_common):
 			chipID = "atmega8dip28",
 			chipPackage = "DIP28",
 			chipPinVCCX = 7,
-			chipPinVPP = 1,
+			chipPinsVPP = 1,
 			chipPinGND = 8,
 			signature = "\x1E\x93\x07",
 			presenceCheckLayout = 0x00031F801400,
