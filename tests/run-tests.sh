@@ -47,6 +47,18 @@ function toprammer
 	fi
 }
 
+function toprammer_layout_silent
+{
+	local args="$@"
+	local logfile="$tmpdir/toprammer-layout.log"
+	echo "        toprammer-layout $args"
+	$basedir/../toprammer-layout $args >$logfile 2>&1
+	if [ $? -ne 0 ]; then
+		[ -r "$logfile" ] && cat "$logfile"
+		die "toprammer-layout $args  <<<FAILED>>>"
+	fi
+}
+
 function toprammer_layout
 {
 	local args="$@"

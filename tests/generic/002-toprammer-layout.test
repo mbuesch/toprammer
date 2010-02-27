@@ -1,0 +1,9 @@
+#!/bin/bash
+
+function test_run
+{
+	# Some basic toprammer-layout tests
+	toprammer_layout_silent -h
+	toprammer_layout_silent --help
+	toprammer_layout_silent --device TOP2049 --package DIP28 --vccx 1 --vpp 2 --gnd 3
+}
