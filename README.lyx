@@ -1,0 +1,310 @@
+#LyX 1.5.5 created this file. For more info see http://www.lyx.org/
+\lyxformat 276
+\begin_document
+\begin_header
+\textclass article
+\language english
+\inputencoding auto
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\paperfontsize default
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Toprammer - TOPxxxx OpenSource suite
+\end_layout
+
+\begin_layout Author
+Copyright (c) 2009-2010 Michael Buesch <mb@bu3sch.de>
+\end_layout
+
+\begin_layout Section
+Dependencies
+\end_layout
+
+\begin_layout Itemize
+Python 2.5 or Python 2.6 is required
+\end_layout
+
+\begin_layout LyX-Code
+http://python.org/
+\end_layout
+
+\begin_layout Itemize
+python-usb module is required:
+\end_layout
+
+\begin_layout LyX-Code
+http://sourceforge.net/apps/mediawiki/pyusb/index.php?title=Main_Page
+\end_layout
+
+\begin_layout Itemize
+python-pkg-resources module is required 'pkg_resources' is part of the Python
+ 'setuptools' package.
+\end_layout
+
+\begin_layout LyX-Code
+http://pypi.python.org/pypi/setuptools
+\end_layout
+
+\begin_layout Section
+Supported chips
+\end_layout
+
+\begin_layout Standard
+\begin_inset Tabular
+<lyxtabular version="3" rows="5" columns="2">
+<features>
+<column alignment="center" valignment="top" leftline="true" width="0">
+<column alignment="center" valignment="top" leftline="true" rightline="true" width="0">
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Chip
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+State
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Atmel Mega32 DIP40
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+supported
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Atmel Mega8 DIP28
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+supported
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Atmel Mega88 DIP28
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+supported
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+m2764a EPROM
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+supported
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Installation
+\end_layout
+
+\begin_layout Standard
+Just execute
+\end_layout
+
+\begin_layout LyX-Code
+python setup.py install
+\end_layout
+
+\begin_layout Standard
+as root inside of the toprammer distribution package's root directory.
+ Note that 
+\begin_inset Quotes eld
+\end_inset
+
+setuptools
+\begin_inset Quotes erd
+\end_inset
+
+ have to be installed on your system.
+ See dependencies.
+\end_layout
+
+\begin_layout Section
+Usage
+\end_layout
+
+\begin_layout Standard
+A .BIT file is always needed to do operations on the inserted chip.
+ The .BIT file must match the chip.
+ For example, do do operations on an Atmel Mega8 DIP microcontroller, the
+ atmega8dip28.bit file is needed.
+ Prebuilt .BIT files can be found in the "libtoprammer/bit/" subdirectory.
+ Sourcecode for these .BIT files is located in "libtoprammer/bit/src/".
+ However, the full path to the .BIT file doesn't need to be specified to
+ the toprammer tool.
+ If you just pass the chip-name, toprammer will search for a matching .BIT
+ file in some standard search paths.
+ The .BIT file basically is the firmware that runs on the FPGA in the TOP
+ programmer.
+ See toprammer --help for device actions to read/write stuff from/to the
+ chip.
+\end_layout
+
+\begin_layout Standard
+Example: 
+\end_layout
+
+\begin_layout LyX-Code
+Checking which chips are supported:
+\end_layout
+
+\begin_layout LyX-Code
+  toprammer --list
+\end_layout
+
+\begin_layout LyX-Code
+
+\end_layout
+
+\begin_layout LyX-Code
+Reading the flash of an Atmel Mega8 DIP to the file flash.img:
+\end_layout
+
+\begin_layout LyX-Code
+  toprammer --bitfile atmega8dip28 --read-prog flash.img
+\end_layout
+
+\begin_layout Section
+ZIF socket layout generator
+\end_layout
+
+\begin_layout Standard
+The ZIF socket layout generator "toprammer-layout" will try to generate
+ a chip-insert layout with the given parameters and print it as ASCII-art
+ to the console.
+\end_layout
+
+\begin_layout Standard
+For example, if you have a DIP28 packaged chip, that needs VCC on pin 7,
+ VPP on pin 1 and GND on pin 8, you'd issue the following command:
+\end_layout
+
+\begin_layout LyX-Code
+toprammer-layout -d top2049 --package DIP28 --vccx 7 --vpp 1 --gnd 8
+\end_layout
+
+\begin_layout Standard
+This will show you a layout of how to insert the chip into the programmer.
+ It will also show which pins of the ZIF are powered.
+ This will hopefully match your request.
+ :) Alternatively, it will yield an error message, if it was unable to find
+ a layout that fits the contraints.
+ Note that the --vccx, --vpp and --gnd pins specified on the commandline
+ are with respect to the package (_not_ the ZIF socket).
+ The whole purpose of the tool is to map the package and its pin layout
+ to the ZIF socket, while obeying the programmer constraints.
+\end_layout
+
+\begin_layout Standard
+Alternatively you can specify one of the supported chip-IDs to toprammer-layout:
+\end_layout
+
+\begin_layout LyX-Code
+toprammer-layout -d top2049 --package atmega8dip28
+\end_layout
+
+\begin_layout Standard
+This will show you the layout of the AtMega8 DIP28.
+\end_layout
+
+\end_body
+\end_document
