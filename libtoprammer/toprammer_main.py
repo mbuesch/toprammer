@@ -19,7 +19,7 @@
 """
 
 VERSION_MAJOR	= 0
-VERSION_MINOR	= 2
+VERSION_MINOR	= 3
 VERSION = "%d.%d" % (VERSION_MAJOR, VERSION_MINOR)
 
 from bitfile import *
