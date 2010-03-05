@@ -699,5 +699,19 @@ applyGND(on) This method enables or disables (depending on the parameter)
  Disabling the layout will tristate the driver.
 \end_layout
 
+\begin_layout Description
+regenerateVoltageLayouts(chipPackage,chipPinVCCX,chipPinsVPP,chipPinGND)
+ This method lets you regenerate the voltage layouts.
+ That is useful, if you need to change one or more of the layouts for different
+ programming tasks.
+ For example it is common that VPP may be required on distinct pins for
+ different operations.
+ Note that it is not required to pass the auto-layout parameters to the
+ __init__() constructor, if you plan to use this method instead.
+ The parameters to this method match the parameters to the __init__() constructo
+r.
+ See above for a detailled description of these parameters.
+\end_layout
+
 \end_body
 \end_document
