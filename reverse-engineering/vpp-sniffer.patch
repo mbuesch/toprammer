@@ -1,0 +1,39 @@
+diff --git a/libtoprammer/toprammer_main.py b/libtoprammer/toprammer_main.py
+index 3962d44..b9e41ff 100644
+--- a/libtoprammer/toprammer_main.py
++++ b/libtoprammer/toprammer_main.py
+@@ -204,7 +204,34 @@ class TOP:
+ 			raise TOPException("Init: Unexpected status register (b): 0x%08X" % stat)
+ 
+ 		self.__bitfileUpload()
++
+ 		self.chip.initializeChip()
++		self.chip.setOutputEnableMask(0)
++		self.cmdSetVPPVoltage(12)
++		self.queueCommand("\x0E\x28\x01\x00")
++		self.flushCommands()
++
++		import hc4094sniffer
++		s = hc4094sniffer.Sniffer("/dev/ttyUSB0", 4)
++		count = 0
++		for i in range(0, 0xFF+1):
++			self.cmdLoadVPPLayout(0)
++			self.cmdLoadVPPLayout(i)
++			self.flushCommands()
++			time.sleep(0.1)
++			d = s.read()
++			d = ord(d[0]) | (ord(d[1]) << 8) | (ord(d[2]) << 16) | (ord(d[3]) << 24)
++			d ^= 0xFFFFFFFF
++			sys.stdout.write("0x%08X," % d)
++			count += 1
++			if count == 5:
++				count = 0
++				sys.stdout.write("\n")
++			else:
++				sys.stdout.write(" ")
++			sys.stdout.flush()
++
++		sys.exit(0)
+ 
+ 	def __bitfileUpload(self):
+ 		self.printDebug("Uploading bitfile %s..." % self.bitfile.getFilename())
