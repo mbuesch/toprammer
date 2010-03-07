@@ -40,6 +40,7 @@ from chip_atmega32dip40 import *
 from chip_atmega8dip28 import *
 from chip_atmega88dip28 import *
 from chip_attiny26dip20 import *
+from chip_at89c2051dip20 import *
 from chip_m2764a import *
 from chip_m8cissp import *
 from chip_unitest import *
