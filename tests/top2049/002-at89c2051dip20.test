@@ -1,0 +1,23 @@
+#!/bin/bash
+
+function test_init
+{
+	request_DUT "at89c2051dip20" || return 1
+	return 0
+}
+
+function test_run
+{
+	local args="--bitfile at89c2051dip20 -I bin -O bin"
+
+	# Check signature
+	toprammer $args --read-sig "$tmpfile"
+	compare_file_to_hex $tmpfile "1E21" || die "signature mismatch"
+
+	toprammer $args --erase
+
+	# Check progmem
+	toprammer $args --write-prog "$testfile_2k"
+	toprammer $args --read-prog "$tmpfile"
+	compare_files "$testfile_2k" "$tmpfile" || die "progmem mismatch"
+}
