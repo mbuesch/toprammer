@@ -89,38 +89,38 @@ class Chip:
 				       gndPin=chipPinGND)
 		self.generator.recalculate()
 
-	def applyVCCX(self, on=True):
+	def applyVCCX(self, turnOn):
 		"Turn VCCX on, using the auto-layout."
-		if on:
+		if turnOn:
 			try:
-				(vccxBitmask, vppBitmask, gndBitmask) = self.generator.getBitmasks()
+				generator = self.generator
 			except (AttributeError), e:
 				self.throwError("BUG: Using auto-layout, but did not initialize it.")
+			generator.applyVCCXLayout(self.top)
 		else:
-			vccxBitmask = 0
-		self.top.vccx.setLayoutMask(vccxBitmask)
+			self.top.vccx.setLayoutMask(0)
 
-	def applyVPP(self, on=True):
+	def applyVPP(self, turnOn):
 		"Turn VPP on, using the auto-layout."
-		if on:
+		if turnOn:
 			try:
-				(vccxBitmask, vppBitmask, gndBitmask) = self.generator.getBitmasks()
+				generator = self.generator
 			except (AttributeError), e:
 				self.throwError("BUG: Using auto-layout, but did not initialize it.")
+			generator.applyVPPLayout(self.top)
 		else:
-			vppBitmask = 0
-		self.top.vpp.setLayoutMask(vppBitmask)
+			self.top.vpp.setLayoutMask(0)
 
-	def applyGND(self, on=True):
+	def applyGND(self, turnOn):
 		"Turn GND on, using the auto-layout."
-		if on:
+		if turnOn:
 			try:
-				(vccxBitmask, vppBitmask, gndBitmask) = self.generator.getBitmasks()
+				generator = self.generator
 			except (AttributeError), e:
 				self.throwError("BUG: Using auto-layout, but did not initialize it.")
+			generator.applyGNDLayout(self.top)
 		else:
-			gndBitmask = 0
-		self.top.gnd.setLayoutMask(gndBitmask)
+			self.top.gnd.setLayoutMask(0)
 
 	def progressMeterInit(self, message, nrSteps):
 		self.progressNrSteps = nrSteps
