@@ -12,7 +12,7 @@ function test_run
 
 	# Check signature
 	toprammer $args --read-sig "$tmpfile"
-	compare_file_to_hex $tmpfile "1E9502" || die "signature mismatch"
+	compare_file_to_hex "$tmpfile" "1E9502" || die "signature mismatch"
 
 	toprammer $args --erase
 
@@ -25,4 +25,15 @@ function test_run
 	toprammer $args --write-eeprom "$testfile_1k"
 	toprammer $args --read-eeprom "$tmpfile"
 	compare_files "$testfile_1k" "$tmpfile" || die "EEPROM mismatch"
+
+	# Check fuses
+	testfuses="A4D9"
+	echo "0x0000: $testfuses .." | toprammer $args -I hex --write-fuse -
+	toprammer $args --read-fuse "$tmpfile"
+	compare_file_to_hex "$tmpfile" "$testfuses" || die "fuses mismatch"
+
+	# Check lockbits
+	toprammer $args --read-lock "$tmpfile"
+	compare_file_to_hex "$tmpfile" "FF" || die "fuses mismatch"
+	toprammer $args --write-lock "$tmpfile"
 }

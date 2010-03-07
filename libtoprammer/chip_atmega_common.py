@@ -38,7 +38,6 @@ class Chip_ATMega_common(Chip):
 	def __init__(self, chipID,
 		     chipPackage, chipPinVCCX, chipPinsVPP, chipPinGND,
 		     signature,
-		     presenceCheckLayout,
 		     flashPageSize, flashPages,
 		     eepromPageSize, eepromPages,
 		     broken=False
@@ -50,7 +49,6 @@ class Chip_ATMega_common(Chip):
 			      chipPinGND = chipPinGND,
 			      broken = broken)
 		self.signature = signature
-		self.presenceCheckLayout = presenceCheckLayout
 		self.flashPageSize = flashPageSize	# Flash page size, in words
 		self.flashPages = flashPages		# Nr of flash pages
 		self.eepromPageSize = eepromPageSize	# EEPROM page size, in bytes
@@ -269,25 +267,9 @@ class Chip_ATMega_common(Chip):
 		self.__setWR(0)
 		self.top.flushCommands()
 
-		self.top.queueCommand("\x0E\x28\x01\x00")
 		self.applyGND(True)
 		self.applyVCCX(True)
 
-		self.top.cmdFPGAReadRaw(0x16)
-		self.top.cmdFPGAReadRaw(0x17)
-		self.top.cmdFPGAReadRaw(0x18)
-		self.top.cmdFPGAReadRaw(0x19)
-		self.top.cmdFPGAReadRaw(0x1A)
-		self.top.cmdFPGAReadRaw(0x1B)
-		stat = self.top.cmdReadStatusReg48()
-		if stat != self.presenceCheckLayout:
-			msg = "Did not detect chip. Please check connections. (0x%012X)" % stat
-			if self.top.getForceLevel() >= 2:
-				self.printWarning(msg)
-			else:
-				self.throwError(msg)
-
-		self.top.queueCommand("\x0E\x28\x00\x00")
 		self.top.queueCommand("\x19")
 		self.__setReadMode(0)
 		self.top.queueCommand("\x34")

@@ -32,7 +32,6 @@ class Chip_ATTiny26DIP20(Chip_ATMega_common):
 			chipPinsVPP = 10,
 			chipPinGND = 6,
 			signature = "\x1E\x91\x09",
-			presenceCheckLayout = 0x00031F801000,#FIXME
 			flashPageSize = 16,
 			flashPages = 64,
 			eepromPageSize = 4,

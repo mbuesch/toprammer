@@ -33,7 +33,6 @@ class Chip_ATMega32DIP40(Chip_ATMega_common):
 			chipPinsVPP = 9,
 			chipPinGND = 11,
 			signature = "\x1E\x95\x02",
-			presenceCheckLayout = 0x0043FF000000,
 			flashPageSize = 64,
 			flashPages = 256,
 			eepromPageSize = 4,
