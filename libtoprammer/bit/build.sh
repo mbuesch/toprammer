@@ -91,6 +91,10 @@ for src in $srcdir/*; do
 		cat $logfile | grep WARNING
 	else
 		make -C $src/ all
+		if [ $? -ne 0 ]; then
+			echo "FAILED to build $srcname."
+			exit 1
+		fi
 	fi
 
 	new="$src/$srcname.bit"
