@@ -286,10 +286,6 @@ class TOP:
 		self.chip.writeLockbits(image)
 		self.printDebug("Done writing image.")
 
-	def printZIFLayout(self):
-		"""Prints the required ZIF layout."""
-		print self.chip.generator.zifLayoutAsciiArt()
-
 	def cmdFlush(self, count=1):
 		"""Send 'count' flush requests."""
 		assert(count >= 1)

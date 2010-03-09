@@ -23,6 +23,9 @@
 from util import *
 from top_xxxx import *
 
+#FIXME This needs to be fixed to properly support devices with multiple possible
+# VPP layouts. It needs to be split up to do the chip-placement and VPP-enabling
+# in two separate steps.
 
 class LayoutGenerator:
 	"Layout generator baseclass."
