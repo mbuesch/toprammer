@@ -27,7 +27,7 @@ import re
 class TOPException(Exception): pass
 
 
-hexdump_re = re.compile(r"0x[0-9a-fA-F]+:\s+([0-9a-fA-F\s]+)\s+.+")
+hexdump_re = re.compile(r"0x[0-9a-fA-F]+:\s+([0-9a-fA-F\s]+)\s*.*")
 
 def parseHexdump(dump):
 	try:
