@@ -8,8 +8,6 @@ TOP2049 USB protocol (incomplete)
 
 01		>= Read a byte from the FPGA into the status register.
 
-10xx		>= Write a byte (xx) to the FPGA.
-
 07		>= Read the status register.
 		   The register is read by sending 07h via bulk out
 		   and reading 64bytes via bulk in.
@@ -17,6 +15,10 @@ TOP2049 USB protocol (incomplete)
 0Axxyy		>= Write data into the FPGA via the parallel uc->FPGA interface.
 		   xx is the address (clocked via ALE).
 		   yy is the data (clocked via WR).
+
+0Bxx		>= Read a byte from the FPGA at address xx into the status register.
+
+0D		>= Unknown
 
 0E110000	>= Put the device ID string into the status register.
 		   String length is 16 bytes.
@@ -51,5 +53,11 @@ TOP2049 USB protocol (incomplete)
 		   Pulls the ~PROGRAM pin of the FPGA low.
 
 0E220000...	>= Program the FPGA. 60bytes of data is appended.
+
+10xx		>= Write a byte (xx) to the FPGA.
+
+19		>= Unknown
+
+34		>= Unknown
 
 1B		>= Flush (and/or commit) command
