@@ -129,6 +129,17 @@ def parseBulkOut(data):
 			dumpInstr(data[i:i+1], "Flush request")
 		elif data[i] == 0x34:
 			dumpInstr(data[i:i+1], "Unknown 0x34")
+		elif data[i] == 0x38:
+			dumpInstr(data[i:i+2], "Unknown 0x38")
+			i += 1
+		elif data[i] == 0x39:
+			dumpInstr(data[i:i+1], "Unknown 0x39")
+		elif data[i] == 0x4A:
+			dumpInstr(data[i:i+2], "Unknown 0x4A")
+			i += 1
+		elif data[i] == 0x4B:
+			dumpInstr(data[i:i+2], "Unknown 0x4B")
+			i += 1
 		else:
 			print "UNKNOWN INSTRUCTION 0x%02X. Aborting..." % data[i]
 			for j in range(i, len(data)):

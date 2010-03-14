@@ -6,7 +6,7 @@ TOP2049 USB protocol (incomplete)
 
 00		>= NOP. No operation.
 
-01		>= Read a byte from the FPGA into the status register.
+01		>= Read a byte from the FPGA at address 0x10 into the status register.
 
 07		>= Read the status register.
 		   The register is read by sending 07h via bulk out
@@ -54,10 +54,18 @@ TOP2049 USB protocol (incomplete)
 
 0E220000...	>= Program the FPGA. 60bytes of data is appended.
 
-10xx		>= Write a byte (xx) to the FPGA.
+10xx		>= Write a byte (xx) to the FPGA at address 0x10.
 
 19		>= Unknown
 
+1B		>= Flush (and/or commit) command
+
 34		>= Unknown
 
-1B		>= Flush (and/or commit) command
+38xx		>= Unknown
+
+39		>= Unknown
+
+4Axx		>= Unknown
+
+4Bxx		>= Unknown
