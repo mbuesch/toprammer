@@ -39,10 +39,11 @@ def usage():
 	print " -p|--package DIPxx     The package type of the DUT."
 	print "                        Package may also be the name of a supported chip."
 	print "                        In this case, --vccx, --vpp and --gnd are ignored."
-	print " -v|--vccx PIN          Set VCCX pin, relative to the package."
-	print " -P|--vpp PIN(s)        Set VPP pin(s), relative to the package."
-	print "                        May be one pin or a comma separated list of pins."
-	print " -g|--gnd PIN           Set GND pin, relative to the package."
+	print " -v|--vccx PIN          Set VCCX pin number, relative to the package."
+	print " -P|--vpp PIN(s)        Set VPP pin number(s), relative to the package."
+	print "                        May be one pin number or a comma separated list of pin numbers."
+	print "                        May be omitted or NONE, if no VPP pin is required."
+	print " -g|--gnd PIN           Set GND pin number, relative to the package."
 	print ""
 	print "Optional:"
 	print " -h|--help              Print this help text"
@@ -76,9 +77,12 @@ def main(argv):
 			if o in ("-v", "--vccx"):
 				vccxPin = int(v)
 			if o in ("-P", "--vpp"):
-				vppPins = []
-				for v in v.split(","):
-					vppPins.append(int(v))
+				if v.upper() == "NONE":
+					vppPins = None
+				else:
+					vppPins = []
+					for v in v.split(","):
+						vppPins.append(int(v))
 			if o in ("-g", "--gnd"):
 				gndPin = int(v)
 			if o in ("-I", "--only-insert"):
@@ -94,8 +98,8 @@ def main(argv):
 			print "-p|--package is mandatory!\n"
 			raise ValueError()
 		if generator:
-			if vccxPin is None or not vppPins or gndPin is None:
-				print "-v|--vccx,  -p|--vpp  and  -g|--gnd  " +\
+			if vccxPin is None or gndPin is None:
+				print "-v|--vccx and  -g|--gnd  " +\
 					"are mandatory, if a package type is specified.\n"
 				raise ValueError()
 	except (getopt.GetoptError, ValueError, KeyError), e:
