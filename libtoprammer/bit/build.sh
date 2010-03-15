@@ -41,7 +41,9 @@ while [ $# -gt 0 ]; do
 		shift
 		continue
 	fi
-	targets[nr_targets]="$1"
+	target="$1"
+	target="${target%.bit}"	# strip .bit suffix
+	targets[nr_targets]="$target"
 	let nr_targets=nr_targets+1
 	shift
 done
