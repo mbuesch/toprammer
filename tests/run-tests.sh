@@ -140,16 +140,19 @@ testfile_2k="$tmpdir/testfile_2k"
 create_random_file "$testfile_2k" 1024 2
 
 testfile_4k="$tmpdir/testfile_4k"
-create_random_file "$testfile_4k" 1024 4
+create_random_file "$testfile_4k" 4096 1
 
 testfile_8k="$tmpdir/testfile_8k"
-create_random_file "$testfile_8k" 1024 8
+create_random_file "$testfile_8k" 4096 2
 
 testfile_16k="$tmpdir/testfile_16k"
-create_random_file "$testfile_16k" 1024 16
+create_random_file "$testfile_16k" 4096 4
 
 testfile_32k="$tmpdir/testfile_32k"
-create_random_file "$testfile_32k" 1024 32
+create_random_file "$testfile_32k" 4096 8
+
+testfile_128k="$tmpdir/testfile_128k"
+create_random_file "$testfile_128k" 4096 32
 
 
 for device in $(ls "$basedir"); do
