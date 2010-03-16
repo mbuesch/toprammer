@@ -52,7 +52,8 @@ def usage():
 	print " -L|--write-lock FILE    Write the lock bits"
 	print ""
 	print "Optional:"
-	print " -t|--list               Print a list of supported chips and exit"
+	print " -t|--list               Print a list of supported chips and exit."
+	print "                         Use -V|--verbose to control the list verbosity (1-4)"
 	print " -d|--device BUS.DEV     Use the programmer at BUS.DEV"
 	print "                         First found programmer is used, if not given."
 	print " -V|--verbose LEVEL      Set the verbosity level. Default = 1"
@@ -247,9 +248,7 @@ def main(argv):
 			if o in ("-b", "--bitfile"):
 				opt_bitfile = v
 			if o in ("-t", "--list"):
-				print "Supported chips:"
-				RegisteredChip.dumpAll(sys.stdout)
-				return 0
+				opt_action = "print-list"
 			if o in ("-d", "--device"):
 				try:
 					v = v.split(".")
@@ -301,7 +300,7 @@ def main(argv):
 	except (getopt.GetoptError, ValueError), e:
 		usage()
 		return 1
-	if not opt_bitfile:
+	if opt_action and opt_action != "print-list" and not opt_bitfile:
 		print "-b|--bitfile is mandatory!"
 		return 1
 	if not opt_action:
@@ -315,6 +314,10 @@ def main(argv):
 		return 1
 
 	try:
+		if opt_action == "print-list":
+			RegisteredChip.dumpAll(sys.stdout, verbose=opt_verbose, showBroken=True)
+			return 0
+
 		bitfile = bitfileFind(opt_bitfile)
 		if not bitfile:
 			print "Bitfile " + opt_bitfile + " not found"

@@ -344,4 +344,11 @@ class Chip_M8C_ISSP(Chip):
 		self.__loadVectorInputMask(inputMask)
 		self.__loadVector(vector)
 
-RegisteredChip(Chip_M8C_ISSP, "m8c-issp", broken=True)
+RegisteredChip(
+	Chip_M8C_ISSP,
+	bitfile = "m8c-issp",
+	description = "Cypress M8C In System Serial Programmer",
+	packages = ( ("M8C ISSP header", "Special adapter"), ),
+	comment = "Special adapter required",
+	broken = True
+)

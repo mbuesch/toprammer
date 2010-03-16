@@ -36,4 +36,11 @@ class Chip_ATTiny26DIP20(Chip_ATMega_common):
 			eepromPageSize = 4,
 			eepromPages = 32)
 
-RegisteredChip(Chip_ATTiny26DIP20, "attiny26dip20", broken=True)
+RegisteredChip(
+	Chip_ATTiny26DIP20,
+	bitfile = "attiny26dip20",
+	description = "Atmel AtTiny26",
+	packages = ( ("DIP20", ""), ),
+	comment = "Special ZIF position",
+	broken = True
+)

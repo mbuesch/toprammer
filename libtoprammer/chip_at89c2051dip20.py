@@ -225,4 +225,9 @@ class Chip_AT89C2051dip20(Chip):
 			self.top.delay(0.001)
 		self.throwError("Timeout in busywait.")
 
-RegisteredChip(Chip_AT89C2051dip20, "at89c2051dip20")
+RegisteredChip(
+	Chip_AT89C2051dip20,
+	bitfile = "at89c2051dip20",
+	description = "Atmel AT89C2051",
+	packages = ( ("DIP20", ""), )
+)

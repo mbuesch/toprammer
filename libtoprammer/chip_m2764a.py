@@ -170,4 +170,9 @@ class Chip_M2764A(Chip):
 			self.top.delay(0.01)
 		self.throwError("Timeout in busywait.")
 
-RegisteredChip(Chip_M2764A, "m2764a")
+RegisteredChip(
+	Chip_M2764A,
+	bitfile = "m2764a",
+	description = "M2764A EPROM",
+	packages = ( ("DIP28", ""), ),
+)

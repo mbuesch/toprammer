@@ -222,4 +222,9 @@ class Chip_w29ee011dip32(Chip):
 			self.top.delay(0.01)
 		self.throwError("Timeout in busywait.")
 
-RegisteredChip(Chip_w29ee011dip32, "w29ee011dip32")
+RegisteredChip(
+	Chip_w29ee011dip32,
+	bitfile = "w29ee011dip32",
+	description = "Winbond W29EE011 EEPROM",
+	packages = ( ("DIP32", ""), ("PLCC32", "Use 1:1 PLCC32->DIP32 adapter"), )
+)

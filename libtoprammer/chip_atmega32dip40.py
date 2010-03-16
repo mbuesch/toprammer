@@ -22,7 +22,6 @@
 
 from chip_atmega_common import *
 
-# Note: Chip has to be inserted upside-down into the ZIF
 
 class Chip_ATMega32DIP40(Chip_ATMega_common):
 	def __init__(self):
@@ -37,4 +36,10 @@ class Chip_ATMega32DIP40(Chip_ATMega_common):
 			eepromPageSize = 4,
 			eepromPages = 256)
 
-RegisteredChip(Chip_ATMega32DIP40, "atmega32dip40")
+RegisteredChip(
+	Chip_ATMega32DIP40,
+	bitfile = "atmega32dip40",
+	description = "Atmel AtMega32",
+	packages = ( ("DIP40", ""), ),
+	comment = "Insert upside down into ZIF socket"
+)

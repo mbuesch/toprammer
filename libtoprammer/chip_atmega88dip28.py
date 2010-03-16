@@ -36,4 +36,9 @@ class Chip_ATMega88DIP28(Chip_ATMega_common):
 			eepromPageSize = 4,
 			eepromPages = 128)
 
-RegisteredChip(Chip_ATMega88DIP28, "atmega88dip28")
+RegisteredChip(
+	Chip_ATMega88DIP28,
+	bitfile = "atmega88dip28",
+	description = "Atmel AtMega88",
+	packages = ( ("DIP28", ""), ),
+)

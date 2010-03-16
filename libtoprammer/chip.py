@@ -188,12 +188,24 @@ class Chip:
 registeredChips = []
 
 class RegisteredChip:
-	def __init__(self, chipImplClass, bitfile, broken=False):
+	def __init__(self, chipImplClass, bitfile,
+		     description="", packages=None, comment="",
+		     broken=False):
 		"""Register a chip implementation class.
-		chipImplClass		=> The implementation class of the chip
-		bitfile			=> The bitfile ID of the chip"""
+		chipImplClass	=> The implementation class of the chip.
+		bitfile		=> The bitfile ID of the chip.
+		description	=> Human readable chip description string.
+		packages	=> List of supported packages.
+				   Each entry is a tuple of two strings: ("PACKAGE", "description")
+		comment		=> Additional comment string.
+		broken		=> Boolean flag to mark the implementation as broken.
+		"""
+
 		self.chipImplClass = chipImplClass
 		self.bitfile = bitfile
+		self.description = description
+		self.packages = packages
+		self.comment = comment
 		self.broken = broken
 		registeredChips.append(self)
 
@@ -210,13 +222,48 @@ class RegisteredChip:
 		return None
 
 	@staticmethod
-	def dumpAll(fd, showBroken=True):
+	def dumpAll(fd, verbose=1, showBroken=True):
 		"Dump all supported chips to file fd."
+		count = 0
 		for chip in registeredChips:
-			broken = ""
-			if chip.broken:
-				if not showBroken:
-					continue
-				broken = " (broken)"
-			fd.write("%20s%s\n" % (chip.bitfile, broken))
+			if chip.broken and not showBroken:
+				continue
+			count = count + 1
+			if count >= 2:
+				fd.write("\n")
+			chip.dump(fd, verbose)
+
+	def dump(self, fd, verbose=1):
+		"Dump information about a registered chip to file fd."
+		if self.description:
+			fd.write(self.description)
+		else:
+			fd.write(self.bitfile)
+		if self.broken:
+			fd.write("  (broken implementation)")
+		fd.write("\n")
+		fd.write("%25s:  %s\n" % ("BIT-file", self.bitfile))
+		if verbose >= 3 and self.packages:
+			for (package, description) in self.packages:
+				if description:
+					description = "  (" + description + ")"
+				fd.write("%25s:  %s%s\n" % ("Supported package", package, description))
+		if verbose >= 4:
+			supportedFeatures = (
+				("erase", "Full chip erase"),
+				("readSignature", "Chip signature reading"),
+				("readProgmem", "Program memory reading (flash)"),
+				("writeProgmem", "Program memory writing (flash)"),
+				("readEEPROM", "(E)EPROM memory reading"),
+				("writeEEPROM", "(E)EPROM memory writing"),
+				("readFuse", "Fuse bits reading"),
+				("writeFuse", "Fuse bits writing"),
+				("readLockbits", "Lock bits reading"),
+				("writeLockbits", "Lock bits writing"),
+			)
+			for (attr, description) in supportedFeatures:
+				if getattr(self.chipImplClass, attr) != getattr(Chip, attr):
+					fd.write("%25s:  %s\n" % ("Support for", description))
+		if verbose >= 2 and self.comment:
+			fd.write("%25s:  %s\n" % ("Comment", self.comment))
 

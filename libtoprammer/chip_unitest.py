@@ -90,4 +90,8 @@ class Chip_Unitest(Chip):
 		inputs = self.top.cmdReadStatusReg48()
 		return inputs
 
-RegisteredChip(Chip_Unitest, "unitest")
+RegisteredChip(
+	Chip_Unitest,
+	bitfile = "unitest",
+	description = "Universal device tester",
+)
