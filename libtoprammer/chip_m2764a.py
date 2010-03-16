@@ -23,13 +23,13 @@
 from chip import *
 
 
-class M2764A(Chip):
+class Chip_M2764A(Chip):
 	PROGCMD_PPULSE	= 1 # Perform a P-pulse
 
 	STAT_BUSY	= 0x01 # Programmer is running a command
 
 	def __init__(self):
-		Chip.__init__(self, "m2764a",
+		Chip.__init__(self,
 			      chipPackage = "DIP28",
 			      chipPinVCCX = 28,
 			      chipPinsVPP = 1,
@@ -170,4 +170,4 @@ class M2764A(Chip):
 			self.top.delay(0.01)
 		self.throwError("Timeout in busywait.")
 
-supportedChips.append(M2764A())
+RegisteredChip(Chip_M2764A, "m2764a")

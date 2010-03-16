@@ -248,7 +248,7 @@ def main(argv):
 				opt_bitfile = v
 			if o in ("-t", "--list"):
 				print "Supported chips:"
-				dumpSupportedChips(sys.stdout)
+				RegisteredChip.dumpAll(sys.stdout)
 				return 0
 			if o in ("-d", "--device"):
 				try:

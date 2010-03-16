@@ -26,7 +26,6 @@ from chip_atmega_common import *
 class Chip_ATTiny26DIP20(Chip_ATMega_common):
 	def __init__(self):
 		Chip_ATMega_common.__init__(self,
-			chipID = "attiny26dip20",
 			chipPackage = "DIP20",
 			chipPinVCCX = 5,
 			chipPinsVPP = 10,
@@ -35,7 +34,6 @@ class Chip_ATTiny26DIP20(Chip_ATMega_common):
 			flashPageSize = 16,
 			flashPages = 64,
 			eepromPageSize = 4,
-			eepromPages = 32,
-			broken = True)
+			eepromPages = 32)
 
-supportedChips.append(Chip_ATTiny26DIP20())
+RegisteredChip(Chip_ATTiny26DIP20, "attiny26dip20", broken=True)

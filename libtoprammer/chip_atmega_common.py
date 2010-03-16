@@ -35,19 +35,17 @@ class Chip_ATMega_common(Chip):
 	CMD_READFLASH		= 0x02 # Read Flash
 	CMD_READEEPROM		= 0x03 # Read EEPROM
 
-	def __init__(self, chipID,
+	def __init__(self,
 		     chipPackage, chipPinVCCX, chipPinsVPP, chipPinGND,
 		     signature,
 		     flashPageSize, flashPages,
-		     eepromPageSize, eepromPages,
-		     broken=False
+		     eepromPageSize, eepromPages
 		    ):
-		Chip.__init__(self, chipID = chipID,
+		Chip.__init__(self,
 			      chipPackage = chipPackage,
 			      chipPinVCCX = chipPinVCCX,
 			      chipPinsVPP = chipPinsVPP,
-			      chipPinGND = chipPinGND,
-			      broken = broken)
+			      chipPinGND = chipPinGND)
 		self.signature = signature
 		self.flashPageSize = flashPageSize	# Flash page size, in words
 		self.flashPages = flashPages		# Nr of flash pages

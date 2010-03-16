@@ -27,7 +27,6 @@ from chip_atmega_common import *
 class Chip_ATMega32DIP40(Chip_ATMega_common):
 	def __init__(self):
 		Chip_ATMega_common.__init__(self,
-			chipID = "atmega32dip40",
 			chipPackage = "DIP40",
 			chipPinVCCX = 10,
 			chipPinsVPP = 9,
@@ -38,4 +37,4 @@ class Chip_ATMega32DIP40(Chip_ATMega_common):
 			eepromPageSize = 4,
 			eepromPages = 256)
 
-supportedChips.append(Chip_ATMega32DIP40())
+RegisteredChip(Chip_ATMega32DIP40, "atmega32dip40")

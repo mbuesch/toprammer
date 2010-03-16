@@ -1,8 +1,9 @@
-#LyX 1.5.5 created this file. For more info see http://www.lyx.org/
-\lyxformat 276
+#LyX 1.6.5 created this file. For more info see http://www.lyx.org/
+\lyxformat 345
 \begin_document
 \begin_header
 \textclass article
+\use_default_options false
 \language english
 \inputencoding auto
 \font_roman default
@@ -13,8 +14,10 @@
 \font_osf false
 \font_sf_scale 100
 \font_tt_scale 100
+
 \graphics default
 \paperfontsize default
+\use_hyperref false
 \papersize default
 \use_geometry false
 \use_amsmath 1
@@ -496,19 +499,25 @@ Chip
 \begin_inset Quotes erd
 \end_inset
 
--derived class you need to add it to the 
-\begin_inset Quotes eld
-\end_inset
-
-supportedChips
-\begin_inset Quotes erd
-\end_inset
-
- array.
+-derived class you need to register it.
+ This is done by calling RegisteredChip():
 \end_layout
 
 \begin_layout LyX-Code
-supportedChips.append(Chip_MyDevice())
+RegisteredChip(Chip_MyDevice, 
+\begin_inset Quotes eld
+\end_inset
+
+bitfileID
+\begin_inset Quotes erd
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Standard
+The class (_not_ an instance of it) is passed as first parameter.
+ The ID string of the required bitfile is past as second parameter.
 \end_layout
 
 \begin_layout Subsection

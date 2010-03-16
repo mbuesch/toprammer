@@ -67,9 +67,7 @@ class TOP:
 		chipID = self.bitfile.getSrcFile().lower()
 		if chipID.endswith(".ncd"):
 			chipID = chipID[0:-4]
-		self.chip = chipFind(chipID)
-		if self.chip and self.chip.isBroken() and not usebroken:
-			self.chip = None
+		self.chip = RegisteredChip.find(chipID, usebroken)
 		if not self.chip:
 			raise TOPException("Did not find an implementation for the chip %s" % chipID)
 		self.chip.setTOP(self)

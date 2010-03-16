@@ -24,21 +24,14 @@ from util import *
 from layout_generator import *
 
 
-supportedChips = []
-
 class Chip:
-	def __init__(self, chipID,
-		     chipPackage=None, chipPinVCCX=None, chipPinsVPP=None, chipPinGND=None,
-		     broken=False):
-		"""The chipID is the ID string from the bitfile.
-		chipPackage is the ID string for the package.
-			May be None, if no initial auto-layout is required.
+	def __init__(self, chipPackage=None, chipPinVCCX=None, chipPinsVPP=None, chipPinGND=None):
+		"""chipPackage is the ID string for the package.
+		May be None, if no initial auto-layout is required.
 		chipPinVCCX is the required VCCX pin on the package.
 		chipPinVPP is the required VPP pin on the package.
 		chipPinGND is the required GND pin on the package."""
 
-		self.chipID = chipID
-		self.broken = broken
 		self.printPrefix = True
 
 		if chipPackage:
@@ -48,14 +41,11 @@ class Chip:
 						      chipPinsVPP=chipPinsVPP,
 						      chipPinGND=chipPinGND)
 
-	def getID(self):
-		return self.chipID
-
-	def isBroken(self):
-		return self.broken
-
 	def setTOP(self, top):
 		self.top = top
+
+	def setChipID(self, chipID):
+		self.chipID = chipID
 
 	def printWarning(self, message, newline=True):
 		if self.printPrefix:
@@ -195,15 +185,38 @@ class Chip:
 		# Override me in the subclass, if required.
 		raise TOPException("Lockbit writing not supported on " + self.chipID)
 
-def chipFind(chipID):
-	for chip in supportedChips:
-		if chip.getID().lower() == chipID.lower():
-			return chip
-	return None
+registeredChips = []
 
-def dumpSupportedChips(fd):
-	for chip in supportedChips:
-		broken = ""
-		if chip.isBroken():
-			broken = " (broken)"
-		fd.write("%20s%s\n" % (chip.getID(), broken))
+class RegisteredChip:
+	def __init__(self, chipImplClass, bitfile, broken=False):
+		"""Register a chip implementation class.
+		chipImplClass		=> The implementation class of the chip
+		bitfile			=> The bitfile ID of the chip"""
+		self.chipImplClass = chipImplClass
+		self.bitfile = bitfile
+		self.broken = broken
+		registeredChips.append(self)
+
+	@staticmethod
+	def find(chipID, allowBroken=False):
+		"Find a chip implementation by ID and return an instance of it."
+		for chip in registeredChips:
+			if chip.broken and not allowBroken:
+				continue
+			if chip.bitfile.lower() == chipID.lower():
+				instance = chip.chipImplClass()
+				instance.setChipID(chip.bitfile)
+				return instance
+		return None
+
+	@staticmethod
+	def dumpAll(fd, showBroken=True):
+		"Dump all supported chips to file fd."
+		for chip in registeredChips:
+			broken = ""
+			if chip.broken:
+				if not showBroken:
+					continue
+				broken = " (broken)"
+			fd.write("%20s%s\n" % (chip.bitfile, broken))
+

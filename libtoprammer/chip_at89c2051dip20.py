@@ -24,12 +24,12 @@
 from chip import *
 
 
-class AT89C2051dip20(Chip):
+class Chip_AT89C2051dip20(Chip):
 	STAT_BUSY	= 0x01 # Programmer is running a command
 	STAT_ERR	= 0x02 # Error during write
 
 	def __init__(self):
-		Chip.__init__(self, "at89c2051dip20",
+		Chip.__init__(self,
 			      chipPackage = "DIP20",
 			      chipPinVCCX = 20,
 			      chipPinsVPP = 1,
@@ -225,4 +225,4 @@ class AT89C2051dip20(Chip):
 			self.top.delay(0.001)
 		self.throwError("Timeout in busywait.")
 
-supportedChips.append(AT89C2051dip20())
+RegisteredChip(Chip_AT89C2051dip20, "at89c2051dip20")

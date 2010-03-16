@@ -24,7 +24,7 @@ from chip import *
 import time
 
 
-class M8C_ISSP(Chip):
+class Chip_M8C_ISSP(Chip):
 	ISSPCMD_POR	= 1 # Perform a power-on-reset
 	ISSPCMD_PWROFF	= 2 # Turn power off
 	ISSPCMD_SENDVEC	= 3 # Send a vector
@@ -168,7 +168,7 @@ class M8C_ISSP(Chip):
 	)
 
 	def __init__(self):
-		Chip.__init__(self, "m8c-issp", broken=True)
+		Chip.__init__(self)
 
 	def initializeChip(self):
 		self.printDebug("Initializing chip")
@@ -344,4 +344,4 @@ class M8C_ISSP(Chip):
 		self.__loadVectorInputMask(inputMask)
 		self.__loadVector(vector)
 
-supportedChips.append(M8C_ISSP())
+RegisteredChip(Chip_M8C_ISSP, "m8c-issp", broken=True)

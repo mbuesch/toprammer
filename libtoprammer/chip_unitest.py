@@ -25,7 +25,7 @@ from chip import *
 
 class Chip_Unitest(Chip):
 	def __init__(self):
-		Chip.__init__(self, "unitest")
+		Chip.__init__(self)
 
 	def initializeChip(self):
 		self.printDebug("Initializing chip")
@@ -90,4 +90,4 @@ class Chip_Unitest(Chip):
 		inputs = self.top.cmdReadStatusReg48()
 		return inputs
 
-supportedChips.append(Chip_Unitest())
+RegisteredChip(Chip_Unitest, "unitest")

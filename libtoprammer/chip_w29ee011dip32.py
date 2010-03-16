@@ -30,7 +30,7 @@ class Chip_w29ee011dip32(Chip):
 	STAT_BUSY		= 0x01 # Programmer is running a command
 
 	def __init__(self):
-		Chip.__init__(self, "w29ee011dip32",
+		Chip.__init__(self,
 			      chipPackage = "DIP32",
 			      chipPinVCCX = 32,
 			      chipPinsVPP = None,
@@ -222,4 +222,4 @@ class Chip_w29ee011dip32(Chip):
 			self.top.delay(0.01)
 		self.throwError("Timeout in busywait.")
 
-supportedChips.append(Chip_w29ee011dip32())
+RegisteredChip(Chip_w29ee011dip32, "w29ee011dip32")
