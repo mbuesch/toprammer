@@ -44,6 +44,7 @@ from chip_at89c2051dip20 import *
 from chip_m2764a import *
 from chip_m8cissp import *
 from chip_unitest import *
+from chip_w29ee011dip32 import *
 
 
 class TOP:
