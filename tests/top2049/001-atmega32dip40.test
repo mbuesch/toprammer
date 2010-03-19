@@ -8,7 +8,7 @@ function test_init
 
 function test_run
 {
-	local args="--bitfile atmega32dip40 -I bin -O bin"
+	local args="-c atmega32dip40 -I bin -O bin"
 
 	# Check signature
 	toprammer $args --read-sig "$tmpfile"

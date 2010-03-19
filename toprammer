@@ -30,10 +30,8 @@ def usage():
 	print ""
 	print "Usage: %s [OPTIONS]" % sys.argv[0]
 	print ""
-	print " -b|--bitfile            The *.bit file (mandatory)"
-	print "    A full path to the bitfile is not required. Specifying the"
-	print "    chip-ID (see --list) usually is sufficient. The .bit file will"
-	print "    be searched for in the standard paths then."
+	print " -c|--chip-id            The ID of the handled chip. (mandatory)"
+	print "                         See -t|--list for a list of supported chips."
 	print ""
 	print "Actions:"
 	print " -s|--read-sig FILE      Read the signature bytes"
@@ -225,7 +223,7 @@ def fileIn(filename, format):
 def main(argv):
 	opt_verbose = 1
 	opt_forceLevel = 0
-	opt_bitfile = None
+	opt_chipID = None
 	opt_device = None
 	opt_action = None
 	opt_file = None
@@ -235,8 +233,8 @@ def main(argv):
 	opt_outformat = "bin"
 	try:
 		(opts, args) = getopt.getopt(sys.argv[1:],
-			"hb:d:V:Qs:xp:P:e:E:f:F:o:l:L:BtI:O:",
-			[ "help", "bitfile=", "device=", "verbose=", "noqueue",
+			"hc:d:V:Qs:xp:P:e:E:f:F:o:l:L:BtI:O:",
+			[ "help", "chip-id=", "device=", "verbose=", "noqueue",
 			  "read-sig=", "erase", "read-prog=", "write-prog=",
 			  "read-eeprom=", "write-eeprom=", "read-fuse=", "write-fuse=",
 			  "read-lock=", "write-lock=",
@@ -245,8 +243,8 @@ def main(argv):
 			if o in ("-h", "--help"):
 				usage()
 				return 0
-			if o in ("-b", "--bitfile"):
-				opt_bitfile = v
+			if o in ("-c", "--chip-id"):
+				opt_chipID = v
 			if o in ("-t", "--list"):
 				opt_action = "print-list"
 			if o in ("-d", "--device"):
@@ -300,8 +298,8 @@ def main(argv):
 	except (getopt.GetoptError, ValueError), e:
 		usage()
 		return 1
-	if opt_action and opt_action != "print-list" and not opt_bitfile:
-		print "-b|--bitfile is mandatory!"
+	if opt_action and opt_action != "print-list" and not opt_chipID:
+		print "-c|--chip-id is mandatory!"
 		return 1
 	if not opt_action:
 		print "An action is mandatory!"
@@ -318,14 +316,10 @@ def main(argv):
 			RegisteredChip.dumpAll(sys.stdout, verbose=opt_verbose, showBroken=True)
 			return 0
 
-		bitfile = bitfileFind(opt_bitfile)
-		if not bitfile:
-			print "Bitfile " + opt_bitfile + " not found"
-			print "See --list for a list of supported devices"
-			return 1
-		top = TOP(bitfileName = bitfile, busDev = opt_device,
+		top = TOP(busDev = opt_device,
 			  verbose = opt_verbose, forceLevel = opt_forceLevel,
 			  noqueue = opt_noqueue, usebroken = opt_usebroken)
+		top.initializeChip(opt_chipID)
 		if opt_action == "read-sig":
 			fileOut(opt_file, opt_outformat, top.readSignature())
 		elif opt_action == "erase":
@@ -348,7 +342,7 @@ def main(argv):
 			top.writeLockbits(fileIn(opt_file, opt_informat))
 		else:
 			assert(0)
-		top.shutdown()
+		top.shutdownChip()
 	except (TOPException, BitfileException, IOError), e:
 		print e
 		return 1

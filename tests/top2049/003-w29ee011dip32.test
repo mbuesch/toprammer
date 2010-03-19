@@ -8,7 +8,7 @@ function test_init
 
 function test_run
 {
-	local args="--bitfile w29ee011dip32 -I bin -O bin"
+	local args="-c w29ee011dip32 -I bin -O bin"
 
 	toprammer $args --erase
 

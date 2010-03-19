@@ -71,8 +71,10 @@ def main(argv):
 			if o in ("-d", "--device"):
 				programmer = v
 			if o in ("-p", "--package"):
-				chip = RegisteredChip.find(v)
-				if not chip:
+				result = RegisteredChip.find(v)
+				if result:
+					(unused, chip) = result
+				else:
 					generator = createLayoutGenerator(v)
 			if o in ("-v", "--vccx"):
 				vccxPin = int(v)

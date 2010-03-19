@@ -31,13 +31,9 @@ class MainWidget(QWidget):
 		QWidget.__init__(self, mainwnd)
 		self.mainwnd = mainwnd
 
-		self.bitpath = bitfileFind("unitest.bit")
-		if not self.bitpath:
-			QMessageBox.critical(self, self.tr("Bitfile not found"),
-				self.tr("Could not find the Bitfile unitest.bit"))
-			raise TOPException()
 		try:
-			self.top = TOP(bitfileName=self.bitpath, verbose=2)
+			self.top = TOP(verbose=2)
+			self.top.initializeChip("unitest")
 		except (TOPException), e:
 			QMessageBox.critical(self, self.tr("TOP init failed"),
 				self.tr("Initialization of TOP device failed:\n") +\

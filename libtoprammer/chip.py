@@ -188,12 +188,13 @@ class Chip:
 registeredChips = []
 
 class RegisteredChip:
-	def __init__(self, chipImplClass, bitfile,
+	def __init__(self, chipImplClass, bitfile, chipID="",
 		     description="", packages=None, comment="",
 		     broken=False):
 		"""Register a chip implementation class.
 		chipImplClass	=> The implementation class of the chip.
 		bitfile		=> The bitfile ID of the chip.
+		chipID		=> The chip-ID. Will default to the value of bitfile.
 		description	=> Human readable chip description string.
 		packages	=> List of supported packages.
 				   Each entry is a tuple of two strings: ("PACKAGE", "description")
@@ -201,8 +202,11 @@ class RegisteredChip:
 		broken		=> Boolean flag to mark the implementation as broken.
 		"""
 
+		if not chipID:
+			chipID = bitfile
 		self.chipImplClass = chipImplClass
 		self.bitfile = bitfile
+		self.chipID = chipID
 		self.description = description
 		self.packages = packages
 		self.comment = comment
@@ -215,10 +219,10 @@ class RegisteredChip:
 		for chip in registeredChips:
 			if chip.broken and not allowBroken:
 				continue
-			if chip.bitfile.lower() == chipID.lower():
+			if chip.chipID.lower() == chipID.lower():
 				instance = chip.chipImplClass()
-				instance.setChipID(chip.bitfile)
-				return instance
+				instance.setChipID(chip.chipID)
+				return (chip, instance)
 		return None
 
 	@staticmethod

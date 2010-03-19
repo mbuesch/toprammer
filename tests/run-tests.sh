@@ -28,6 +28,12 @@ function error
 	echo "ERROR $current_test:  $@"
 }
 
+function abort
+{
+	cleanup
+	exit 1
+}
+
 function die
 {
 	error $@
@@ -79,6 +85,7 @@ function request
 {
 	read -s -n1 -p "$@" res
 	echo
+	[ "$res" = "a" ] && abort
 	[ "$res" = "x" ] && return 1
 	return 0
 }
@@ -87,12 +94,12 @@ function request_DUT # $1=DUT-name
 {
 	local dut="$1"
 	toprammer_layout -d "$current_device" -p "$dut" --only-insert
-	request "Please insert a $dut into the ZIF socket (x to skip)..."
+	request "Please insert a $dut into the ZIF socket (x to skip; a to abort)..."
 }
 
 function request_TOP # $1=TOPxxxx
 {
-	request "Please connect the $@ programmer (x to skip)..."
+	request "Please connect the $@ programmer (x to skip; a to abort)..."
 }
 
 function create_random_file # $1=file $2=bs $3=count

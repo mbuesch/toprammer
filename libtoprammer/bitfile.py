@@ -131,8 +131,9 @@ def bitfileFind(filename):
 	"Search some standard paths for a bitfile"
 	if not filename.endswith(".bit"):
 		filename += ".bit"
-	if __probeFile(filename):
-		return filename
+	if filename.startswith("/"):
+		if __probeFile(filename):
+			return filename
 	paths = ( ".", "./libtoprammer/bit", )
 	for path in paths:
 		fullpath = path + "/" + filename

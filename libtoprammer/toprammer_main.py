@@ -48,29 +48,17 @@ from chip_w29ee011dip32 import *
 
 
 class TOP:
-	def __init__(self, bitfileName, busDev=None, verbose=0,
+	def __init__(self, busDev=None, verbose=0,
 		     forceLevel=0, noqueue=False, usebroken=False):
-		"""bitfileName is the path to the .bit file.
-		   busDev is a tuple (BUSID, DEVID) or None."""
+		"""busDev is a tuple (BUSID, DEVID) or None."""
 
 		self.verbose = verbose
 		self.forceLevel = forceLevel
 		self.noqueue = noqueue
 		self.usebroken = usebroken
 
+		self.chip = None
 		self.commandQueue = []
-
-		self.bitfile = Bitfile()
-		self.bitfile.parseFile(bitfileName)
-
-		# Find a chip handler for the given bitfile.
-		chipID = self.bitfile.getSrcFile().lower()
-		if chipID.endswith(".ncd"):
-			chipID = chipID[0:-4]
-		self.chip = RegisteredChip.find(chipID, usebroken)
-		if not self.chip:
-			raise TOPException("Did not find an implementation for the chip %s" % chipID)
-		self.chip.setTOP(self)
 
 		# Find the device
 		for bus in usb.busses():
@@ -133,9 +121,32 @@ class TOP:
 
 		self.__initializeHardware()
 
-	def shutdown(self):
+	def initializeChip(self, chipID):
+		"Initialize the programmer for a chip"
+		# If a chip is initialized, shut it down first.
+		if self.chip:
+			self.shutdownChip()
+		# Find the implementation of the chip.
+		(descriptor, self.chip) = RegisteredChip.find(chipID, self.usebroken)
+		if not self.chip:
+			raise TOPException("Did not find an implementation for the chip %s" % chipID)
+		self.chip.setTOP(self)
+		# Find the bitfile for the chip.
+		bitfile = bitfileFind(descriptor.bitfile)
+		if not bitfile:
+			self.chip = None
+			raise TOPException("Did not find BIT-file for chip implementation %s" % chipID)
+		# Open and parse the bitfile.
+		self.bitfile = Bitfile()
+		self.bitfile.parseFile(bitfile)
+		# Initialize the hardware.
+		self.__bitfileUpload()
+		self.chip.initializeChip()
+
+	def shutdownChip(self):
 		self.chip.shutdownChip()
 		self.flushCommands()
+		self.chip = None
 
 	def getForceLevel(self):
 		return self.forceLevel
@@ -202,9 +213,6 @@ class TOP:
 		stat = self.cmdReadStatusReg32()
 		if stat != 0x0000686C:
 			raise TOPException("Init: Unexpected status register (b): 0x%08X" % stat)
-
-		self.__bitfileUpload()
-		self.chip.initializeChip()
 
 	def __bitfileUpload(self):
 		self.printDebug("Uploading bitfile %s..." % self.bitfile.getFilename())
