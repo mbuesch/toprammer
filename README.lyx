@@ -1,8 +1,9 @@
-#LyX 1.5.5 created this file. For more info see http://www.lyx.org/
-\lyxformat 276
+#LyX 1.6.5 created this file. For more info see http://www.lyx.org/
+\lyxformat 345
 \begin_document
 \begin_header
 \textclass article
+\use_default_options false
 \language english
 \inputencoding auto
 \font_roman default
@@ -13,8 +14,10 @@
 \font_osf false
 \font_sf_scale 100
 \font_tt_scale 100
+
 \graphics default
 \paperfontsize default
+\use_hyperref false
 \papersize default
 \use_geometry false
 \use_amsmath 1
@@ -80,116 +83,20 @@ Supported chips
 \end_layout
 
 \begin_layout Standard
-\begin_inset Tabular
-<lyxtabular version="3" rows="5" columns="2">
-<features>
-<column alignment="center" valignment="top" leftline="true" width="0">
-<column alignment="center" valignment="top" leftline="true" rightline="true" width="0">
-<row topline="true" bottomline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Standard
-Chip
+Just execute the following command to get a list of supported chips:
 \end_layout
 
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Standard
-State
+\begin_layout LyX-Code
+toprammer --list
 \end_layout
 
-\end_inset
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
 \begin_layout Standard
-Atmel Mega32 DIP40
+For a more verbose list, also pass the -V parameter with a verbosity level
+ number:
 \end_layout
 
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Standard
-supported
-\end_layout
-
-\end_inset
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Standard
-Atmel Mega8 DIP28
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Standard
-supported
-\end_layout
-
-\end_inset
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Standard
-Atmel Mega88 DIP28
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Standard
-supported
-\end_layout
-
-\end_inset
-</cell>
-</row>
-<row topline="true" bottomline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Standard
-m2764a EPROM
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Standard
-supported
-\end_layout
-
-\end_inset
-</cell>
-</row>
-</lyxtabular>
-
-\end_inset
-
-
+\begin_layout LyX-Code
+toprammer --list -V99
 \end_layout
 
 \begin_layout Section
@@ -223,48 +130,36 @@ Usage
 \end_layout
 
 \begin_layout Standard
-A .BIT file is always needed to do operations on the inserted chip.
- The .BIT file must match the chip.
- For example, do do operations on an Atmel Mega8 DIP microcontroller, the
- atmega8dip28.bit file is needed.
- Prebuilt .BIT files can be found in the "libtoprammer/bit/" subdirectory.
- Sourcecode for these .BIT files is located in "libtoprammer/bit/src/".
- However, the full path to the .BIT file doesn't need to be specified to
- the toprammer tool.
- If you just pass the chip-name, toprammer will search for a matching .BIT
- file in some standard search paths.
- The .BIT file basically is the firmware that runs on the FPGA in the TOP
- programmer.
- See toprammer --help for device actions to read/write stuff from/to the
- chip.
+Toprammer needs the identification string of the chip that is inserted into
+ the ZIF socket.
+ Additionally it needs an action to be performed on the chip.
+ So a call to toprammer might look like this:
+\end_layout
+
+\begin_layout LyX-Code
+toprammer --chip-id atmega32dip40 --read-prog flash.img
 \end_layout
 
 \begin_layout Standard
-Example: 
+That command selects an Atmel AtMega32 DIP40 chip and reads its flash contents
+ into the flash.img file.
+\end_layout
+
+\begin_layout Standard
+For a list of supported chips, see the
 \end_layout
 
 \begin_layout LyX-Code
-Checking which chips are supported:
+topgrammer --list
 \end_layout
 
-\begin_layout LyX-Code
-  toprammer --list
-\end_layout
-
-\begin_layout LyX-Code
-
-\end_layout
-
-\begin_layout LyX-Code
-Reading the flash of an Atmel Mega8 DIP to the file flash.img:
-\end_layout
-
-\begin_layout LyX-Code
-  toprammer --bitfile atmega8dip28 --read-prog flash.img
+\begin_layout Standard
+command.
+ It will print a list of supported chip-IDs.
 \end_layout
 
 \begin_layout Section
-ZIF socket layout generator
+ZIF socket layout
 \end_layout
 
 \begin_layout Standard
