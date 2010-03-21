@@ -246,7 +246,10 @@ class RegisteredChip:
 		if self.broken:
 			fd.write("  (broken implementation)")
 		fd.write("\n")
-		fd.write("%25s:  %s\n" % ("BIT-file", self.bitfile))
+		if verbose >= 1:
+			fd.write("%25s:  %s\n" % ("ChipID", self.chipID))
+		if verbose >= 2:
+			fd.write("%25s:  %s\n" % ("BIT-file", self.bitfile))
 		if verbose >= 3 and self.packages:
 			for (package, description) in self.packages:
 				if description:
