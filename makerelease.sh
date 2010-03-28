@@ -4,7 +4,8 @@ set -e
 project="toprammer"
 
 
-origin="$PWD/$(dirname $0)"
+origin="$(dirname "$0")"
+[ "${origin:0:1}" = "/" ] || origin="$PWD/$origin"
 
 do_git_tag=1
 [ "$1" = "--notag" ] && do_git_tag=0
