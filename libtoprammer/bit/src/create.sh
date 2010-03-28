@@ -1,6 +1,11 @@
 #!/bin/bash
+# Create source template
+# Copyright (c) 2010 Michael Buesch <mb@bu3sch.de>
+# Licensed under the GNU/GPL v2+
 
-basedir="$PWD/$(dirname $0)"
+basedir="$(dirname "$0")"
+[ "${basedir:0:1}" = "/" ] || basedir="$PWD/$basedir"
+
 template="$basedir/template"
 
 set -e
