@@ -40,6 +40,7 @@ from chip_at89c2051dip20 import *
 from chip_atmega32dip40 import *
 from chip_atmega8dip28 import *
 from chip_atmega88dip28 import *
+from chip_attiny13dip8 import *
 from chip_attiny26dip20 import *
 from chip_m2764a import *
 from chip_m8cissp import *
@@ -304,6 +305,12 @@ class TOP:
 		"""Read the status register. Returns 64 bytes."""
 		self.queueCommand(chr(0x07))
 		return self.receive(64)
+
+	def cmdReadStatusReg16(self):
+		"""Read a 16bit value from the status register."""
+		stat = self.cmdReadStatusReg()
+		stat = ord(stat[0]) | (ord(stat[1]) << 8)
+		return stat
 
 	def cmdReadStatusReg32(self):
 		"""Read a 32bit value from the status register."""
