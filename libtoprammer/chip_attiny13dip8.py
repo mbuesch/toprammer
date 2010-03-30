@@ -27,6 +27,7 @@ class Chip_AtTiny13dip8(Chip):
 	PROGCMD_SENDINSTR	= 1 # Send an instruction to the chip
 
 	STAT_BUSY		= 0x01 # Programmer is running a command
+	STAT_SDO		= 0x02 # Raw SDO pin state
 
 	def __init__(self):
 		Chip.__init__(self,
@@ -61,6 +62,71 @@ class Chip_AtTiny13dip8(Chip):
 		self.progressMeterFinish()
 		return signature
 
+	def erase(self):
+		self.__enterPM()
+		self.progressMeterInit("Erasing chip", 0)
+		self.__sendInstr(SDI=0x80, SII=0x4C)
+		self.__sendInstr(SDI=0x00, SII=0x64)
+		self.__sendInstr(SDI=0x00, SII=0x6C)
+		self.__waitHighSDO()
+		self.__sendNOP()
+		self.progressMeterFinish()
+
+	def readProgmem(self):
+		pass#TODO
+
+	def writeProgmem(self, image):
+		pass#TODO
+
+	def readEEPROM(self):
+		pass#TODO
+
+	def writeEEPROM(self, image):
+		pass#TODO
+
+	def readFuse(self):
+		fuses = ""
+		self.__enterPM()
+		self.progressMeterInit("Reading fuses", 0)
+		self.__sendInstr(SDI=0x04, SII=0x4C)
+		self.__sendInstr(SDI=0x00, SII=0x68)
+		self.__sendInstr(SDI=0x00, SII=0x6C)
+		data = self.__getSDOBuffer()
+		data = (data >> 3) & 0xFF
+		fuses += chr(data)
+		self.__sendInstr(SDI=0x04, SII=0x4C)
+		self.__sendInstr(SDI=0x00, SII=0x7A)
+		self.__sendInstr(SDI=0x00, SII=0x7E)
+		data = self.__getSDOBuffer()
+		data = ((data >> 3) & 0x1F) | 0xE0
+		fuses += chr(data)
+		self.progressMeterFinish()
+		return fuses
+
+	def writeFuse(self, image):
+		if len(image) != 2:
+			self.throwError("Invalid Fuses image size %d (expected %d)" %\
+				(len(image), 2))
+		self.__enterPM()
+		self.progressMeterInit("Writing fuses", 0)
+		self.__sendInstr(SDI=0x40, SII=0x4C)
+		self.__sendInstr(SDI=ord(image[0]), SII=0x2C)
+		self.__sendInstr(SDI=0x00, SII=0x64)
+		self.__sendInstr(SDI=0x00, SII=0x6C)
+		self.__waitHighSDO()
+		self.__sendInstr(SDI=0x40, SII=0x4C)
+		self.__sendInstr(SDI=(ord(image[1]) & 0x1F), SII=0x2C)
+		self.__sendInstr(SDI=0x00, SII=0x74)
+		self.__sendInstr(SDI=0x00, SII=0x7C)
+		self.__waitHighSDO()
+		self.progressMeterFinish()
+
+	def readLockbits(self):
+		pass#TODO
+
+	def writeLockbits(self, image):
+		pass#TODO
+
 	def __readSignature(self):
 		sig = ""
 		self.__sendInstr(SDI=0x08, SII=0x4C)
@@ -68,7 +134,7 @@ class Chip_AtTiny13dip8(Chip):
 			self.__sendInstr(SDI=i, SII=0x0C)
 			self.__sendInstr(SDI=0x00, SII=0x68)
 			self.__sendInstr(SDI=0x00, SII=0x6C)
-			data = self.__getSDO()
+			data = self.__getSDOBuffer()
 			data = (data >> 3) & 0xFF
 			sig += chr(data)
 		return sig
@@ -109,6 +175,9 @@ class Chip_AtTiny13dip8(Chip):
 			else:
 				self.throwError(msg)
 
+	def __sendNOP(self):
+		self.__sendInstr(SDI=0x00, SII=0x4C)
+
 	def __sendInstr(self, SDI, SII):
 		self.__setSDI(SDI)
 		self.__setSII(SII)
@@ -146,10 +215,13 @@ class Chip_AtTiny13dip8(Chip):
 		stat = self.top.cmdReadStatusReg()
 		return ord(stat[0])
 
-	def __getSDO(self):
+	def __getSDOBuffer(self):
 		self.top.cmdFPGAReadRaw(0x13)
 		self.top.cmdFPGAReadRaw(0x14)
 		return self.top.cmdReadStatusReg16()
+
+	def __rawSDOState(self):
+		return bool(self.__getStatusFlags() & self.STAT_SDO)
 
 	def __busy(self):
 		return bool(self.__getStatusFlags() & self.STAT_BUSY)
@@ -160,6 +232,13 @@ class Chip_AtTiny13dip8(Chip):
 				return
 			self.top.delay(0.01)
 		self.throwError("Timeout in busywait.")
+
+	def __waitHighSDO(self):
+		for i in range(0, 100):
+			if self.__rawSDOState():
+				return
+			self.top.delay(0.01)
+		self.throwError("Timeout waiting for SDO.")
 
 RegisteredChip(
 	Chip_AtTiny13dip8,
