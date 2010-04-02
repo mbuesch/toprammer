@@ -93,14 +93,12 @@ class Chip_AtTiny13dip8(Chip):
 				currentHigh = high
 			self.__sendInstr(SDI=0x00, SII=0x68)
 			self.__sendInstr(SDI=0x00, SII=0x6C)
-			data = self.__getSDOBuffer()
-			data = (data >> 3) & 0xFF
-			image += chr(data)
+			self.__readSDOBufferHigh()
+			image += self.top.cmdReadStatusReg()[0]
 			self.__sendInstr(SDI=0x00, SII=0x78)
 			self.__sendInstr(SDI=0x00, SII=0x7C)
-			data = self.__getSDOBuffer()
-			data = (data >> 3) & 0xFF
-			image += chr(data)
+			self.__readSDOBufferHigh()
+			image += self.top.cmdReadStatusReg()[0]
 		self.progressMeterFinish()
 		return image
 
@@ -149,9 +147,8 @@ class Chip_AtTiny13dip8(Chip):
 				currentPage = high
 			self.__sendInstr(SDI=0x00, SII=0x68)
 			self.__sendInstr(SDI=0x00, SII=0x6C)
-			data = self.__getSDOBuffer()
-			data = (data >> 3) & 0xFF
-			image += chr(data)
+			self.__readSDOBufferHigh()
+			image += self.top.cmdReadStatusReg()[0]
 		self.progressMeterFinish()
 		return image
 
@@ -183,15 +180,14 @@ class Chip_AtTiny13dip8(Chip):
 		self.__sendInstr(SDI=0x04, SII=0x4C)
 		self.__sendInstr(SDI=0x00, SII=0x68)
 		self.__sendInstr(SDI=0x00, SII=0x6C)
-		data = self.__getSDOBuffer()
-		data = (data >> 3) & 0xFF
-		fuses += chr(data)
+		self.__readSDOBufferHigh()
+		fuses += self.top.cmdReadStatusReg()[0]
 		self.__sendInstr(SDI=0x04, SII=0x4C)
 		self.__sendInstr(SDI=0x00, SII=0x7A)
 		self.__sendInstr(SDI=0x00, SII=0x7E)
-		data = self.__getSDOBuffer()
-		data = ((data >> 3) & 0x1F) | 0xE0
-		fuses += chr(data)
+		self.__readSDOBufferHigh()
+		data = ord(self.top.cmdReadStatusReg()[0])
+		fuses += chr(data | 0xE0)
 		self.progressMeterFinish()
 		return fuses
 
@@ -219,9 +215,9 @@ class Chip_AtTiny13dip8(Chip):
 		self.__sendInstr(SDI=0x04, SII=0x4C)
 		self.__sendInstr(SDI=0x00, SII=0x78)
 		self.__sendInstr(SDI=0x00, SII=0x7C)
-		data = self.__getSDOBuffer()
-		data = (data >> 3) & 3
-		lockbits = chr(data)
+		self.__readSDOBufferHigh()
+		data = ord(self.top.cmdReadStatusReg()[0])
+		lockbits = chr(data & 3)
 		self.progressMeterFinish()
 		return lockbits
 
@@ -239,15 +235,14 @@ class Chip_AtTiny13dip8(Chip):
 		self.progressMeterFinish()
 
 	def __readSignature(self):
-		sig = ""
 		self.__sendInstr(SDI=0x08, SII=0x4C)
+		sig = ""
 		for i in range(0, 3):
 			self.__sendInstr(SDI=i, SII=0x0C)
 			self.__sendInstr(SDI=0x00, SII=0x68)
 			self.__sendInstr(SDI=0x00, SII=0x6C)
-			data = self.__getSDOBuffer()
-			data = (data >> 3) & 0xFF
-			sig += chr(data)
+			self.__readSDOBufferHigh()
+			sig += self.top.cmdReadStatusReg()[0]
 		return sig
 
 	def __enterPM(self):
@@ -338,10 +333,8 @@ class Chip_AtTiny13dip8(Chip):
 		stat = self.top.cmdReadStatusReg()
 		return ord(stat[0])
 
-	def __getSDOBuffer(self):
-		self.top.cmdFPGAReadRaw(0x13)
-		self.top.cmdFPGAReadRaw(0x14)
-		return self.top.cmdReadStatusReg16()
+	def __readSDOBufferHigh(self):
+		self.top.cmdFPGAReadByte()
 
 	def __rawSDOState(self):
 		return bool(self.__getStatusFlags() & self.STAT_SDO)
