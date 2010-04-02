@@ -36,6 +36,10 @@ class Chip_AtTiny13dip8(Chip):
 			      chipPinsVPP = 1,
 			      chipPinGND = 4)
 		self.signature = "\x1E\x90\x07"
+		self.flashPageSize = 16
+		self.flashPages = 32
+		self.eepromPageSize = 4
+		self.eepromPages = 16
 
 	def initializeChip(self):
 		self.printDebug("Initializing chip")
@@ -73,16 +77,104 @@ class Chip_AtTiny13dip8(Chip):
 		self.progressMeterFinish()
 
 	def readProgmem(self):
-		pass#TODO
+		nrWords = self.flashPages * self.flashPageSize
+		image = ""
+		self.__enterPM()
+		self.progressMeterInit("Reading flash", nrWords)
+		self.__sendReadFlashInstr()
+		currentHigh = -1
+		for word in range(0, nrWords):
+			self.progressMeter(word)
+			low = word & 0xFF
+			high = (word >> 8) & 0xFF
+			self.__sendInstr(SDI=low, SII=0x0C)
+			if high != currentHigh:
+				self.__sendInstr(SDI=high, SII=0x1C)
+				currentHigh = high
+			self.__sendInstr(SDI=0x00, SII=0x68)
+			self.__sendInstr(SDI=0x00, SII=0x6C)
+			data = self.__getSDOBuffer()
+			data = (data >> 3) & 0xFF
+			image += chr(data)
+			self.__sendInstr(SDI=0x00, SII=0x78)
+			self.__sendInstr(SDI=0x00, SII=0x7C)
+			data = self.__getSDOBuffer()
+			data = (data >> 3) & 0xFF
+			image += chr(data)
+		self.progressMeterFinish()
+		return image
 
 	def writeProgmem(self, image):
-		pass#TODO
+		nrWords = self.flashPages * self.flashPageSize
+		if len(image) > nrWords * 2 or len(image) % 2 != 0:
+			self.throwError("Invalid flash image size %d (expected <=%d and word aligned)" %\
+				(len(image), nrWords * 2))
+		self.__enterPM()
+		self.progressMeterInit("Writing flash", len(image) // 2)
+		self.__sendWriteFlashInstr()
+		currentHigh = -1
+		for word in range(0, len(image) // 2):
+			self.progressMeter(word)
+			low = word & 0xFF
+			high = (word >> 8) & 0xFF
+			self.__sendInstr(SDI=low, SII=0x0C)
+			self.__sendInstr(SDI=ord(image[word * 2 + 0]), SII=0x2C)
+			self.__sendInstr(SDI=ord(image[word * 2 + 1]), SII=0x3C)
+			self.__sendInstr(SDI=0x00, SII=0x7D)
+			self.__sendInstr(SDI=0x00, SII=0x7C)
+			if ((word + 1) % self.flashPageSize == 0) or word == len(image) // 2 - 1:
+				if currentHigh != high:
+					self.__sendInstr(SDI=high, SII=0x1C)
+					currentHigh = high
+				self.__sendInstr(SDI=0x00, SII=0x64)
+				self.__sendInstr(SDI=0x00, SII=0x6C)
+				self.__waitHighSDO()
+		self.__sendNOP()
+		self.progressMeterFinish()
 
 	def readEEPROM(self):
-		pass#TODO
+		nrBytes = self.eepromPages * self.eepromPageSize
+		image = ""
+		self.__enterPM()
+		self.progressMeterInit("Reading EEPROM", nrBytes)
+		self.__sendReadEEPROMInstr()
+		currentPage = -1
+		for i in range(0, nrBytes):
+			self.progressMeter(i)
+			low = i & 0xFF
+			high = (i >> 8) & 0xFF
+			self.__sendInstr(SDI=low, SII=0x0C)
+			if currentPage != high:
+				self.__sendInstr(SDI=high, SII=0x1C)
+				currentPage = high
+			self.__sendInstr(SDI=0x00, SII=0x68)
+			self.__sendInstr(SDI=0x00, SII=0x6C)
+			data = self.__getSDOBuffer()
+			data = (data >> 3) & 0xFF
+			image += chr(data)
+		self.progressMeterFinish()
+		return image
 
 	def writeEEPROM(self, image):
-		pass#TODO
+		nrBytes = self.eepromPages * self.eepromPageSize
+		if len(image) > nrBytes:
+			self.throwError("Invalid EEPROM image size %d (expected <=%d)" %\
+				(len(image), nrBytes))
+		self.__enterPM()
+		self.progressMeterInit("Writing EEPROM", len(image))
+		self.__sendWriteEEPROMInstr()
+		for i in range(0, len(image)):
+			self.progressMeter(i)
+			self.__sendInstr(SDI=i, SII=0x0C)
+			self.__sendInstr(SDI=ord(image[i]), SII=0x2C)
+			self.__sendInstr(SDI=0x00, SII=0x6D)
+			self.__sendInstr(SDI=0x00, SII=0x6C)
+			if ((i + 1) % self.eepromPageSize == 0) or i == len(image) - 1:
+				self.__sendInstr(SDI=0x00, SII=0x64)
+				self.__sendInstr(SDI=0x00, SII=0x6C)
+				self.__waitHighSDO()
+		self.__sendNOP()
+		self.progressMeterFinish()
 
 	def readFuse(self):
 		fuses = ""
@@ -122,10 +214,29 @@ class Chip_AtTiny13dip8(Chip):
 		self.progressMeterFinish()
 
 	def readLockbits(self):
-		pass#TODO
+		self.__enterPM()
+		self.progressMeterInit("Reading lockbits", 0)
+		self.__sendInstr(SDI=0x04, SII=0x4C)
+		self.__sendInstr(SDI=0x00, SII=0x78)
+		self.__sendInstr(SDI=0x00, SII=0x7C)
+		data = self.__getSDOBuffer()
+		data = (data >> 3) & 3
+		lockbits = chr(data)
+		self.progressMeterFinish()
+		return lockbits
 
 	def writeLockbits(self, image):
-		pass#TODO
+		if len(image) != 1:
+			self.throwError("Invalid Lockbits image size %d (expected %d)" %\
+				(len(image), 1))
+		self.__enterPM()
+		self.progressMeterInit("Writing lockbits", 0)
+		self.__sendInstr(SDI=0x20, SII=0x4C)
+		self.__sendInstr(SDI=(ord(image[0]) & 3), SII=0x2C)
+		self.__sendInstr(SDI=0x00, SII=0x64)
+		self.__sendInstr(SDI=0x00, SII=0x6C)
+		self.__waitHighSDO()
+		self.progressMeterFinish()
 
 	def __readSignature(self):
 		sig = ""
@@ -174,6 +285,18 @@ class Chip_AtTiny13dip8(Chip):
 				self.printWarning(msg)
 			else:
 				self.throwError(msg)
+
+	def __sendReadEEPROMInstr(self):
+		self.__sendInstr(SDI=0x03, SII=0x4C)
+
+	def __sendWriteEEPROMInstr(self):
+		self.__sendInstr(SDI=0x11, SII=0x4C)
+
+	def __sendReadFlashInstr(self):
+		self.__sendInstr(SDI=0x02, SII=0x4C)
+
+	def __sendWriteFlashInstr(self):
+		self.__sendInstr(SDI=0x10, SII=0x4C)
 
 	def __sendNOP(self):
 		self.__sendInstr(SDI=0x00, SII=0x4C)
