@@ -158,11 +158,11 @@ module attiny13dip8(data, ale, write, read, osc_in, zif);
 			read_data[0] <= (prog_busy[0] != prog_busy[1]);	/* busy */
 			read_data[1] <= zif[`DUT_SDO];			/* Raw SDO pin access */
 		end
-		8'h13: begin /* Get SDO sequence (low) */
+		8'h13: begin /* Get SDO sequence low (bits 0-7) */
 			read_data[7:0] <= sdo_buf[7:0];
 		end
-		8'h14: begin /* Get SDO sequence (high) */
-			read_data[2:0] <= sdo_buf[10:8];
+		8'h14: begin /* Get SDO sequence high (bits 3-10) */
+			read_data[7:0] <= sdo_buf[10:3];
 		end
 		endcase
 	end
