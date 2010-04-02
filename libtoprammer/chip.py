@@ -114,30 +114,31 @@ class Chip:
 
 	def progressMeterInit(self, message, nrSteps):
 		self.progressNrSteps = nrSteps
-		self.progressHave25 = False
-		self.progressHave50 = False
-		self.progressHave75 = False
+		self.progress = range(0, 100)
 		self.printInfo(message + " [0%", newline=False)
 
 	def progressMeterFinish(self):
 		if not self.progressNrSteps:
-			self.printInfo("...", newline=False)
+			self.progressMeter(0)
 		self.printInfo("100%]")
 
 	def progressMeter(self, step):
-		if step % (self.progressNrSteps // 32) == 0:
+		if self.progressNrSteps:
 			percent = (step * 100 // self.progressNrSteps)
-			if percent >= 25 and not self.progressHave25:
+		else:
+			percent = 100
+		for progress in list(self.progress):
+			if progress > percent:
+				break
+			if progress == 25:
 				self.printInfo("25%", newline=False)
-				self.progressHave25 = True
-			elif percent >= 50 and not self.progressHave50:
+			elif progress == 50:
 				self.printInfo("50%", newline=False)
-				self.progressHave50 = True
-			elif percent >= 75 and not self.progressHave75:
+			elif progress == 75:
 				self.printInfo("75%", newline=False)
-				self.progressHave75 = True
-			else:
+			elif progress % 2 == 0:
 				self.printInfo(".", newline=False)
+			self.progress.remove(progress)
 
 	def initializeChip(self):
 		pass # Override me in the subclass, if required.
