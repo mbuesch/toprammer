@@ -258,6 +258,13 @@ address
 \end_inset
 
  is used for address latching on the FPGA.
+ The microcontroller's status register has an automagically incrementing
+ pointer.
+ So issueing several cmdFPGAReadRaw() in a row will result in all the bytes
+ being put one after each other into the status register.
+ The status register can hold up to 64 bytes.
+ Reading the status register (cmdReadStatusReg()) will reset the automagic
+ pointer to zero.
 \end_layout
 
 \begin_layout Subsection
@@ -265,18 +272,13 @@ cmdFPGAReadByte()
 \end_layout
 
 \begin_layout Standard
-This is cmdFPGAReadRaw(0x10) with auto-increment.
+This is a shortcut to cmdFPGAReadRaw(0x10).
  In general it is used for payload data reading.
  Using cmdFPGAReadByte() instead of cmdFPGAReadRaw(0x10) is more efficient
  for payload reading, because on the USB bus the command is only one byte
  wide instead of two.
  So it uses up less space in the transmission queue and can thus speed up
  operation.
- It also automagically increments the status register pointer.
- So several cmdFPGAReadByte() calls in a row will result in the data put
- next to each other into the status register.
- This way up to 64bytes can be queued up and be read by one single status
- register read.
 \end_layout
 
 \begin_layout Subsection
