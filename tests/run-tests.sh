@@ -2,7 +2,9 @@
 # Toprammer regression tests
 # Copyright (c) 2010 Michael Buesch <mb@bu3sch.de>
 
-basedir="$PWD/$(dirname $0)"
+basedir="$(dirname "$0")"
+[ "${basedir:0:1}" = "/" ] || basedir="$PWD/$basedir"
+
 tmpdir="/tmp/toprammer-test-$$"
 
 
@@ -130,6 +132,9 @@ mkdir -p "$tmpdir"
 
 # Create various test files
 tmpfile="$tmpdir/tmpfile"
+
+testfile_64="$tmpdir/testfile_64"
+create_random_file "$testfile_64" 64 1
 
 testfile_128="$tmpdir/testfile_128"
 create_random_file "$testfile_128" 128 1
