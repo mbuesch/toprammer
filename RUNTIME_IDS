@@ -19,5 +19,13 @@
 
 0x0000		=> Reserved. Do not use.
 0x0001		=> attiny13dip8
+0x0002		=> attiny26dip20
+0x0003		=> atmega8dip28
+0x0004		=> atmega32dip40
+0x0005		=> at89c2051dip20
+0x0006		=> m2764a
+0x0007		=> m8c_issp
+0x0008		=> unitest
+0x0009		=> w29ee011dip32
 0xFEFD		=> Reserved. Do not use.
 0xFFFF		=> Reserved. Do not use.

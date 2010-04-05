@@ -21,6 +21,10 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+/* The runtime ID and revision. */
+`define RUNTIME_ID	16'h0006
+`define RUNTIME_REV	16'h01
+
 module m2764a(data, ale, write, read, osc_in, zif);
 	inout [7:0] data;
 	input ale;
@@ -153,30 +157,10 @@ module m2764a(data, ale, write, read, osc_in, zif);
 			/* Read status */
 			read_data[0] <= (prog_busy[0] != prog_busy[1]);
 		end
-		8'h16: begin
-			/* Raw ZIF pin read access */
-			read_data <= zif[8:1];
-		end
-		8'h17: begin
-			/* Raw ZIF pin read access */
-			read_data <= zif[16:9];
-		end
-		8'h18: begin
-			/* Raw ZIF pin read access */
-			read_data <= zif[24:17];
-		end
-		8'h19: begin
-			/* Raw ZIF pin read access */
-			read_data <= zif[32:25];
-		end
-		8'h1A: begin
-			/* Raw ZIF pin read access */
-			read_data <= zif[40:33];
-		end
-		8'h1B: begin
-			/* Raw ZIF pin read access */
-			read_data <= zif[48:41];
-		end
+
+		8'hFD: read_data <= `RUNTIME_ID & 16'hFF;
+		8'hFE: read_data <= (`RUNTIME_ID >> 8) & 16'hFF;
+		8'hFF: read_data <= `RUNTIME_REV;
 		endcase
 	end
 

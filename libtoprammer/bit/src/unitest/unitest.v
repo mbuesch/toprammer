@@ -21,6 +21,10 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+/* The runtime ID and revision. */
+`define RUNTIME_ID	16'h0008
+`define RUNTIME_REV	16'h01
+
 module unitest(data, ale, write, read, zif);
 	inout [7:0] data;
 	input ale;
@@ -111,6 +115,10 @@ module unitest(data, ale, write, read, zif);
 		8'h1D: begin
 			read_data <= zif[48:41];
 		end
+
+		8'hFD: read_data <= `RUNTIME_ID & 16'hFF;
+		8'hFE: read_data <= (`RUNTIME_ID >> 8) & 16'hFF;
+		8'hFF: read_data <= `RUNTIME_REV;
 		endcase
 	end
 
