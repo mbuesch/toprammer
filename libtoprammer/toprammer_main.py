@@ -141,7 +141,7 @@ class TOP:
 		self.bitfile = Bitfile()
 		self.bitfile.parseFile(bitfile)
 		# Initialize the hardware.
-		self.__bitfileUpload()
+		self.__bitfileUpload(descriptor.runtimeID)
 		self.chip.initializeChip()
 
 	def shutdownChip(self):
@@ -194,20 +194,16 @@ class TOP:
 		if stat != 0x00020C69:
 			raise TOPException("Init: Unexpected status register (a): 0x%08X" % stat)
 
-		self.cmdFPGAWrite(0x1B, 0xFF)
 		self.cmdSetVPPVoltage(0)
 		self.cmdSetVPPVoltage(0)
-		self.cmdSetVPPVoltage(0)
-		self.cmdSetVPPVoltage(12)
 		self.queueCommand("\x0E\x20\x00\x00")
 		self.cmdFlush()
 		self.cmdSetVCCXVoltage(0)
-		self.cmdFPGAWrite(0x1D, 0x86)
+
 		self.cmdLoadGNDLayout(0)
 		self.cmdLoadVPPLayout(0)
 		self.cmdLoadVCCXLayout(0)
-		self.cmdSetVPPVoltage(0)
-		self.cmdSetVPPVoltage(12)
+
 		self.queueCommand("\x0E\x20\x00\x00")
 		self.cmdFlush()
 		self.queueCommand("\x0E\x25\x00\x00")
@@ -215,15 +211,36 @@ class TOP:
 		if stat != 0x0000686C:
 			raise TOPException("Init: Unexpected status register (b): 0x%08X" % stat)
 
-	def __bitfileUpload(self):
+	def __bitfileUpload(self, requiredRuntimeID):
+		(requiredID, requiredRevision) = requiredRuntimeID
+		if requiredID and requiredRevision:
+			# Check if the bitfile is already uploaded.
+			self.cmdFPGAReadRaw(0xFD)
+			self.cmdFPGAReadRaw(0xFE)
+			self.cmdFPGAReadRaw(0xFF)
+			data = self.cmdReadStatusReg()
+			gotID = ord(data[0]) | (ord(data[1]) << 8)
+			if gotID == 0xFEFD or gotID == 0xFFFF:
+				gotID = 0
+			gotRev = ord(data[2])
+			if gotRev == 0xFF:
+				gotRev = 0
+			if gotID == requiredID and gotRev == requiredRevision:
+				self.printDebug("Bitfile %s ID 0x%04X Rev 0x%02X is already uploaded." %\
+						(self.bitfile.getFilename(), gotID, gotRev))
+				return
+			self.printDebug("Current runtime ID 0x%04X Rev 0x%02X. Uploading new bitfile..." %\
+					(gotID, gotRev))
+
 		self.printDebug("Uploading bitfile %s..." % self.bitfile.getFilename())
 
-		self.cmdFPGAWrite(0x1B, 0x00)
 		self.cmdFPGAInitiateConfig()
-		stat = self.cmdReadStatusReg32()
-		if stat != 0x00006801:
+		stat = self.cmdReadStatusReg8()
+		expected = 0x01
+		if stat != expected:
 			raise TOPException("bit-upload: Failed to initiate " +\
-				"config sequence (0x%08X)" % stat)
+				"config sequence (got 0x%02X, expected 0x%02X)" %\
+				(stat, expected))
 
 		data = self.bitfile.getPayload()
 		for i in range(0, len(data), 60):
@@ -306,10 +323,22 @@ class TOP:
 		self.queueCommand(chr(0x07))
 		return self.receive(64)
 
+	def cmdReadStatusReg8(self):
+		"""Read a 8bit value from the status register."""
+		stat = self.cmdReadStatusReg()
+		stat = ord(stat[0])
+		return stat
+
 	def cmdReadStatusReg16(self):
 		"""Read a 16bit value from the status register."""
 		stat = self.cmdReadStatusReg()
 		stat = ord(stat[0]) | (ord(stat[1]) << 8)
+		return stat
+
+	def cmdReadStatusReg24(self):
+		"""Read a 24bit value from the status register."""
+		stat = self.cmdReadStatusReg()
+		stat = ord(stat[0]) | (ord(stat[1]) << 8) | (ord(stat[2]) << 16)
 		return stat
 
 	def cmdReadStatusReg32(self):

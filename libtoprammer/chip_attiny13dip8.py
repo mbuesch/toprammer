@@ -217,7 +217,7 @@ class Chip_AtTiny13dip8(Chip):
 		self.__sendInstr(SDI=0x00, SII=0x7C)
 		self.__readSDOBufferHigh()
 		data = ord(self.top.cmdReadStatusReg()[0])
-		lockbits = chr(data & 3)
+		lockbits = chr(data | 0xFC)
 		self.progressMeterFinish()
 		return lockbits
 
@@ -359,6 +359,7 @@ class Chip_AtTiny13dip8(Chip):
 RegisteredChip(
 	Chip_AtTiny13dip8,
 	bitfile = "attiny13dip8",
+	runtimeID = (0x0001, 1),
 	description = "Atmel AtTiny13",
 	packages = ( ("DIP8", ""), ),
 )

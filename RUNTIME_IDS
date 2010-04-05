@@ -1,0 +1,23 @@
+*************************************************************
+*** Toprammer                                             ***
+*** Registered Runtime IDs and reserved Runtime Revisions ***
+*************************************************************
+
+
+
+*** RUNTIME_REV - Runtime revisions ***
+
+0x00		=> Reserved. Do not use.
+0x01 - 0xFE	=> Available for use by FPGA implementations.
+		   Start with 0x01 and increment on every incompatible update
+		   to the FPGA implementation.
+0xFF		=> Reserved. Do not use.
+
+
+
+*** RUNTIME_ID - Registered runtime IDs ***
+
+0x0000		=> Reserved. Do not use.
+0x0001		=> attiny13dip8
+0xFEFD		=> Reserved. Do not use.
+0xFFFF		=> Reserved. Do not use.

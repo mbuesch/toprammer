@@ -190,12 +190,16 @@ registeredChips = []
 
 class RegisteredChip:
 	def __init__(self, chipImplClass, bitfile, chipID="",
+		     runtimeID=(0,0),
 		     description="", packages=None, comment="",
 		     broken=False):
 		"""Register a chip implementation class.
 		chipImplClass	=> The implementation class of the chip.
-		bitfile		=> The bitfile ID of the chip.
-		chipID		=> The chip-ID. Will default to the value of bitfile.
+		bitfile		=> The bitfile ID string of the chip.
+		chipID		=> The chip-ID string. Will default to the bitfile ID string.
+		runtimeID	=> The runtime-ID is a tuple of two numbers that uniquely
+				   identifies a loaded FPGA configuration. The first number in the
+				   tuple is an ID number and the second number is a revision number.
 		description	=> Human readable chip description string.
 		packages	=> List of supported packages.
 				   Each entry is a tuple of two strings: ("PACKAGE", "description")
@@ -208,6 +212,7 @@ class RegisteredChip:
 		self.chipImplClass = chipImplClass
 		self.bitfile = bitfile
 		self.chipID = chipID
+		self.runtimeID = runtimeID
 		self.description = description
 		self.packages = packages
 		self.comment = comment
