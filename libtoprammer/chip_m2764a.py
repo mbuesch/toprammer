@@ -173,6 +173,7 @@ class Chip_M2764A(Chip):
 RegisteredChip(
 	Chip_M2764A,
 	bitfile = "m2764a",
+	runtimeID = (0x0006, 0x01),
 	description = "M2764A EPROM",
 	packages = ( ("DIP28", ""), ),
 )

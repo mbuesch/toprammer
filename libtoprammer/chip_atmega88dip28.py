@@ -40,6 +40,7 @@ RegisteredChip(
 	Chip_ATMega88DIP28,
 	bitfile = "atmega8dip28",
 	chipID = "atmega88dip28",
+	runtimeID = (0x0003, 0x01),
 	description = "Atmel AtMega88",
 	packages = ( ("DIP28", ""), ),
 )

@@ -93,5 +93,6 @@ class Chip_Unitest(Chip):
 RegisteredChip(
 	Chip_Unitest,
 	bitfile = "unitest",
+	runtimeID = (0x0008, 0x01),
 	description = "Universal device tester",
 )

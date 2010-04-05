@@ -228,6 +228,7 @@ class Chip_AT89C2051dip20(Chip):
 RegisteredChip(
 	Chip_AT89C2051dip20,
 	bitfile = "at89c2051dip20",
+	runtimeID = (0x0005, 0x01),
 	description = "Atmel AT89C2051",
 	packages = ( ("DIP20", ""), )
 )

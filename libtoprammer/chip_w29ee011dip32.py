@@ -225,6 +225,7 @@ class Chip_w29ee011dip32(Chip):
 RegisteredChip(
 	Chip_w29ee011dip32,
 	bitfile = "w29ee011dip32",
+	runtimeID = (0x0009, 0x01),
 	description = "Winbond W29EE011 EEPROM",
 	packages = ( ("DIP32", ""), ("PLCC32", "Use 1:1 PLCC32->DIP32 adapter"), )
 )
