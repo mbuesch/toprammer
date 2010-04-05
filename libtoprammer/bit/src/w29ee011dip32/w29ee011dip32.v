@@ -26,7 +26,7 @@ module w29ee011dip32(data, ale, write, read, osc_in, zif);
 	input ale;
 	input write;
 	input read;
-	input osc_in; /* 12MHz oscillator */
+	input osc_in; /* 24MHz oscillator */
 	inout [48:1] zif;
 
 	/* Interface to the microcontroller */
@@ -69,7 +69,7 @@ module w29ee011dip32(data, ale, write, read, osc_in, zif);
 	/* Programmer commands */
 	parameter CMD_WRITEBUF		= 1;
 
-	/* The delay counter. Based on the 12MHz input clock. */
+	/* The delay counter. Based on the 24MHz input clock. */
 	reg [15:0] delay_count;
 	wire osc;
 	IBUF osc_ibuf(.I(osc_in), .O(osc));
