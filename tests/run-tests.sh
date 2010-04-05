@@ -212,6 +212,9 @@ function do_run_test # $1=device, $2=testscript
 	[ $? -eq 0 ] || continue
 	test_run
 	test_exit
+
+	current_device=
+	current_test=
 }
 
 if [ $nr_scriptpaths -eq 0 ]; then
