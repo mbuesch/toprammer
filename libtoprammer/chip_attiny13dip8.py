@@ -83,6 +83,7 @@ class Chip_AtTiny13dip8(Chip):
 		self.progressMeterInit("Reading flash", nrWords)
 		self.__sendReadFlashInstr()
 		currentHigh = -1
+		bufferedBytes = 0
 		for word in range(0, nrWords):
 			self.progressMeter(word)
 			low = word & 0xFF
@@ -94,11 +95,15 @@ class Chip_AtTiny13dip8(Chip):
 			self.__sendInstr(SDI=0x00, SII=0x68)
 			self.__sendInstr(SDI=0x00, SII=0x6C)
 			self.__readSDOBufferHigh()
-			image += self.top.cmdReadStatusReg()[0]
+			bufferedBytes += 1
 			self.__sendInstr(SDI=0x00, SII=0x78)
 			self.__sendInstr(SDI=0x00, SII=0x7C)
 			self.__readSDOBufferHigh()
-			image += self.top.cmdReadStatusReg()[0]
+			bufferedBytes += 1
+			if bufferedBytes == 64 or word == nrWords - 1:
+				image += self.top.cmdReadStatusReg()[0:bufferedBytes]
+				bufferedBytes = 0
+		assert(bufferedBytes == 0)
 		self.progressMeterFinish()
 		return image
 
@@ -137,6 +142,7 @@ class Chip_AtTiny13dip8(Chip):
 		self.progressMeterInit("Reading EEPROM", nrBytes)
 		self.__sendReadEEPROMInstr()
 		currentPage = -1
+		bufferedBytes = 0
 		for i in range(0, nrBytes):
 			self.progressMeter(i)
 			low = i & 0xFF
@@ -148,7 +154,11 @@ class Chip_AtTiny13dip8(Chip):
 			self.__sendInstr(SDI=0x00, SII=0x68)
 			self.__sendInstr(SDI=0x00, SII=0x6C)
 			self.__readSDOBufferHigh()
-			image += self.top.cmdReadStatusReg()[0]
+			bufferedBytes += 1
+			if bufferedBytes == 64 or i == nrBytes - 1:
+				image += self.top.cmdReadStatusReg()[0:bufferedBytes]
+				bufferedBytes = 0
+		assert(bufferedBytes == 0)
 		self.progressMeterFinish()
 		return image
 
@@ -236,14 +246,12 @@ class Chip_AtTiny13dip8(Chip):
 
 	def __readSignature(self):
 		self.__sendInstr(SDI=0x08, SII=0x4C)
-		sig = ""
 		for i in range(0, 3):
 			self.__sendInstr(SDI=i, SII=0x0C)
 			self.__sendInstr(SDI=0x00, SII=0x68)
 			self.__sendInstr(SDI=0x00, SII=0x6C)
 			self.__readSDOBufferHigh()
-			sig += self.top.cmdReadStatusReg()[0]
-		return sig
+		return self.top.cmdReadStatusReg()[0:3]
 
 	def __enterPM(self):
 		"Enter HV programming mode."
@@ -299,7 +307,11 @@ class Chip_AtTiny13dip8(Chip):
 	def __sendInstr(self, SDI, SII):
 		self.__setSDI(SDI)
 		self.__setSII(SII)
-		self.__runCommandSync(self.PROGCMD_SENDINSTR)
+		self.__loadCommand(self.PROGCMD_SENDINSTR)
+		# We do not poll the busy flag, because that would result
+		# in a significant slowdown. We delay long enough for the
+		# command to finish execution, instead.
+		self.top.delay(0.001)
 
 	def __setSDI(self, sdi):
 		self.top.cmdFPGAWrite(0x13, sdi & 0xFF)
