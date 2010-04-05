@@ -47,11 +47,17 @@ function toprammer
 {
 	local args="$@"
 	local logfile="$tmpdir/toprammer.log"
+
 	echo "        toprammer $args"
-	$basedir/../toprammer $args >$logfile 2>&1
-	if [ $? -ne 0 ]; then
-		[ -r "$logfile" ] && cat "$logfile"
-		die "toprammer $args  <<<FAILED>>>"
+	if [ $verbose -eq 0 ]; then
+		$basedir/../toprammer $args >$logfile 2>&1
+		if [ $? -ne 0 ]; then
+			[ -r "$logfile" ] && cat "$logfile"
+			die "toprammer $args  <<<FAILED>>>"
+		fi
+	else
+		$basedir/../toprammer $args -V2
+		[ $? -eq 0 ] || die "toprammer $args  <<<FAILED>>>"
 	fi
 }
 
@@ -132,6 +138,7 @@ function usage
 	echo
 	echo "Options:"
 	echo " -h|--help               Show this help text"
+	echo " -V|--verbose            Be verbose"
 	echo
 	echo "If the optional scriptpath is specified, only that testscript"
 	echo "is executed. The scriptpath is DEVICE/TESTSCRIPT. Example:"
@@ -142,10 +149,16 @@ function usage
 
 # Parse commandline
 nr_scriptpaths=0
+verbose=0
 while [ $# -gt 0 ]; do
 	if [ "$1" = "-h" -o "$1" = "--help" ]; then
 		usage
 		exit 0
+	fi
+	if [ "$1" = "-V" -o "$1" = "--verbose" ]; then
+		verbose=1
+		shift
+		continue
 	fi
 	scriptpaths[nr_scriptpaths]="$1"
 	let nr_scriptpaths=nr_scriptpaths+1
