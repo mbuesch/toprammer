@@ -2,6 +2,7 @@
  *   TOP2049 Open Source programming suite
  *
  *   Atmel Mega8 DIP28
+ *   Atmel Mega88 DIP28
  *   FPGA bottomhalf implementation
  *
  *   Copyright (c) 2010 Michael Buesch <mb@bu3sch.de>
@@ -20,6 +21,7 @@
  *   with this program; if not, write to the Free Software Foundation, Inc.,
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
+
 module atmega8dip28(data, ale, write, read, zif);
 	inout [7:0] data;
 	input ale;

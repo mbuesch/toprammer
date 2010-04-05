@@ -38,7 +38,8 @@ class Chip_ATMega88DIP28(Chip_ATMega_common):
 
 RegisteredChip(
 	Chip_ATMega88DIP28,
-	bitfile = "atmega88dip28",
+	bitfile = "atmega8dip28",
+	chipID = "atmega88dip28",
 	description = "Atmel AtMega88",
 	packages = ( ("DIP28", ""), ),
 )
