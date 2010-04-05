@@ -21,6 +21,10 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+/* The runtime ID and revision. */
+`define RUNTIME_ID	16'h0001
+`define RUNTIME_REV	16'h01
+
 module attiny13dip8(data, ale, write, read, osc_in, zif);
 	inout [7:0] data;
 	input ale;
@@ -162,6 +166,10 @@ module attiny13dip8(data, ale, write, read, osc_in, zif);
 		8'h13: begin /* Get SDO sequence low (bits 0-7) */
 			read_data[7:0] <= sdo_buf[7:0];
 		end
+
+		8'hFD: read_data <= `RUNTIME_ID & 16'hFF;
+		8'hFE: read_data <= (`RUNTIME_ID >> 8) & 16'hFF;
+		8'hFF: read_data <= `RUNTIME_REV;
 		endcase
 	end
 
