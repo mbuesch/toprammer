@@ -106,8 +106,10 @@ function request_TOP # $1=TOPxxxx
 
 function create_random_file # $1=file $2=bs $3=count
 {
-	dd if=/dev/urandom of=$1 bs=$2 count=$3 >/dev/null 2>&1
+	dd if=/dev/urandom of="$1" bs="$2" count="$3" >/dev/null 2>&1
 	[ $? -eq 0 ] || die "Failed to create $1"
+	chmod 444 "$1"
+	[ $? -eq 0 ] || die "Failed to set $1 read-only"
 }
 
 function compare_files # $1=file1 $2=file2
