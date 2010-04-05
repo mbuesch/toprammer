@@ -126,6 +126,32 @@ function compare_file_to_hex # $1=file $2=hex_string
 	[ "$filehex" = "$2" ]
 }
 
+function usage
+{
+	echo "Usage: run-tests.sh <OPTIONS> <SCRIPTPATH>"
+	echo
+	echo "Options:"
+	echo " -h|--help               Show this help text"
+	echo
+	echo "If the optional scriptpath is specified, only that testscript"
+	echo "is executed. The scriptpath is DEVICE/TESTSCRIPT. Example:"
+	echo "   top2049/001-atmega32dip40.test"
+	echo "This will execute the atmega32 test for the TOP2049 and exit."
+	echo "If no path is specified, all tests will be executed."
+}
+
+# Parse commandline
+nr_scriptpaths=0
+while [ $# -gt 0 ]; do
+	if [ "$1" = "-h" -o "$1" = "--help" ]; then
+		usage
+		exit 0
+	fi
+	scriptpaths[nr_scriptpaths]="$1"
+	let nr_scriptpaths=nr_scriptpaths+1
+	shift
+done
+
 current_test=
 current_device=
 cleanup
@@ -169,22 +195,45 @@ testfile_128k="$tmpdir/testfile_128k"
 create_random_file "$testfile_128k" 4096 32
 
 
-for device in $(ls "$basedir"); do
-	devdir="$basedir/$device"
-	[ -d "$devdir" ] || continue
-	[ "$device" == "generic" ] || request_TOP "$device" || continue
-	current_device="$device"
+function do_run_test # $1=device, $2=testscript
+{
+	current_device="$1"
+	current_test="$1/$2"
 
-	for testscript in $(ls "$devdir"); do
-		current_test="$device/$testscript"
-		echo "Running $current_test..."
-		. "$basedir/defaults.test"
-		. "$devdir/$testscript"
-		rm -f "$tmpfile"
-		test_init
-		[ $? -eq 0 ] || continue
-		test_run
-		test_exit
+	echo "Running $current_test..."
+	rm -f "$tmpfile"
+
+	# Import the testscript
+	. "$basedir/defaults.test"
+	. "$basedir/$current_test"
+
+	# And run the tests
+	test_init
+	[ $? -eq 0 ] || continue
+	test_run
+	test_exit
+}
+
+if [ $nr_scriptpaths -eq 0 ]; then
+	# Run all scripts
+	for device in $(ls "$basedir"); do
+		[ -d "$basedir/$device" ] || continue
+		[ "$device" == "generic" ] || request_TOP "$device" || continue
+
+		for testscript in $(ls "$basedir/$device"); do
+			do_run_test "$device" "$testscript"
+		done
 	done
-done
+else
+	# Only run the specified tests
+	let end=nr_scriptpaths-1
+	for i in $(seq 0 $end); do
+		scriptpath="${scriptpaths[i]}"
+		device="$(echo "$scriptpath" | cut -d'/' -f1)"
+		testscript="$(echo "$scriptpath" | cut -d'/' -f2)"
+		[ -d "$basedir/$device" -a -f "$basedir/$device/$testscript" ] || \
+			die "$scriptpath is an invalid scriptpath"
+		do_run_test "$device" "$testscript"
+	done
+fi
 cleanup
