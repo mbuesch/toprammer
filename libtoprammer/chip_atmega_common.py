@@ -53,15 +53,6 @@ class Chip_ATMega_common(Chip):
 		self.eepromPages = eepromPages		# Nr of EEPROM pages
 		assert(eepromPageSize <= 64)
 
-	def initializeChip(self):
-		self.printDebug("Initializing chip")
-		self.applyGND(True)
-		self.applyVCCX(False)
-		self.applyVPP(False)
-		self.top.cmdSetVCCXVoltage(5)
-		self.top.cmdSetVPPVoltage(0)
-		self.top.cmdSetVPPVoltage(12)
-
 	def shutdownChip(self):
 		self.printDebug("Shutdown chip")
 		self.top.cmdSetVCCXVoltage(5)
