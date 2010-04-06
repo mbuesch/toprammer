@@ -71,14 +71,14 @@ class Chip_ATMega_common(Chip):
 		self.applyGND(False)
 
 	def readSignature(self):
-		self.__initPins()
+		self.__enterPM()
 
 		(signature, calibration) = self.__readSigAndCalib()
 
 		return signature
 
 	def erase(self):
-		self.__initPins()
+		self.__enterPM()
 
 		self.progressMeterInit("Erasing chip", 0)
 		self.__loadCommand(self.CMD_CHIPERASE)
@@ -87,7 +87,7 @@ class Chip_ATMega_common(Chip):
 		self.progressMeterFinish()
 
 	def readProgmem(self):
-		self.__initPins()
+		self.__enterPM()
 
 		self.progressMeterInit("Reading Flash", self.flashPages)
 		image = ""
@@ -113,7 +113,7 @@ class Chip_ATMega_common(Chip):
 		if len(image) != flashBytes:
 			self.throwError("Invalid program memory image size %d (expected %d)" %\
 				(len(image), flashBytes))
-		self.__initPins()
+		self.__enterPM()
 
 		self.progressMeterInit("Writing Flash", self.flashPages)
 		for page in range(0, self.flashPages):
@@ -133,7 +133,7 @@ class Chip_ATMega_common(Chip):
 		self.progressMeterFinish()
 
 	def readEEPROM(self):
-		self.__initPins()
+		self.__enterPM()
 
 		self.progressMeterInit("Reading EEPROM", self.eepromPages)
 		image = ""
@@ -153,7 +153,7 @@ class Chip_ATMega_common(Chip):
 		if len(image) != eepromBytes:
 			self.throwError("Invalid EEPROM image size %d (expected %d)" %\
 				(len(image), eepromBytes))
-		self.__initPins()
+		self.__enterPM()
 
 		self.progressMeterInit("Writing EEPROM", self.eepromPages)
 		for page in range(0, self.eepromPages):
@@ -171,7 +171,7 @@ class Chip_ATMega_common(Chip):
 		self.progressMeterFinish()
 
 	def readFuse(self):
-		self.__initPins()
+		self.__enterPM()
 
 		self.progressMeterInit("Reading Fuse bits", 0)
 		(fuse, lock) = self.__readFuseAndLockBits()
@@ -182,7 +182,7 @@ class Chip_ATMega_common(Chip):
 		if len(image) != 2:
 			self.throwError("Invalid Fuses image size %d (expected %d)" %\
 				(len(image), 2))
-		self.__initPins()
+		self.__enterPM()
 
 		self.progressMeterInit("Writing Fuse bits", 0)
 		self.__loadCommand(self.CMD_WRITEFUSE)
@@ -198,7 +198,7 @@ class Chip_ATMega_common(Chip):
 		self.progressMeterFinish()
 
 	def readLockbits(self):
-		self.__initPins()
+		self.__enterPM()
 
 		self.progressMeterInit("Reading lock bits", 0)
 		(fuses, lockbits) = self.__readFuseAndLockBits()
@@ -210,7 +210,7 @@ class Chip_ATMega_common(Chip):
 		if len(image) != 1:
 			self.throwError("Invalid lock-bits image size %d (expected %d)" %\
 				(len(image), 1))
-		self.__initPins()
+		self.__enterPM()
 
 		self.progressMeterInit("Writing lock bits", 0)
 		self.__loadCommand(self.CMD_WRITELOCK)
@@ -248,8 +248,8 @@ class Chip_ATMega_common(Chip):
 		lock = data[1]
 		return (fuses, lock)
 
-	def __initPins(self):
-		"""Initialize the pin voltages and logic."""
+	def __enterPM(self):
+		"Enter HV programming mode."
 		self.applyVPP(False)
 		self.applyVCCX(False)
 		self.top.queueCommand("\x0E\x28\x00\x00")
