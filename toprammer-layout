@@ -71,7 +71,7 @@ def main(argv):
 			if o in ("-d", "--device"):
 				programmer = v
 			if o in ("-p", "--package"):
-				result = RegisteredChip.find(v)
+				result = RegisteredChip.find(v, allowBroken=True)
 				if result:
 					(unused, chip) = result
 				else:
