@@ -229,7 +229,7 @@ class RegisteredChip:
 				instance = chip.chipImplClass()
 				instance.setChipID(chip.chipID)
 				return (chip, instance)
-		return None
+		return (None, None)
 
 	@staticmethod
 	def dumpAll(fd, verbose=1, showBroken=True):
