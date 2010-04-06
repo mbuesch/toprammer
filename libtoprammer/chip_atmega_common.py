@@ -268,10 +268,8 @@ class Chip_ATMega_common(Chip):
 		self.applyGND(True)
 		self.applyVCCX(True)
 
-		self.top.queueCommand("\x19")
-		self.__setReadMode(0)
-		self.top.queueCommand("\x34")
-		self.__setReadMode(0)
+#		self.top.queueCommand("\x19")
+#		self.top.queueCommand("\x34")
 		self.__setOE(0)
 		self.__setWR(1)
 		self.__setXTAL1(0)
@@ -282,13 +280,13 @@ class Chip_ATMega_common(Chip):
 		self.__setBS2(0)
 		self.__setPAGEL(0)
 		self.__pulseXTAL1(10)
-		self.top.queueCommand("\x19")
+#		self.top.queueCommand("\x19")
 		self.top.flushCommands()
 
 		self.applyVPP(True)
 		self.top.queueCommand("\x0E\x28\x01\x00")
 
-		self.top.queueCommand("\x34")
+#		self.top.queueCommand("\x34")
 		self.top.cmdFPGAWrite(0x12, 0x88)
 		self.__setOE(1)
 		self.top.cmdFlush()
@@ -315,32 +313,26 @@ class Chip_ATMega_common(Chip):
 
 	def __readWordToStatusReg(self):
 		"""Read a data word from the DUT into the status register."""
-		self.__setReadMode(1)
 		self.__setBS1(0)
 		self.__setOE(0)
 		self.top.cmdFPGAReadByte()
 		self.__setBS1(1)
 		self.top.cmdFPGAReadByte()
 		self.__setOE(1)
-		self.__setReadMode(0)
 
 	def __readLowByteToStatusReg(self):
 		"""Read the low data byte from the DUT into the status register."""
-		self.__setReadMode(1)
 		self.__setBS1(0)
 		self.__setOE(0)
 		self.top.cmdFPGAReadByte()
 		self.__setOE(1)
-		self.__setReadMode(0)
 
 	def __readHighByteToStatusReg(self):
 		"""Read the high data byte from the DUT into the status register."""
-		self.__setReadMode(1)
 		self.__setBS1(1)
 		self.__setOE(0)
 		self.top.cmdFPGAReadByte()
 		self.__setOE(1)
-		self.__setReadMode(0)
 
 	def __loadData(self, data):
 		"""Load a data word."""
@@ -386,20 +378,13 @@ class Chip_ATMega_common(Chip):
 
 	def __loadCommand(self, command):
 		"""Load a command into the device."""
-		self.top.queueCommand("\x34")
+#		self.top.queueCommand("\x34")
 		self.__setBS1(0)
-		self.top.queueCommand("\x34")
+#		self.top.queueCommand("\x34")
 		self.__setXA0(0)
 		self.__setXA1(1)
 		self.top.cmdFPGAWrite(0x10, command)
 		self.__pulseXTAL1()
-
-	def __setReadMode(self, high):
-		"""Put the FPGA into read mode."""
-		value = 0x01
-		if high:
-			value |= 0x80
-		self.top.cmdFPGAWrite(0x12, value)
 
 	def __waitForRDY(self):
 		"""Wait for the RDY pin to go high."""
