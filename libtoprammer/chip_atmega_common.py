@@ -248,7 +248,7 @@ class Chip_ATMega_common(Chip):
 		self.top.cmdSetVPPVoltage(0)
 		self.top.cmdSetVPPVoltage(12)
 		self.applyGND(True)
-		self.top.cmdSetVCCXVoltage(4.4)
+		self.top.cmdSetVCCXVoltage(5)
 
 		self.__setXA0(0)
 		self.__setXA1(0)
@@ -299,8 +299,8 @@ class Chip_ATMega_common(Chip):
 		self.top.queueCommand("\x0E\x1F\x00\x00")
 		self.top.delay(0.1)
 		stat = self.top.cmdReadStatusReg32()
-		if stat != 0xB9C80101:
-			self.throwError("read: Unexpected status value 0x%08X" % stat)
+#		if stat != 0xB9C80101:
+#			self.throwError("read: Unexpected status value 0x%08X" % stat)
 
 	def __readWordToStatusReg(self):
 		"""Read a data word from the DUT into the status register."""
