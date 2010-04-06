@@ -243,44 +243,33 @@ class Chip_ATMega_common(Chip):
 		"Enter HV programming mode."
 		self.applyVPP(False)
 		self.applyVCCX(False)
+		self.applyGND(True)
 		self.top.queueCommand("\x0E\x28\x00\x00")
-		self.top.cmdFPGAWrite(0x1B, 0x00)
 		self.top.cmdSetVPPVoltage(0)
 		self.top.cmdSetVPPVoltage(12)
-		self.applyGND(True)
 		self.top.cmdSetVCCXVoltage(5)
 
 		self.__setXA0(0)
 		self.__setXA1(0)
 		self.__setBS1(0)
+		self.__setPAGEL(0)
 		self.__setWR(0)
-		self.top.flushCommands()
 
-		self.applyGND(True)
 		self.applyVCCX(True)
 
-#		self.top.queueCommand("\x19")
-#		self.top.queueCommand("\x34")
 		self.__setOE(0)
 		self.__setWR(1)
 		self.__setXTAL1(0)
 		self.__setXA0(0)
 		self.__setXA1(0)
-		self.top.cmdFPGAWrite(0x12, 0x08)
 		self.__setBS1(0)
 		self.__setBS2(0)
 		self.__setPAGEL(0)
 		self.__pulseXTAL1(10)
-#		self.top.queueCommand("\x19")
-		self.top.flushCommands()
 
 		self.applyVPP(True)
-		self.top.queueCommand("\x0E\x28\x01\x00")
 
-#		self.top.queueCommand("\x34")
-		self.top.cmdFPGAWrite(0x12, 0x88)
 		self.__setOE(1)
-		self.top.cmdFlush()
 
 		(signature, calibration) = self.__readSigAndCalib()
 		if signature != self.signature:
@@ -294,13 +283,6 @@ class Chip_ATMega_common(Chip):
 				self.printWarning(msg)
 			else:
 				self.throwError(msg)
-
-		self.top.cmdFlush(10)
-		self.top.queueCommand("\x0E\x1F\x00\x00")
-		self.top.delay(0.1)
-		stat = self.top.cmdReadStatusReg32()
-#		if stat != 0xB9C80101:
-#			self.throwError("read: Unexpected status value 0x%08X" % stat)
 
 	def __readWordToStatusReg(self):
 		"""Read a data word from the DUT into the status register."""
