@@ -27,6 +27,10 @@ class GenericLayout:
 	def __init__(self, nrZifPins):
 		self.nrZifPins = nrZifPins
 
+	def getNrOfPins(self):
+		"Returns the number of pins on the layout"
+		return self.nrZifPins
+
 	def __repr__(self):
 		res = ""
 		for (id, zif_mask) in self.supportedLayouts():

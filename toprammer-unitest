@@ -26,19 +26,158 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
 
+class ZifWidget(QGroupBox):
+	def __init__(self, parent, top):
+		QGroupBox.__init__(self, parent.tr("ZIF socket"), parent)
+		self.top = top
+		self.setLayout(QGridLayout())
+
+		self.nrPins = top.vccx.getNrOfPins()
+		assert(self.nrPins == top.vpp.getNrOfPins())
+		assert(self.nrPins == top.gnd.getNrOfPins())
+		assert(self.nrPins % 2 == 0)
+
+		label = QLabel(self)
+		label.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+		label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+		self.layout().addWidget(label, 0, 2, self.nrPins // 2, 1)
+
+		self.pins = [ None ] * self.nrPins
+		self.pinOuten = [ None ] * self.nrPins
+		for i in range(0, self.nrPins // 2):
+			left = i + 1
+			right = self.nrPins - i
+			self.pins[left - 1] = QCheckBox(str(left), self)
+			self.connect(self.pins[left - 1], SIGNAL("stateChanged(int)"),
+				     self.__outChanged)
+			self.pinOuten[left - 1] = QCheckBox("out", self)
+			self.connect(self.pinOuten[left - 1], SIGNAL("stateChanged(int)"),
+				     self.__outEnChanged)
+			self.layout().addWidget(self.pinOuten[left - 1], left - 1, 0)
+			self.layout().addWidget(self.pins[left - 1], left - 1, 1)
+			self.pins[right - 1] = QCheckBox(str(right), self)
+			self.connect(self.pins[right - 1], SIGNAL("stateChanged(int)"),
+				     self.__outChanged)
+			self.pinOuten[right - 1] = QCheckBox("out", self)
+			self.connect(self.pinOuten[right - 1], SIGNAL("stateChanged(int)"),
+				     self.__outEnChanged)
+			self.layout().addWidget(self.pins[right - 1], self.nrPins - right, 3)
+			self.layout().addWidget(self.pinOuten[right - 1], self.nrPins - right, 4)
+		self.__outEnChanged()
+		self.__outChanged()
+
+	def readInputs(self):
+		try:
+			inputMask = self.top.chip.getInputs()
+		except (TOPException), e:
+			QMessageBox.critical(self, self.tr("TOP communication failed"),
+				self.tr("Failed to fetch input states:\n") +\
+				str(e))
+			return
+		for i in range(0, self.nrPins):
+			if self.pinOuten[i].checkState() != Qt.Checked:
+				state = Qt.Unchecked
+				if inputMask & (1 << i):
+					state = Qt.Checked
+				self.pins[i].setCheckState(state)
+
+	def __updateInOutStates(self):
+		for i in range(0, self.nrPins):
+			if self.pinOuten[i].checkState() == Qt.Checked:
+				self.pins[i].setEnabled(True)
+			else:
+				self.pins[i].setEnabled(False)
+
+	def __outEnChanged(self):
+		self.__updateInOutStates()
+		outEnMask = 0
+		for i in range(0, self.nrPins):
+			if self.pinOuten[i].checkState() == Qt.Checked:
+				outEnMask |= (1 << i)
+		try:
+			self.top.chip.setOutputEnableMask(outEnMask)
+		except (TOPException), e:
+			QMessageBox.critical(self, self.tr("TOP communication failed"),
+				self.tr("Failed to set output-enable states:\n") +\
+				str(e))
+			return
+		self.readInputs()
+
+	def __outChanged(self):
+		outMask = 0
+		for i in range(0, self.nrPins):
+			if self.pins[i].checkState() == Qt.Checked:
+				outMask |= (1 << i)
+		try:
+			self.top.chip.setOutputs(outMask)
+		except (TOPException), e:
+			QMessageBox.critical(self, self.tr("TOP communication failed"),
+				self.tr("Failed to set output states:\n") +\
+				str(e))
+			return
+		self.readInputs()
+
 class MainWidget(QWidget):
 	def __init__(self, mainwnd):
 		QWidget.__init__(self, mainwnd)
 		self.mainwnd = mainwnd
-
+		self.setLayout(QGridLayout())
 		try:
 			self.top = TOP(verbose=2)
 			self.top.initializeChip("unitest")
+
+			self.zifWidget = ZifWidget(self, self.top)
+			self.layout().addWidget(self.zifWidget, 0, 0, 10, 1)
 		except (TOPException), e:
 			QMessageBox.critical(self, self.tr("TOP init failed"),
 				self.tr("Initialization of TOP device failed:\n") +\
 				str(e))
 			raise
+
+		group = QGroupBox(self.tr("Input polling"), self)
+		group.setLayout(QGridLayout())
+		self.inputPollEn = QCheckBox(self.tr("Input polling enabled"), self)
+		group.layout().addWidget(self.inputPollEn, 0, 0)
+		self.inputPollInterval = QDoubleSpinBox(self)
+		self.inputPollInterval.setPrefix(self.tr("Interval "))
+		self.inputPollInterval.setSuffix(self.tr(" seconds"))
+		self.inputPollInterval.setMinimum(0.25)
+		self.inputPollInterval.setSingleStep(0.25)
+		self.inputPollInterval.setValue(1.0)
+		group.layout().addWidget(self.inputPollInterval, 1, 0)
+		self.layout().addWidget(group, 0, 1, 1, 1)
+
+		self.inputPollTimer = QTimer()
+		self.connect(self.inputPollTimer, SIGNAL("timeout()"),
+			     self.doInputPollTimer)
+
+		self.connect(self.inputPollEn, SIGNAL("stateChanged(int)"),
+			     self.inputPollChanged)
+		self.connect(self.inputPollInterval, SIGNAL("valueChanged(double)"),
+			     self.inputPollChanged)
+		self.inputPollChanged()
+
+	def shutdown(self):
+		self.inputPollTimer.stop()
+		try:
+			self.top.shutdownChip()
+		except (TOPException), e:
+			QMessageBox.critical(self, self.tr("TOP shutdown failed"),
+				self.tr("Failed to shutdown TOP device:\n") +\
+				str(e))
+
+	def doInputPollTimer(self):
+		self.zifWidget.readInputs()
+
+	def inputPollChanged(self, unused=None):
+		if self.inputPollEn.checkState() == Qt.Checked:
+			self.inputPollInterval.setEnabled(True)
+			self.doInputPollTimer()
+			inter = int(self.inputPollInterval.value() * 1000)
+			self.inputPollTimer.start(inter)
+		else:
+			self.inputPollInterval.setEnabled(False)
+			self.inputPollTimer.stop()
 
 class MainWindow(QMainWindow):
 	def __init__(self, parent=None):
@@ -46,6 +185,9 @@ class MainWindow(QMainWindow):
 
 		self.setWindowTitle(self.tr("Toprammer - Universal tester"))
 		self.setCentralWidget(MainWidget(self))
+
+	def closeEvent(self, ev):
+		self.centralWidget().shutdown()
 
 def main(argv):
 	try:
