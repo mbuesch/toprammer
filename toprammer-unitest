@@ -44,6 +44,7 @@ class ZifWidget(QGroupBox):
 		assert(self.nrPins % 2 == 0)
 
 		self.blockedPins = []
+		self.ignoreOutChange = False
 
 		label = QLabel(self)
 		label.setFrameStyle(QFrame.Panel | QFrame.Sunken)
@@ -88,7 +89,9 @@ class ZifWidget(QGroupBox):
 				state = Qt.Unchecked
 				if inputMask & (1 << i):
 					state = Qt.Checked
+				self.ignoreOutChange = True
 				self.pins[i].setCheckState(state)
+				self.ignoreOutChange = False
 		return True
 
 	def __updateInOutStates(self):
@@ -121,6 +124,8 @@ class ZifWidget(QGroupBox):
 		self.readInputs()
 
 	def __outChanged(self):
+		if self.ignoreOutChange:
+			return
 		outMask = 0
 		for i in range(0, self.nrPins):
 			if self.pins[i].checkState() == Qt.Checked:
@@ -237,6 +242,23 @@ class MainWidget(QWidget):
 				xOffset += 1
 		self.layout().addWidget(group, 0, 2, 8, 1)
 
+		group = QGroupBox(self.tr("Oscillator"), self)
+		group.setLayout(QGridLayout())
+		self.oscPin = QComboBox(self)
+		self.oscPin.addItem("Disabled", QVariant(0))
+		for i in range(0, self.zifWidget.nrPins):
+			self.oscPin.addItem("On pin %d" % (i + 1), QVariant(1 << i))
+		group.layout().addWidget(self.oscPin, 0, 0)
+		self.oscDiv = QSpinBox(self)
+		self.oscDiv.setPrefix("Divider ")
+		self.oscDiv.setMinimum(1)
+		self.oscDiv.setMaximum(24000000)
+		self.oscDiv.setSingleStep(1)
+		group.layout().addWidget(self.oscDiv, 1, 0)
+		self.oscFreq = QLabel(self)
+		group.layout().addWidget(self.oscFreq, 2, 0)
+		self.layout().addWidget(group, 3, 1)
+
 		self.connect(self.inputPollEn, SIGNAL("stateChanged(int)"),
 			     self.inputPollChanged)
 		self.connect(self.inputPollInterval, SIGNAL("valueChanged(double)"),
@@ -249,9 +271,14 @@ class MainWidget(QWidget):
 			     self.vccxLayoutChanged)
 		self.connect(self.vppVoltage, SIGNAL("valueChanged(double)"),
 			     self.vppLayoutChanged)
+		self.connect(self.oscPin, SIGNAL("currentIndexChanged(int)"),
+			     self.oscChanged)
+		self.connect(self.oscDiv, SIGNAL("valueChanged(int)"),
+			     self.oscChanged)
 		self.gndLayoutChanged()
 		self.vccxLayoutChanged()
 		self.inputPollChanged()
+		self.oscChanged()
 
 	def shutdown(self):
 		self.inputPollTimer.stop()
@@ -276,6 +303,12 @@ class MainWidget(QWidget):
 		for key in self.vppLayouts.keys():
 			if self.vppLayouts[key].checkState() == Qt.Checked:
 				blockedPins.extend(self.top.vpp.ID2pinlist(key))
+		# OSC
+		idx = self.oscPin.currentIndex()
+		mask = self.oscPin.itemData(idx).toInt()[0]
+		for i in range(0, self.zifWidget.nrPins):
+			if mask & (1 << i):
+				blockedPins.append(i + 1)
 		self.zifWidget.setBlockedPins(blockedPins)
 
 	def gndLayoutChanged(self, unused=None):
@@ -332,6 +365,21 @@ class MainWidget(QWidget):
 		else:
 			self.inputPollInterval.setEnabled(False)
 			self.inputPollTimer.stop()
+
+	def oscChanged(self, unused=None):
+		try:
+			div = self.oscDiv.value()
+			self.top.chip.setOscDivider(div)
+			idx = self.oscPin.currentIndex()
+			mask = self.oscPin.itemData(idx).toInt()[0]
+			self.top.chip.setOscMask(mask)
+		except (TOPException), e:
+			QMessageBox.critical(self, self.tr("TOP communication failed"),
+				self.tr("Failed configure oscillator:\n") +\
+				str(e))
+			return
+		self.oscFreq.setText("%.03f Hz" % (24000000.0 / div))
+		self.updateZifCheckboxes()
 
 class MainWindow(QMainWindow):
 	def __init__(self, parent=None):
