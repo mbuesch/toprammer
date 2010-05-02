@@ -55,6 +55,22 @@ class GenericLayout:
 		# Reimplement me in the subclass
 		raise Exception()
 
+	def ID2mask(self, id):
+		"Convert a layout ID to a layout mask"
+		for (layoutId, layoutMask) in self.supportedLayouts():
+			if id == layoutId:
+				return layoutMask
+		return None
+
+	def ID2pinlist(self, id):
+		"Convert a layout ID to a list of pins"
+		pinlist = []
+		mask = self.ID2mask(id)
+		for i in range(0, self.nrZifPins):
+			if mask & (1 << i):
+				pinlist.append(i + 1)
+		return pinlist
+
 	def setLayoutPins(self, zifPinsList):
 		"""Load a layout. zifPinsList is a list of hot ZIF pins.
 		The first ZIF pin is 1."""

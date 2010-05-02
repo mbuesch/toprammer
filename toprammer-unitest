@@ -37,6 +37,8 @@ class ZifWidget(QGroupBox):
 		assert(self.nrPins == top.gnd.getNrOfPins())
 		assert(self.nrPins % 2 == 0)
 
+		self.blockedPins = []
+
 		label = QLabel(self)
 		label.setFrameStyle(QFrame.Panel | QFrame.Sunken)
 		label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
@@ -75,7 +77,8 @@ class ZifWidget(QGroupBox):
 				str(e))
 			return
 		for i in range(0, self.nrPins):
-			if self.pinOuten[i].checkState() != Qt.Checked:
+			if self.pinOuten[i].checkState() != Qt.Checked and\
+			   i + 1 not in self.blockedPins:
 				state = Qt.Unchecked
 				if inputMask & (1 << i):
 					state = Qt.Checked
@@ -83,10 +86,17 @@ class ZifWidget(QGroupBox):
 
 	def __updateInOutStates(self):
 		for i in range(0, self.nrPins):
-			if self.pinOuten[i].checkState() == Qt.Checked:
-				self.pins[i].setEnabled(True)
-			else:
+			if i + 1 in self.blockedPins:
 				self.pins[i].setEnabled(False)
+				self.pins[i].setCheckState(Qt.Unchecked)
+				self.pinOuten[i].setEnabled(False)
+				self.pinOuten[i].setCheckState(Qt.Unchecked)
+			else:
+				self.pinOuten[i].setEnabled(True)
+				if self.pinOuten[i].checkState() == Qt.Checked:
+					self.pins[i].setEnabled(True)
+				else:
+					self.pins[i].setEnabled(False)
 
 	def __outEnChanged(self):
 		self.__updateInOutStates()
@@ -117,6 +127,11 @@ class ZifWidget(QGroupBox):
 			return
 		self.readInputs()
 
+	def setBlockedPins(self, blockedPins):
+		self.blockedPins = blockedPins
+		self.__updateInOutStates()
+		self.readInputs()
+
 class MainWidget(QWidget):
 	def __init__(self, mainwnd):
 		QWidget.__init__(self, mainwnd)
@@ -145,16 +160,90 @@ class MainWidget(QWidget):
 		self.inputPollInterval.setSingleStep(0.25)
 		self.inputPollInterval.setValue(1.0)
 		group.layout().addWidget(self.inputPollInterval, 1, 0)
-		self.layout().addWidget(group, 0, 1, 1, 1)
+		self.layout().addWidget(group, 0, 1)
 
 		self.inputPollTimer = QTimer()
 		self.connect(self.inputPollTimer, SIGNAL("timeout()"),
 			     self.doInputPollTimer)
 
+		group = QGroupBox(self.tr("GND layout"), self)
+		group.setLayout(QGridLayout())
+		self.gndLayout = QComboBox(self)
+		self.gndLayout.addItem(self.tr("Not connected"), QVariant(0))
+		for (layId, layMask) in self.top.gnd.supportedLayouts():
+			if not layMask:
+				continue
+			descr = self.tr("GND on pin ")
+			for i in range(0, self.top.gnd.getNrOfPins()):
+				if layMask & (1 << i):
+					descr += str(i + 1) + " "
+			self.gndLayout.addItem(descr, QVariant(layId))
+		group.layout().addWidget(self.gndLayout, 0, 0)
+		self.layout().addWidget(group, 1, 1)
+
+		group = QGroupBox(self.tr("VCCX layout"), self)
+		group.setLayout(QGridLayout())
+		self.vccxVoltage = QDoubleSpinBox(self)
+		self.vccxVoltage.setSuffix(self.tr(" V"))
+		self.vccxVoltage.setMinimum(self.top.vccx.minVoltage())
+		self.vccxVoltage.setMaximum(self.top.vccx.maxVoltage())
+		self.vccxVoltage.setSingleStep(0.1)
+		group.layout().addWidget(self.vccxVoltage, 0, 0)
+		self.vccxLayout = QComboBox(self)
+		self.vccxLayout.addItem(self.tr("Not connected"), QVariant(0))
+		for (layId, layMask) in self.top.vccx.supportedLayouts():
+			if not layMask:
+				continue
+			descr = self.tr("VCCX on pin ")
+			for i in range(0, self.top.vccx.getNrOfPins()):
+				if layMask & (1 << i):
+					descr += str(i + 1) + " "
+			self.vccxLayout.addItem(descr, QVariant(layId))
+		group.layout().addWidget(self.vccxLayout, 1, 0)
+		self.layout().addWidget(group, 2, 1)
+
+		group = QGroupBox(self.tr("VPP layout"), self)
+		group.setLayout(QGridLayout())
+		self.vppVoltage = QDoubleSpinBox(self)
+		self.vppVoltage.setSuffix(self.tr(" V"))
+		self.vppVoltage.setMinimum(self.top.vpp.minVoltage())
+		self.vppVoltage.setMaximum(self.top.vpp.maxVoltage())
+		self.vppVoltage.setSingleStep(0.1)
+		group.layout().addWidget(self.vppVoltage, 0, 0)
+		self.vppLayouts = {}
+		xOffset = 0
+		yOffset = 0
+		for (layId, layMask) in self.top.vpp.supportedLayouts():
+			if not layMask:
+				continue
+			for i in range(0, self.top.vpp.getNrOfPins()):
+				if layMask & (1 << i):
+					descr = str(i + 1) + " "
+			self.vppLayouts[layId] = QCheckBox(descr, self)
+			self.connect(self.vppLayouts[layId], SIGNAL("stateChanged(int)"),
+				     self.vppLayoutChanged)
+			group.layout().addWidget(self.vppLayouts[layId],
+					yOffset + 1, xOffset)
+			yOffset += 1
+			if yOffset == len(self.top.vpp.supportedLayouts()) // 2:
+				yOffset = 0
+				xOffset += 1
+		self.layout().addWidget(group, 0, 2, 8, 1)
+
 		self.connect(self.inputPollEn, SIGNAL("stateChanged(int)"),
 			     self.inputPollChanged)
 		self.connect(self.inputPollInterval, SIGNAL("valueChanged(double)"),
 			     self.inputPollChanged)
+		self.connect(self.gndLayout, SIGNAL("currentIndexChanged(int)"),
+			     self.gndLayoutChanged)
+		self.connect(self.vccxVoltage, SIGNAL("valueChanged(double)"),
+			     self.vccxLayoutChanged)
+		self.connect(self.vccxLayout, SIGNAL("currentIndexChanged(int)"),
+			     self.vccxLayoutChanged)
+		self.connect(self.vppVoltage, SIGNAL("valueChanged(double)"),
+			     self.vppLayoutChanged)
+		self.gndLayoutChanged()
+		self.vccxLayoutChanged()
 		self.inputPollChanged()
 
 	def shutdown(self):
@@ -165,6 +254,62 @@ class MainWidget(QWidget):
 			QMessageBox.critical(self, self.tr("TOP shutdown failed"),
 				self.tr("Failed to shutdown TOP device:\n") +\
 				str(e))
+
+	def updateZifCheckboxes(self):
+		blockedPins = []
+		# GND
+		idx = self.gndLayout.currentIndex()
+		lay = self.gndLayout.itemData(idx).toInt()[0]
+		blockedPins.extend(self.top.gnd.ID2pinlist(lay))
+		# VCCX
+		idx = self.vccxLayout.currentIndex()
+		lay = self.vccxLayout.itemData(idx).toInt()[0]
+		blockedPins.extend(self.top.vccx.ID2pinlist(lay))
+		# VPP
+		for key in self.vppLayouts.keys():
+			if self.vppLayouts[key].checkState() == Qt.Checked:
+				blockedPins.extend(self.top.vpp.ID2pinlist(key))
+		self.zifWidget.setBlockedPins(blockedPins)
+
+	def gndLayoutChanged(self, unused=None):
+		idx = self.gndLayout.currentIndex()
+		selLayout = self.gndLayout.itemData(idx).toInt()[0]
+		try:
+			self.top.chip.setGND(selLayout)
+		except (TOPException), e:
+			QMessageBox.critical(self, self.tr("TOP communication failed"),
+				self.tr("Failed to set GND layout:\n") +\
+				str(e))
+			return
+		self.updateZifCheckboxes()
+
+	def vccxLayoutChanged(self, unused=None):
+		selVoltage = self.vccxVoltage.value()
+		idx = self.vccxLayout.currentIndex()
+		selLayout = self.vccxLayout.itemData(idx).toInt()[0]
+		try:
+			self.top.chip.setVCCX(selVoltage, selLayout)
+		except (TOPException), e:
+			QMessageBox.critical(self, self.tr("TOP communication failed"),
+				self.tr("Failed to set VCCX layout:\n") +\
+				str(e))
+			return
+		self.updateZifCheckboxes()
+
+	def vppLayoutChanged(self, unused=None):
+		selVoltage = self.vppVoltage.value()
+		selLayouts = []
+		for key in self.vppLayouts.keys():
+			if self.vppLayouts[key].checkState() == Qt.Checked:
+				selLayouts.append(key)
+		try:
+			self.top.chip.setVPP(selVoltage, selLayouts)
+		except (TOPException), e:
+			QMessageBox.critical(self, self.tr("TOP communication failed"),
+				self.tr("Failed to set VPP layout:\n") +\
+				str(e))
+			return
+		self.updateZifCheckboxes()
 
 	def doInputPollTimer(self):
 		self.zifWidget.readInputs()

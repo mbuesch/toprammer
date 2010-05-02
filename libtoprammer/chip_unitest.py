@@ -47,19 +47,21 @@ class Chip_Unitest(Chip):
 
 	def setVCCX(self, voltage, layout):
 		self.top.cmdSetVCCXVoltage(0)
-		self.top.cmdLoadVCCXLayout(layout)
 		self.top.cmdSetVCCXVoltage(voltage)
+		self.top.vccx.setLayoutID(layout)
 		self.top.flushCommands()
 
-	def setVPP(self, voltage, layout):
+	def setVPP(self, voltage, layouts):
 		self.top.cmdSetVPPVoltage(0)
-		self.top.cmdLoadVPPLayout(layout)
 		self.top.cmdSetVPPVoltage(voltage)
+		self.top.vpp.setLayoutMask(0)
+		for layout in layouts:
+			self.top.vpp.setLayoutID(layout)
 		self.top.flushCommands()
 		#TODO: Disable outen on these pins
 
-	def setGND(self, pin):
-		self.top.cmdSetGNDPin(pin)
+	def setGND(self, layout):
+		self.top.gnd.setLayoutID(0)
 		self.top.flushCommands()
 
 	def setOutputEnableMask(self, mask):
