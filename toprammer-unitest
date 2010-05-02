@@ -81,7 +81,7 @@ class ZifWidget(QGroupBox):
 			QMessageBox.critical(self, self.tr("TOP communication failed"),
 				self.tr("Failed to fetch input states:\n") +\
 				str(e))
-			return
+			return False
 		for i in range(0, self.nrPins):
 			if self.pinOuten[i].checkState() != Qt.Checked and\
 			   i + 1 not in self.blockedPins:
@@ -89,6 +89,7 @@ class ZifWidget(QGroupBox):
 				if inputMask & (1 << i):
 					state = Qt.Checked
 				self.pins[i].setCheckState(state)
+		return True
 
 	def __updateInOutStates(self):
 		for i in range(0, self.nrPins):
@@ -318,7 +319,9 @@ class MainWidget(QWidget):
 		self.updateZifCheckboxes()
 
 	def doInputPollTimer(self):
-		self.zifWidget.readInputs()
+		if not self.zifWidget.readInputs():
+			# Whoops, error. Disable input polling
+			self.inputPollEn.setCheckState(Qt.Unchecked)
 
 	def inputPollChanged(self, unused=None):
 		if self.inputPollEn.checkState() == Qt.Checked:
