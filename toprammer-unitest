@@ -25,6 +25,12 @@ from libtoprammer.toprammer_main import *
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
+def stringRemoveChars(string, chars):
+	ret = ""
+	for c in string:
+		if c not in chars:
+			ret += c
+	return ret
 
 class ZifWidget(QGroupBox):
 	def __init__(self, parent, top):
@@ -331,8 +337,63 @@ class MainWindow(QMainWindow):
 		self.setWindowTitle(self.tr("Toprammer - Universal tester"))
 		self.setCentralWidget(MainWidget(self))
 
+		self.setMenuBar(QMenuBar(self))
+		menu = QMenu(self.tr("Unitest"), self)
+		menu.addAction(self.tr("Load settings..."), self.loadSettings)
+		menu.addAction(self.tr("Save settings..."), self.saveSettings)
+		menu.addSeparator()
+		menu.addAction(self.tr("Raw command..."), self.sendRawCommand)
+		menu.addSeparator()
+		menu.addAction(self.tr("Exit"), self.close)
+		self.menuBar().addMenu(menu)
+
+		self.prevRawCommand = ""
+
 	def closeEvent(self, ev):
 		self.centralWidget().shutdown()
+
+	def loadSettings(self):
+		pass#TODO
+
+	def saveSettings(self):
+		pass#TODO
+
+	def sendRawCommand(self):
+		(string, ok) = QInputDialog.getText(self,
+			self.tr("Send raw command"),
+			self.tr("Enter raw command to send.\n" +\
+			"Hex format AABB1122..."),
+			QLineEdit.Normal,
+			self.prevRawCommand)
+		if not ok:
+			return
+		string = str(string).strip().upper()
+		string = stringRemoveChars(string, " \t\r\n")
+		if stringRemoveChars(string, "0123456789ABCDEF"):
+			QMessageBox.critical(self, self.tr("Invalid characters"),
+				self.tr("Invalid characters in raw command string.\n" +\
+				"Only hex characters 0-9,a-f allowed."))
+			return
+		if len(string) % 2 != 0 or len(string) // 2 > 64:
+			QMessageBox.critical(self, self.tr("Invalid length"),
+				self.tr("Invalid command length. Length must be even " +\
+				"and smaller or equal to 64 bytes."))
+			return
+		self.prevRawCommand = string
+		command = ""
+		for i in range(0, len(string), 2):
+			byteString = string[i:i+2]
+			command += chr(int(byteString, 16))
+		assert(len(command) == len(string) // 2)
+		try:
+			top = self.centralWidget().top
+			top.queueCommand(command)
+			top.flushCommands()
+		except (TOPException), e:
+			QMessageBox.critical(self, self.tr("Raw command failed"),
+				self.tr("Failed to send raw command:\n") + str(e))
+			return
+		self.centralWidget().doInputPollTimer()
 
 def main(argv):
 	try:
