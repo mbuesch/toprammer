@@ -37,8 +37,11 @@ class Chip_Unitest(Chip):
 
 	def __reset(self):
 		self.top.vccx.setLayoutPins( [] )
+		self.vccxMask = 0
 		self.top.vpp.setLayoutPins( [] )
+		self.vppMask = 0
 		self.top.gnd.setLayoutPins( [] )
+		self.gndMask = 0
 		self.top.cmdSetVCCXVoltage(5)
 		self.top.cmdSetVPPVoltage(0)
 		self.top.cmdSetVPPVoltage(5)
@@ -46,25 +49,36 @@ class Chip_Unitest(Chip):
 		self.setOutputs(0)
 
 	def setVCCX(self, voltage, layout):
+		self.vccxMask = self.top.vccx.ID2mask(layout)
+		self.__updateOutEn()
 		self.top.cmdSetVCCXVoltage(0)
 		self.top.cmdSetVCCXVoltage(voltage)
 		self.top.vccx.setLayoutID(layout)
 		self.top.flushCommands()
 
 	def setVPP(self, voltage, layouts):
+		self.vppMask = 0
+		for layout in layouts:
+			self.vppMask |= self.top.vpp.ID2mask(layout)
+		self.__updateOutEn()
 		self.top.cmdSetVPPVoltage(0)
 		self.top.cmdSetVPPVoltage(voltage)
 		self.top.vpp.setLayoutMask(0)
 		for layout in layouts:
 			self.top.vpp.setLayoutID(layout)
 		self.top.flushCommands()
-		#TODO: Disable outen on these pins
 
 	def setGND(self, layout):
+		self.gndMask = self.top.gnd.ID2mask(layout)
+		self.__updateOutEn()
 		self.top.gnd.setLayoutID(0)
 		self.top.flushCommands()
 
-	def setOutputEnableMask(self, mask):
+	def __updateOutEn(self):
+		mask = self.desiredOutEnMask
+		mask &= ~self.gndMask
+		mask &= ~self.vccxMask
+		mask &= ~self.vppMask
 		self.top.cmdFPGAWrite(0x12, mask & 0xFF)
 		self.top.cmdFPGAWrite(0x13, (mask >> 8) & 0xFF)
 		self.top.cmdFPGAWrite(0x14, (mask >> 16) & 0xFF)
@@ -72,6 +86,10 @@ class Chip_Unitest(Chip):
 		self.top.cmdFPGAWrite(0x16, (mask >> 32) & 0xFF)
 		self.top.cmdFPGAWrite(0x17, (mask >> 40) & 0xFF)
 		self.top.flushCommands()
+
+	def setOutputEnableMask(self, mask):
+		self.desiredOutEnMask = mask
+		self.__updateOutEn()
 
 	def setOutputs(self, mask):
 		self.top.cmdFPGAWrite(0x18, mask & 0xFF)
