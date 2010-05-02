@@ -9,7 +9,7 @@ NET "data<7>"	LOC = P44;
 
 NET "read"	LOC = P45;
 NET "write"	LOC = P39;
-#NET "osc_in"	LOC = P46;
+NET "osc_in"	LOC = P46;
 NET "ale"	LOC = P36;
 
 #NET "txt"	LOC = P52; #FIXME
