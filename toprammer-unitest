@@ -161,23 +161,6 @@ class MainWidget(QWidget):
 				str(e))
 			raise
 
-		group = QGroupBox(self.tr("Input polling"), self)
-		group.setLayout(QGridLayout())
-		self.inputPollEn = QCheckBox(self.tr("Input polling enabled"), self)
-		group.layout().addWidget(self.inputPollEn, 0, 0)
-		self.inputPollInterval = QDoubleSpinBox(self)
-		self.inputPollInterval.setPrefix(self.tr("Interval "))
-		self.inputPollInterval.setSuffix(self.tr(" seconds"))
-		self.inputPollInterval.setMinimum(0.25)
-		self.inputPollInterval.setSingleStep(0.25)
-		self.inputPollInterval.setValue(1.0)
-		group.layout().addWidget(self.inputPollInterval, 1, 0)
-		self.layout().addWidget(group, 0, 1)
-
-		self.inputPollTimer = QTimer()
-		self.connect(self.inputPollTimer, SIGNAL("timeout()"),
-			     self.doInputPollTimer)
-
 		group = QGroupBox(self.tr("GND layout"), self)
 		group.setLayout(QGridLayout())
 		self.gndLayout = QComboBox(self)
@@ -191,7 +174,7 @@ class MainWidget(QWidget):
 					descr += str(i + 1) + " "
 			self.gndLayout.addItem(descr, QVariant(layId))
 		group.layout().addWidget(self.gndLayout, 0, 0)
-		self.layout().addWidget(group, 1, 1)
+		self.layout().addWidget(group, 0, 1)
 
 		group = QGroupBox(self.tr("VCCX layout"), self)
 		group.setLayout(QGridLayout())
@@ -212,7 +195,37 @@ class MainWidget(QWidget):
 					descr += str(i + 1) + " "
 			self.vccxLayout.addItem(descr, QVariant(layId))
 		group.layout().addWidget(self.vccxLayout, 1, 0)
+		self.layout().addWidget(group, 1, 1)
+
+		group = QGroupBox(self.tr("Input polling"), self)
+		group.setLayout(QGridLayout())
+		self.inputPollEn = QCheckBox(self.tr("Input polling enabled"), self)
+		group.layout().addWidget(self.inputPollEn, 0, 0)
+		self.inputPollInterval = QDoubleSpinBox(self)
+		self.inputPollInterval.setPrefix(self.tr("Interval "))
+		self.inputPollInterval.setSuffix(self.tr(" seconds"))
+		self.inputPollInterval.setMinimum(0.25)
+		self.inputPollInterval.setSingleStep(0.25)
+		self.inputPollInterval.setValue(1.0)
+		group.layout().addWidget(self.inputPollInterval, 1, 0)
 		self.layout().addWidget(group, 2, 1)
+
+		group = QGroupBox(self.tr("Oscillator"), self)
+		group.setLayout(QGridLayout())
+		self.oscPin = QComboBox(self)
+		self.oscPin.addItem("Disabled", QVariant(0))
+		for i in range(0, self.zifWidget.nrPins):
+			self.oscPin.addItem("On pin %d" % (i + 1), QVariant(1 << i))
+		group.layout().addWidget(self.oscPin, 0, 0)
+		self.oscDiv = QSpinBox(self)
+		self.oscDiv.setPrefix("Divider ")
+		self.oscDiv.setMinimum(1)
+		self.oscDiv.setMaximum(24000000)
+		self.oscDiv.setSingleStep(1)
+		group.layout().addWidget(self.oscDiv, 1, 0)
+		self.oscFreq = QLabel(self)
+		group.layout().addWidget(self.oscFreq, 2, 0)
+		self.layout().addWidget(group, 3, 1)
 
 		group = QGroupBox(self.tr("VPP layout"), self)
 		group.setLayout(QGridLayout())
@@ -221,7 +234,7 @@ class MainWidget(QWidget):
 		self.vppVoltage.setMinimum(self.top.vpp.minVoltage())
 		self.vppVoltage.setMaximum(self.top.vpp.maxVoltage())
 		self.vppVoltage.setSingleStep(0.1)
-		group.layout().addWidget(self.vppVoltage, 0, 0)
+		group.layout().addWidget(self.vppVoltage, 0, 0, 1, 2)
 		self.vppLayouts = {}
 		xOffset = 0
 		yOffset = 0
@@ -242,22 +255,9 @@ class MainWidget(QWidget):
 				xOffset += 1
 		self.layout().addWidget(group, 0, 2, 8, 1)
 
-		group = QGroupBox(self.tr("Oscillator"), self)
-		group.setLayout(QGridLayout())
-		self.oscPin = QComboBox(self)
-		self.oscPin.addItem("Disabled", QVariant(0))
-		for i in range(0, self.zifWidget.nrPins):
-			self.oscPin.addItem("On pin %d" % (i + 1), QVariant(1 << i))
-		group.layout().addWidget(self.oscPin, 0, 0)
-		self.oscDiv = QSpinBox(self)
-		self.oscDiv.setPrefix("Divider ")
-		self.oscDiv.setMinimum(1)
-		self.oscDiv.setMaximum(24000000)
-		self.oscDiv.setSingleStep(1)
-		group.layout().addWidget(self.oscDiv, 1, 0)
-		self.oscFreq = QLabel(self)
-		group.layout().addWidget(self.oscFreq, 2, 0)
-		self.layout().addWidget(group, 3, 1)
+		self.inputPollTimer = QTimer()
+		self.connect(self.inputPollTimer, SIGNAL("timeout()"),
+			     self.doInputPollTimer)
 
 		self.connect(self.inputPollEn, SIGNAL("stateChanged(int)"),
 			     self.inputPollChanged)
