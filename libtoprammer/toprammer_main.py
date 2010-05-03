@@ -452,6 +452,9 @@ class TOP:
 			data = ""
 			for c in self.usbh.bulkRead(ep, size):
 				data += chr(c)
+			if len(data) != size:
+				raise TOPException("USB bulk read error: Could not read the " +\
+					"requested number of bytes (req %d, got %d)" % (size, len(data)))
 			if self.verbose >= 3:
 				print "Received data:"
 				dumpMem(data)
