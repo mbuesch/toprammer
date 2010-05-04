@@ -95,8 +95,9 @@ class Chip_Unitest(Chip):
 		self.desiredOutEnMask = mask
 		self.__updateOutEn()
 
-	def setOutputs(self, mask):
-		#TODO force osc pins low
+	def __updateOut(self):
+		mask = self.desiredOutMask
+		mask &= ~self.oscMask
 		self.top.cmdFPGAWrite(0x70, mask & 0xFF)
 		self.top.cmdFPGAWrite(0x71, (mask >> 8) & 0xFF)
 		self.top.cmdFPGAWrite(0x72, (mask >> 16) & 0xFF)
@@ -104,6 +105,10 @@ class Chip_Unitest(Chip):
 		self.top.cmdFPGAWrite(0x74, (mask >> 32) & 0xFF)
 		self.top.cmdFPGAWrite(0x75, (mask >> 40) & 0xFF)
 		self.top.flushCommands()
+
+	def setOutputs(self, mask):
+		self.desiredOutMask = mask
+		self.__updateOut()
 
 	def getInputs(self):
 		self.top.cmdFPGAReadRaw(0x30)
@@ -131,6 +136,7 @@ class Chip_Unitest(Chip):
 		self.top.cmdFPGAWrite(0x34, (mask >> 32) & 0xFF)
 		self.top.cmdFPGAWrite(0x35, (mask >> 40) & 0xFF)
 		self.__updateOutEn()
+		self.__updateOut()
 		self.top.flushCommands()
 
 RegisteredChip(
