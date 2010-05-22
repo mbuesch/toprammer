@@ -357,13 +357,15 @@ class MainWidget(QWidget):
 		if not self.zifWidget.readInputs():
 			# Whoops, error. Disable input polling
 			self.inputPollEn.setCheckState(Qt.Unchecked)
+			return False
+		return True
 
 	def inputPollChanged(self, unused=None):
 		if self.inputPollEn.checkState() == Qt.Checked:
 			self.inputPollInterval.setEnabled(True)
-			self.doInputPollTimer()
-			inter = int(self.inputPollInterval.value() * 1000)
-			self.inputPollTimer.start(inter)
+			if self.doInputPollTimer():
+				inter = int(self.inputPollInterval.value() * 1000)
+				self.inputPollTimer.start(inter)
 		else:
 			self.inputPollInterval.setEnabled(False)
 			self.inputPollTimer.stop()
@@ -414,8 +416,9 @@ class MainWindow(QMainWindow):
 	def sendRawCommand(self):
 		(string, ok) = QInputDialog.getText(self,
 			self.tr("Send raw command"),
-			self.tr("Enter raw command to send.\n" +\
-			"Hex format AABB1122..."),
+			self.tr("Enter raw command to send, in " +\
+			"hex format (AABB1122...).\n" +\
+			"Warning: The programmer will malfunction on invalid commands."),
 			QLineEdit.Normal,
 			self.prevRawCommand)
 		if not ok:
