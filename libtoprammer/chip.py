@@ -33,19 +33,20 @@ class Chip:
 		chipPinGND is the required GND pin on the package."""
 
 		self.printPrefix = True
-
-		if chipPackage:
-			# Initialize auto-layout
-			self.__generateVoltageLayouts(chipPackage=chipPackage,
-						      chipPinVCCX=chipPinVCCX,
-						      chipPinsVPP=chipPinsVPP,
-						      chipPinGND=chipPinGND)
+		self.__chipPackage = chipPackage
+		self.__chipPinVCCX = chipPinVCCX
+		self.__chipPinsVPP = chipPinsVPP
+		self.__chipPinGND = chipPinGND
 
 	def setTOP(self, top):
 		self.top = top
 
 	def setChipID(self, chipID):
 		self.chipID = chipID
+
+	def setProgrammerType(self, programmerType):
+		"Set the TOP programmer type. See class TOP.TYPE_..."
+		self.programmerType = programmerType
 
 	def printWarning(self, message, newline=True):
 		if self.printPrefix:
@@ -68,13 +69,14 @@ class Chip:
 	def throwError(self, message):
 		raise TOPException(self.chipID + ": " + message)
 
-	def __generateVoltageLayouts(self, chipPackage, chipPinVCCX, chipPinsVPP, chipPinGND):
-		self.generator = createLayoutGenerator(chipPackage)
-		self.generator.setProgrammerType("TOP2049")#XXX Currently the only supported programmer
-		self.generator.setPins(vccxPin=chipPinVCCX,
-				       vppPins=chipPinsVPP,
-				       gndPin=chipPinGND)
-		self.generator.recalculate()
+	def generateVoltageLayouts(self):
+		if self.__chipPackage:
+			self.generator = createLayoutGenerator(self.__chipPackage)
+			self.generator.setProgrammerType(self.programmerType)
+			self.generator.setPins(vccxPin=self.__chipPinVCCX,
+					       vppPins=self.__chipPinsVPP,
+					       gndPin=self.__chipPinGND)
+			self.generator.recalculate()
 
 	def applyVCCX(self, turnOn):
 		"Turn VCCX on, using the auto-layout."
@@ -220,7 +222,7 @@ class RegisteredChip:
 		registeredChips.append(self)
 
 	@staticmethod
-	def find(chipID, allowBroken=False):
+	def find(programmerType, chipID, allowBroken=False):
 		"Find a chip implementation by ID and return an instance of it."
 		for chip in registeredChips:
 			if chip.broken and not allowBroken:
@@ -228,6 +230,8 @@ class RegisteredChip:
 			if chip.chipID.lower() == chipID.lower():
 				instance = chip.chipImplClass()
 				instance.setChipID(chip.chipID)
+				instance.setProgrammerType(programmerType)
+				instance.generateVoltageLayouts()
 				return (chip, instance)
 		return (None, None)
 

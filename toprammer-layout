@@ -51,9 +51,8 @@ def usage():
 	print " -S|--only-supply       Only show supply-layout"
 
 def main(argv):
+	package = None
 	programmer = None
-	generator = None
-	chip = None
 	vccxPin = None
 	vppPins = None
 	gndPin = None
@@ -71,11 +70,7 @@ def main(argv):
 			if o in ("-d", "--device"):
 				programmer = v
 			if o in ("-p", "--package"):
-				result = RegisteredChip.find(v, allowBroken=True)
-				if result:
-					(unused, chip) = result
-				else:
-					generator = createLayoutGenerator(v)
+				package = v
 			if o in ("-v", "--vccx"):
 				vccxPin = int(v)
 			if o in ("-P", "--vpp"):
@@ -96,14 +91,19 @@ def main(argv):
 		if not programmer:
 			print "-d|--device is mandatory!\n"
 			raise ValueError()
-		if not generator and not chip:
+		if not package:
 			print "-p|--package is mandatory!\n"
 			raise ValueError()
-		if generator:
+
+		generator = None
+		(unused, chip) = RegisteredChip.find(programmer, package, allowBroken=True)
+		if not chip:
 			if vccxPin is None or gndPin is None:
 				print "-v|--vccx and  -g|--gnd  " +\
 					"are mandatory, if a package type is specified.\n"
 				raise ValueError()
+			generator = createLayoutGenerator(package)
+
 	except (getopt.GetoptError, ValueError, KeyError), e:
 		usage()
 		return 1

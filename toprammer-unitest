@@ -428,8 +428,8 @@ class MainWidget(QWidget):
 				raise TOPException(str(self.tr("Unsupported file version (got %d, expected %d)")) %\
 					(ver, verExpected))
 			pType = p.get(sect, "programmerType")
-			pTypeExpected = "TOP2049" #TODO
-			if pType != pTypeExpected:
+			pTypeExpected = self.top.topType
+			if pType.upper() != pTypeExpected.upper():
 				raise TOPException(str(self.tr("Programmer type mismatch (file = %s, connected = %s)")) %\
 					(pType, pTypeExpected))
 
@@ -494,7 +494,7 @@ class MainWidget(QWidget):
 
 			fd.write("[TOPRAMMER-UNITEST-SETTINGS]\r\n")
 			fd.write("fileVersion=%d\r\n" % 1)
-			fd.write("programmerType=%s\r\n" % "TOP2049") #TODO
+			fd.write("programmerType=%s\r\n" % self.top.topType)
 			idx = self.gndLayout.currentIndex()
 			fd.write("gndLayout=%d\r\n" % self.gndLayout.itemData(idx).toInt()[0])
 			idx = self.vccxLayout.currentIndex()

@@ -40,7 +40,7 @@ class LayoutGenerator:
 		}
 		try:
 			(vccx_layouts, vpp_layouts, gnd_layouts, zifPins) = \
-				supportedDevices[programmer]
+				supportedDevices[programmer.upper()]
 		except (KeyError), e:
 			raise TOPException("Programmer " + programmer + " not supported")
 		self.vccxLayout = vccx_layouts.VCCXLayout()

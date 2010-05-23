@@ -27,6 +27,7 @@ from util import *
 
 import sys
 import time
+import re
 try:
 	import usb
 except (ImportError), e:
@@ -34,21 +35,13 @@ except (ImportError), e:
 	sys.exit(1)
 
 from top_xxxx import *
-
-# Import the supported chip modules in alphabetical order
-from chip_at89c2051dip20 import *
-from chip_atmega32dip40 import *
-from chip_atmega8dip28 import *
-from chip_atmega88dip28 import *
-from chip_attiny13dip8 import *
-from chip_attiny26dip20 import *
-from chip_m2764a import *
-from chip_m8cissp import *
-from chip_unitest import *
-from chip_w29ee011dip32 import *
+from chip_xxxx import *
 
 
 class TOP:
+	# Supported programmer types
+	TYPE_TOP2049		= "TOP2049"
+
 	def __init__(self, busDev=None, verbose=0,
 		     forceLevel=0, noqueue=False, usebroken=False):
 		"""busDev is a tuple (BUSID, DEVID) or None."""
@@ -94,11 +87,11 @@ class TOP:
 			for ep in interface.endpoints:
 				if not self.bulkIn and \
 				   ep.type == usb.ENDPOINT_TYPE_BULK and \
-				   (ep.address & usb.ENDPOINT_IN) != 0:
+				   (ep.address & (usb.ENDPOINT_IN | usb.ENDPOINT_OUT)) == usb.ENDPOINT_IN:
 					self.bulkIn = ep
 				if not self.bulkOut and \
 				   ep.type == usb.ENDPOINT_TYPE_BULK and \
-				   (ep.address & usb.ENDPOINT_IN) == 0:
+				   (ep.address & (usb.ENDPOINT_IN | usb.ENDPOINT_OUT)) == usb.ENDPOINT_OUT:
 					self.bulkOut = ep
 			if not self.bulkIn or not self.bulkOut:
 				raise TOPException("Did not find all USB EPs")
@@ -115,11 +108,6 @@ class TOP:
 			self.printWarning("WARNING: Command queuing disabled. " +\
 				"Hardware access will be _really_ slow.")
 
-		# For now we assume a TOP2049
-		self.vccx = top2049.vccx_layouts.VCCXLayout(self)
-		self.vpp = top2049.vpp_layouts.VPPLayout(self)
-		self.gnd = top2049.gnd_layouts.GNDLayout(self)
-
 		self.__initializeHardware()
 
 	def initializeChip(self, chipID):
@@ -128,7 +116,7 @@ class TOP:
 		if self.chip:
 			self.shutdownChip()
 		# Find the implementation of the chip.
-		(descriptor, self.chip) = RegisteredChip.find(chipID, self.usebroken)
+		(descriptor, self.chip) = RegisteredChip.find(self.topType, chipID, self.usebroken)
 		if not self.chip:
 			raise TOPException("Did not find an implementation for the chip %s" % chipID)
 		self.chip.setTOP(self)
@@ -181,13 +169,38 @@ class TOP:
 
 	@staticmethod
 	def __isTOP(usbdev):
-		ids = ( (0x2471, 0x0853), )
+		"Returns true, if the USB device is a supported TOP programmer device."
+		ids = (
+			(0x2471, 0x0853),	# TOP2049
+		)
 		return (usbdev.idVendor, usbdev.idProduct) in ids
 
 	def __initializeHardware(self):
 		"Initialize the hardware"
-		ver = self.cmdRequestVersion()
-		self.printInfo("Initializing the '" + ver + "'...")
+
+		versionRegex = (
+			(r"top2049\s+ver\s*(\d+\.\d+)", self.TYPE_TOP2049),
+		)
+
+		versionString = self.cmdRequestVersion()
+		for (regex, topType) in versionRegex:
+			m = re.match(regex, versionString, re.IGNORECASE)
+			if m:
+				self.topType = topType
+				self.topVersion = m.group(1)
+				break
+		else:
+			raise TOPException("Connected TOP programmer '" + versionString +\
+				"' is not supported by Toprammer, yet")
+		self.printInfo("Initializing the " + self.topType + " version " + self.topVersion)
+
+		# Initialize the programmer specific layouts
+		if self.topType == self.TYPE_TOP2049:
+			self.vccx = top2049.vccx_layouts.VCCXLayout(self)
+			self.vpp = top2049.vpp_layouts.VPPLayout(self)
+			self.gnd = top2049.gnd_layouts.GNDLayout(self)
+		else:
+			assert(0)
 
 		self.queueCommand("\x0D")
 		stat = self.cmdReadStatusReg32()
