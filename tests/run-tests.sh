@@ -8,8 +8,12 @@ basedir="$(dirname "$0")"
 tmpdir="/tmp/toprammer-test-$$"
 
 
+cleanup_enabled=1
+
 function cleanup
 {
+	[ $cleanup_enabled -ne 0 ] || return
+	echo "Cleanup..."
 	rm -Rf "$tmpdir"
 }
 
@@ -224,13 +228,16 @@ function do_run_test # $1=device, $2=testscript
 	while $(true); do
 		test_init
 		[ $? -eq 0 ] || break
+		cleanup_enabled=0
 		( test_run )
-		if [ $? -ne 0 ]; then
+		local res=$?
+		cleanup_enabled=1
+		if [ $res -ne 0 ]; then
 			test_exit
 			ask "$current_test failed. RETRY?"
 			[ $? -eq 0 ] && continue
 			ask "Terminate testsuite?"
-			[ $? -eq 0 ] && exit 1
+			[ $? -eq 0 ] && abort
 			break
 		fi
 		test_exit
