@@ -24,6 +24,7 @@
 from libtoprammer.toprammer_main import *
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
+import ConfigParser
 
 def stringRemoveChars(string, chars):
 	ret = ""
@@ -110,10 +111,7 @@ class ZifWidget(QGroupBox):
 
 	def __outEnChanged(self):
 		self.__updateInOutStates()
-		outEnMask = 0
-		for i in range(0, self.nrPins):
-			if self.pinOuten[i].checkState() == Qt.Checked:
-				outEnMask |= (1 << i)
+		outEnMask = self.getOutEnMask()
 		try:
 			self.top.chip.setOutputEnableMask(outEnMask)
 		except (TOPException), e:
@@ -126,10 +124,7 @@ class ZifWidget(QGroupBox):
 	def __outChanged(self):
 		if self.ignoreOutChange:
 			return
-		outMask = 0
-		for i in range(0, self.nrPins):
-			if self.pins[i].checkState() == Qt.Checked:
-				outMask |= (1 << i)
+		outMask = self.getOutMask()
 		try:
 			self.top.chip.setOutputs(outMask)
 		except (TOPException), e:
@@ -143,6 +138,40 @@ class ZifWidget(QGroupBox):
 		self.blockedPins = blockedPins
 		self.__updateInOutStates()
 		self.readInputs()
+
+	def getOutEnMask(self):
+		outEnMask = 0
+		for i in range(0, self.nrPins):
+			if self.pinOuten[i].checkState() == Qt.Checked:
+				outEnMask |= (1 << i)
+		return outEnMask
+
+	def setOutEnMask(self, mask):
+		for i in range(0, self.nrPins):
+			if mask & (1 << i):
+				self.pinOuten[i].setCheckState(Qt.Checked)
+			else:
+				self.pinOuten[i].setCheckState(Qt.Unchecked)
+			mask &= ~(1 << i)
+		if mask:
+			raise TOPException("ZIF out-en mask has too many bits set")
+
+	def getOutMask(self):
+		outMask = 0
+		for i in range(0, self.nrPins):
+			if self.pins[i].checkState() == Qt.Checked:
+				outMask |= (1 << i)
+		return outMask
+
+	def setOutMask(self, mask):
+		for i in range(0, self.nrPins):
+			if mask & (1 << i):
+				self.pins[i].setCheckState(Qt.Checked)
+			else:
+				self.pins[i].setCheckState(Qt.Unchecked)
+			mask &= ~(1 << i)
+		if mask:
+			raise TOPException("ZIF out mask has too many bits set")
 
 class MainWidget(QWidget):
 	def __init__(self, mainwnd):
@@ -385,6 +414,116 @@ class MainWidget(QWidget):
 		self.oscFreq.setText("%.03f Hz" % (24000000.0 / div))
 		self.updateZifCheckboxes()
 
+	def loadSettings(self, filename):
+		try:
+			p = ConfigParser.SafeConfigParser()
+			p.read((filename,))
+
+			sect = "TOPRAMMER-UNITEST-SETTINGS"
+			if not p.has_section(sect):
+				raise TOPException(self.tr("Invalid file format"))
+			ver = p.getint(sect, "fileVersion")
+			verExpected = 1
+			if ver != verExpected:
+				raise TOPException(str(self.tr("Unsupported file version (got %d, expected %d)")) %\
+					(ver, verExpected))
+			pType = p.get(sect, "programmerType")
+			pTypeExpected = "TOP2049" #TODO
+			if pType != pTypeExpected:
+				raise TOPException(str(self.tr("Programmer type mismatch (file = %s, connected = %s)")) %\
+					(pType, pTypeExpected))
+
+			layout = p.getint(sect, "gndLayout")
+			idx = self.gndLayout.findData(QVariant(layout))
+			if idx < 0:
+				raise TOPException(self.tr("Invalid GND layout"))
+			self.gndLayout.setCurrentIndex(idx)
+
+			layout = p.getint(sect, "vccxLayout")
+			idx = self.vccxLayout.findData(QVariant(layout))
+			if idx < 0:
+				raise TOPException(self.tr("Invalid VCCX layout"))
+			self.vccxLayout.setCurrentIndex(idx)
+
+			voltage = p.getfloat(sect, "vccxVoltage")
+			self.vccxVoltage.setValue(voltage)
+
+			layouts = p.get(sect, "vppLayout").split(",")
+			for layId in self.vppLayouts.keys():
+				if layId in layouts:
+					self.vppLayouts[layId].setCheckState(Qt.Checked)
+				else:
+					self.vppLayouts[layId].setCheckState(Qt.Unchecked)
+
+			voltage = p.getfloat(sect, "vppVoltage")
+			self.vppVoltage.setValue(voltage)
+
+			interval = p.getfloat(sect, "inputPollInterval")
+			self.inputPollInterval.setValue(interval)
+
+			enabled = p.getboolean(sect, "inputPollEnabled")
+			if enabled:
+				self.inputPollEn.setCheckState(Qt.Checked)
+			else:
+				self.inputPollEn.setCheckState(Qt.Unchecked)
+
+			div = p.getint(sect, "oscillatorDiv")
+			self.oscDiv.setValue(div)
+
+			mask = int(p.get(sect, "oscillatorMask"), 16)
+			idx = self.oscPin.findData(QVariant(mask))
+			if idx < 0:
+				raise TOPException("Invalid oscillator mask")
+			self.oscPin.setCurrentIndex(idx)
+
+			mask = int(p.get(sect, "zifOutEnMask"), 16)
+			self.zifWidget.setOutEnMask(mask)
+
+			mask = int(p.get(sect, "zifOutMask"), 16)
+			self.zifWidget.setOutMask(mask)
+
+		except (ConfigParser.Error, TOPException, ValueError), e:
+			QMessageBox.critical(self, self.tr("Failed to load settings"),
+					     self.tr("Failed to load settings:\n") + str(e))
+			return False
+		return True
+
+	def saveSettings(self, filename):
+		try:
+			fd = file(filename, "w+b")
+
+			fd.write("[TOPRAMMER-UNITEST-SETTINGS]\r\n")
+			fd.write("fileVersion=%d\r\n" % 1)
+			fd.write("programmerType=%s\r\n" % "TOP2049") #TODO
+			idx = self.gndLayout.currentIndex()
+			fd.write("gndLayout=%d\r\n" % self.gndLayout.itemData(idx).toInt()[0])
+			idx = self.vccxLayout.currentIndex()
+			fd.write("vccxLayout=%d\r\n" % self.vccxLayout.itemData(idx).toInt()[0])
+			fd.write("vccxVoltage=%f\r\n" % self.vccxVoltage.value())
+			vppLayouts = ""
+			for layId in self.vppLayouts.keys():
+				if self.vppLayouts[layId].checkState() == Qt.Checked:
+					if vppLayouts:
+						vppLayouts += ","
+					vppLayouts += str(layId)
+			if not vppLayouts:
+				vppLayouts = "0"
+			fd.write("vppLayout=%s\r\n" % vppLayouts)
+			fd.write("vppVoltage=%f\r\n" % self.vppVoltage.value())
+			fd.write("inputPollEnabled=%d\r\n" % int(self.inputPollEn.checkState() == Qt.Checked))
+			fd.write("inputPollInterval=%f\r\n" % self.inputPollInterval.value())
+			idx = self.oscPin.currentIndex()
+			fd.write("oscillatorMask=%X\r\n" % self.oscPin.itemData(idx).toInt()[0])
+			fd.write("oscillatorDiv=%d\r\n" % self.oscDiv.value())
+			fd.write("zifOutEnMask=%X\r\n" % self.zifWidget.getOutEnMask())
+			fd.write("zifOutMask=%X\r\n" % self.zifWidget.getOutMask())
+		except (IOError), e:
+			QMessageBox.critical(self, self.tr("Failed to save settings"),
+					     self.tr("Failed to write settings to file:\n") +\
+					     e.strerror)
+			return False
+		return True
+
 class MainWindow(QMainWindow):
 	def __init__(self, parent=None):
 		QMainWindow.__init__(self, parent)
@@ -408,10 +547,22 @@ class MainWindow(QMainWindow):
 		self.centralWidget().shutdown()
 
 	def loadSettings(self):
-		pass#TODO
+		fn = QFileDialog.getOpenFileName(self, self.tr("Load settings"), "",
+						 self.tr("Toprammer-unitest settings (*.tus)\n" +\
+							 "All files (*)"))
+		fn = str(fn)
+		if fn:
+			self.centralWidget().loadSettings(fn)
 
 	def saveSettings(self):
-		pass#TODO
+		fn = QFileDialog.getSaveFileName(self, self.tr("Save settings"), "",
+						 self.tr("Toprammer-unitest settings (*.tus)"))
+		if not fn:
+			return
+		fn = str(fn)
+		if not fn.endswith(".tus"):
+			fn += ".tus"
+		return self.centralWidget().saveSettings(fn)
 
 	def sendRawCommand(self):
 		(string, ok) = QInputDialog.getText(self,
