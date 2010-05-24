@@ -34,68 +34,49 @@ module w29ee011dip32(data, ale, write, read, osc_in, zif);
 	inout [48:1] zif;
 
 	/* Interface to the microcontroller */
-	wire read_oe;		/* Read output-enable */
-	reg [7:0] address;	/* Cached address value */
-	reg [7:0] read_data;	/* Cached read data */
+	wire read_oe;			/* Read output-enable */
+	reg [7:0] address = 0;		/* Cached address value */
+	reg [7:0] read_data = 0;	/* Cached read data */
 
 	wire low, high;		/* Constant lo/hi */
 	assign low = 0;
 	assign high = 1;
 
 	/* Programmer context */
-	reg [1:0] prog_busy;
-	reg [3:0] prog_command;
-	reg [3:0] prog_state;
-	reg [16:0] prog_addr;
+	reg [1:0] prog_busy = 0;
+	reg [3:0] prog_command = 0;
+	reg [3:0] prog_state = 0;
+	reg [16:0] prog_addr = 0;
 	parameter WRITE_BUF_SIZE = 128;
 	reg [7:0] write_buf[0:WRITE_BUF_SIZE-1];
 	//synthesis attribute ram_style write_buf block;
-	reg [7:0] write_buf_count;
-	reg [7:0] write_buf_iter;
+	reg [7:0] write_buf_count = 0;
+	reg [7:0] write_buf_iter = 0;
 	parameter JEDEC_BUF_SIZE = 6;
 	reg [7:0] jedec_addr_lo[0:JEDEC_BUF_SIZE-1];
 	reg [7:0] jedec_addr_med[0:JEDEC_BUF_SIZE-1];
 	reg [0:0] jedec_addr_hi[0:JEDEC_BUF_SIZE-1];
 	reg [7:0] jedec_data[0:JEDEC_BUF_SIZE-1];
-	reg [2:0] jedec_buf_count;
-	reg [2:0] jedec_buf_iter;
-	reg in_jedec;
-	reg [16:0] dut_write_addr;
-	reg [16:0] dut_read_addr;
+	reg [2:0] jedec_buf_count = 0;
+	reg [2:0] jedec_buf_iter = 0;
+	reg in_jedec = 1;
+	reg [16:0] dut_write_addr = 0;
+	reg [16:0] dut_read_addr = 0;
 	wire [16:0] dut_addr;
-	reg [7:0] dut_jedec_data;
-	reg [7:0] dut_write_data;
+	reg [7:0] dut_jedec_data = 0;
+	reg [7:0] dut_write_data = 0;
 	wire [7:0] dut_data;
-	reg dut_ce;
-	reg dut_oe;
-	reg dut_we;
+	reg dut_ce = 1;
+	reg dut_oe = 1;
+	reg dut_we = 1;
 
 	/* Programmer commands */
 	parameter CMD_WRITEBUF		= 1;
 
 	/* The delay counter. Based on the 24MHz input clock. */
-	reg [15:0] delay_count;
+	reg [15:0] delay_count = 0;
 	wire osc;
 	IBUF osc_ibuf(.I(osc_in), .O(osc));
-
-	initial begin
-		prog_busy <= 0;
-		prog_command <= 0;
-		prog_state <= 0;
-		prog_addr <= 0;
-		write_buf_count <= 0;
-		write_buf_iter <= 0;
-		jedec_buf_count <= 0;
-		jedec_buf_iter <= 0;
-		in_jedec <= 1;
-		dut_write_addr <= 0;
-		dut_read_addr <= 0;
-		dut_jedec_data <= 0;
-		dut_write_data <= 0;
-		dut_ce <= 1;
-		dut_oe <= 1;
-		dut_we <= 1;
-	end
 
 	always @(posedge osc) begin
 		if (delay_count == 0) begin
