@@ -10,10 +10,15 @@ srcdir="$basedir/src"
 bindir="$basedir"
 bitparser="python $basedir/../bitfile.py"
 
+function die
+{
+	echo "$*" >&2
+	exit 1
+}
+
 function terminate
 {
-	echo "Interrupted."
-	exit 1
+	die "Interrupted."
 }
 
 trap terminate TERM INT
@@ -50,6 +55,11 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
+function bitparser
+{
+	python "$basedir/../bitfile.py" "$@" || die "Failed to execute bitparser"
+}
+
 function should_build # $1=target
 {
 	target="$1"
@@ -65,9 +75,10 @@ function should_build # $1=target
 # Check if the payload of two bitfiles matches
 function bitfile_is_equal # $1=file1, $2=file2
 {
+	bitparser "$1" NOACTION # Test if bitparser works
 	[ -r $1 -a -r $2 ] || return 1
-	sum1="$($bitparser $1 GETPAYLOAD | sha1sum - | cut -d' ' -f1)"
-	sum2="$($bitparser $2 GETPAYLOAD | sha1sum - | cut -d' ' -f1)"
+	sum1="$(bitparser "$1" GETPAYLOAD | sha1sum - | cut -d' ' -f1)"
+	sum2="$(bitparser "$2" GETPAYLOAD | sha1sum - | cut -d' ' -f1)"
 	[ "$sum1" = "$sum2" ]
 }
 
