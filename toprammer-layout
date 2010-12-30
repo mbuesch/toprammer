@@ -102,7 +102,6 @@ def main(argv):
 				print "-v|--vccx and  -g|--gnd  " +\
 					"are mandatory, if a package type is specified.\n"
 				raise ValueError()
-			generator = createLayoutGenerator(package)
 
 	except (getopt.GetoptError, ValueError, KeyError), e:
 		usage()
@@ -112,8 +111,15 @@ def main(argv):
 		return 1
 	try:
 		if chip:
-			generator = chip.generator
+			try:
+				generator = chip.generator
+			except (AttributeError), e:
+				print "The chip %s does not have a layout autogenerator. "\
+					"You must specify the package type, -v, -P and -g manually." %\
+					package
+				return 1
 		else:
+			generator = createLayoutGenerator(package)
 			generator.setProgrammerType(programmer.upper())
 			generator.setPins(vccxPin, vppPins, gndPin)
 			generator.recalculate()
