@@ -7,8 +7,8 @@ run
 -ofmt NGC
 -p xc2s15-5-vq100
 -top m8c_issp
--opt_mode Speed
--opt_level 1
+-opt_mode Area
+-opt_level 2
 -iuc NO
 -lso m8c-issp.lso
 -keep_hierarchy NO

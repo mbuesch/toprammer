@@ -49,7 +49,7 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 	reg [`ISSP_VEC_SIZE-1:0] issp_input_vector;	/* Read data */
 	reg [5:0] issp_vecbit;				/* Currently TXed/RXed bit */
 	reg [7:0] issp_count;				/* General purpose counter */
-	reg [3:0] issp_state;				/* Statemachine */
+	reg [2:0] issp_state;				/* Statemachine */
 
 	/* The M8C programmer commands */
 	`define ISSPCMD_NONE	0	/* No command loaded */
@@ -64,31 +64,19 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 	reg dut_sclk;
 	reg dut_sclk_z;
 	reg dut_vdd;
-	`define VDD_ON		0
-	`define VDD_OFF		1
+	`define VDD_ON		1
+	`define VDD_OFF		0
 	`define ZIF_SDATA	22	/* SDATA ZIF pin */
 
 	assign low = 0;
 	assign high = 1;
 
-	initial begin
-		issp_busy <= 0;
-		issp_command <= 0;
-		issp_vector <= 0;
-		issp_vecbit <= `ISSP_VEC_SIZE;
-		issp_state <= 0;
-		dut_sdata <= 0;
-		dut_sdata_input <= 1;
-		dut_sclk <= 0;
-		dut_sclk_z <= 1;
-		dut_vdd <= `VDD_OFF;
-		read_data <= 0;
-	end
-
 	/* The delay counter. Based on the 24MHz input clock. */
 	reg [15:0] delay_count;
 	wire osc;
 	IBUF osc_ibuf(.I(osc_in), .O(osc));
+
+	`define DELAY_250NS	6 - 1
 
 	always @(posedge osc) begin
 		if (delay_count == 0) begin
@@ -105,14 +93,16 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 						dut_sclk <= 0;
 						dut_sdata_input <= 1;
 //						delay_count <= 24000 - 1; /* Wait 1ms */
-						delay_count <= 12000 - 1;
-//						delay_count <= 5000 - 1;
+//						delay_count <= 12000 - 1;
+						delay_count <= 5000 - 1;
 						issp_state <= 1;
 					end
 					1: begin
 						if (zif[`ZIF_SDATA] == 1) begin
 							issp_state <= 2;
-							delay_count <= 6 - 1; /* Wait 250ns */
+							delay_count <= `DELAY_250NS;
+						end else begin
+							issp_state <= 1;
 						end
 					end
 					2: begin
@@ -120,7 +110,10 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 							issp_state <= 3;
 							dut_sclk_z <= 0;
 							dut_sclk <= 0;
-							delay_count <= 6 - 1; /* Wait 250ns */
+							issp_vecbit <= `ISSP_VEC_SIZE;
+							delay_count <= `DELAY_250NS;
+						end else begin
+							issp_state <= 2;
 						end
 					end
 					3: begin
@@ -134,14 +127,14 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 							dut_sdata <= issp_vector[issp_vecbit - 1];
 							dut_sclk <= 1;
 							issp_state <= 4;
-							delay_count <= 6 - 1; /* Wait 250ns */
+							delay_count <= `DELAY_250NS;
 						end
 					end
 					4: begin
 						dut_sclk <= 0;
 						issp_state <= 3;
 						issp_vecbit <= issp_vecbit - 1;
-						delay_count <= 6 - 1; /* Wait 250ns */
+						delay_count <= `DELAY_250NS;
 					end
 					5: begin
 						/* We're done. */
@@ -153,8 +146,13 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 				end
 				if (issp_command == `ISSPCMD_PWROFF) begin
 					dut_vdd <= `VDD_OFF;
+					dut_sdata <= 0;
 					dut_sdata_input <= 1;
+					dut_sclk <= 0;
 					dut_sclk_z <= 1;
+					issp_vecbit <= `ISSP_VEC_SIZE;
+					issp_state <= 0;
+					delay_count <= 0;
 					/* We're done. */
 					issp_busy[1] <= issp_busy[0];
 				end
@@ -169,7 +167,7 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 						end
 						dut_sclk <= 1;
 						issp_state <= 1;
-						delay_count <= 6 - 1; /* Wait 250ns */
+						delay_count <= `DELAY_250NS;
 					end
 					1: begin
 						if (issp_input_mask[issp_vecbit - 1] != 0) begin
@@ -180,7 +178,7 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 						end
 						dut_sclk <= 0;
 						issp_state <= 2;
-						delay_count <= 6 - 1; /* Wait 250ns */
+						delay_count <= `DELAY_250NS;
 					end
 					2: begin//FIXME?
 						if (issp_vecbit == 0) begin
@@ -205,13 +203,13 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 						dut_sclk_z <= 0;
 						issp_count <= 40;
 						issp_state <= 1;
-						delay_count <= 6 - 1; /* Wait 250ns */
+						delay_count <= `DELAY_250NS;
 					end
 					1: begin /* Wait 40 cycles, set clk=hi */
 						dut_sclk <= 1;
 						issp_state <= 2;
 						issp_count <= issp_count - 1;
-						delay_count <= 6 - 1; /* Wait 250ns */
+						delay_count <= `DELAY_250NS;
 					end
 					2: begin /* Wait 40 cycles, set clk=lo */
 						dut_sclk <= 0;
@@ -219,7 +217,7 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 							issp_state <= 3;
 						else
 							issp_state <= 1;
-						delay_count <= 6 - 1; /* Wait 250ns */
+						delay_count <= `DELAY_250NS;
 					end
 					3: begin /* Wait for SDATA=0, set clk=hi */
 						dut_sclk <= 1;
@@ -232,12 +230,12 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 						end else begin
 							issp_state <= 4;
 						end
-						delay_count <= 6 - 1; /* Wait 250ns */
+						delay_count <= `DELAY_250NS;
 					end
 					4: begin /* Wait for SDATA=0, set clk=lo */
 						dut_sclk <= 0;
 						issp_state <= 3;
-						delay_count <= 6 - 1; /* Wait 250ns */
+						delay_count <= `DELAY_250NS;
 					end
 					5: begin /* Send 40 zeros. set clk=lo */
 						dut_sdata_input <= 0;
@@ -246,13 +244,13 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 							issp_state <= 7;
 						else
 							issp_state <= 6;
-						delay_count <= 6 - 1; /* Wait 250ns */
+						delay_count <= `DELAY_250NS;
 					end
 					6: begin /* Send 40 zeros. set clk=hi */
 						dut_sclk <= 1;
 						issp_count <= issp_count - 1;
 						issp_state <= 5;
-						delay_count <= 6 - 1; /* Wait 250ns */
+						delay_count <= `DELAY_250NS;
 					end
 					7: begin /* finish */
 						/* We're done. */
@@ -314,7 +312,16 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 		end
 		8'h12: begin
 			/* Read status */
-			read_data[0] <= (issp_busy[0] != issp_busy[1]);
+			read_data[0] <= issp_busy[0];
+			read_data[1] <= issp_busy[1];
+
+			read_data[2] <= issp_state[0];
+			read_data[3] <= issp_state[1];
+			read_data[4] <= issp_state[2];
+
+			read_data[5] <= 0;
+			read_data[6] <= 0;
+			read_data[7] <= 0;
 		end
 		8'h13: begin
 			/* Read input vector low */
