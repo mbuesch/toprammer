@@ -54,9 +54,15 @@ def usage():
 	print "                         Use -V|--verbose to control the list verbosity (1-4)"
 	print " -d|--device BUS.DEV     Use the programmer at BUS.DEV"
 	print "                         First found programmer is used, if not given."
-	print " -V|--verbose LEVEL      Set the verbosity level. Default = 1"
+	print " -V|--verbose LEVEL      Set the verbosity level:"
+	print "                         0 => show warnings"
+	print "                         1 => also show informational messages (default)"
+	print "                         2 => also show debugging messages"
+	print "                         3 => also dump all USB commands"
 	print " -o|--force LEVEL        Set the force level. Default = 0"
 	print "                         Note that any value greater than 0 may brick devices"
+	print " -U|--force-upload       Force upload the bitfile, even if it already appears"
+	print "                         to be uploaded."
 	print " -Q|--noqueue            Disable command queuing. Really slow!"
 	print " -B|--broken             Also use broken algorithms"
 	print " -I|--in-format FMT      Input file format. Default = autodetect"
@@ -223,6 +229,7 @@ def fileIn(filename, format):
 def main(argv):
 	opt_verbose = 1
 	opt_forceLevel = 0
+	opt_forceBitfileUpload = False
 	opt_chipID = None
 	opt_device = None
 	opt_action = None
@@ -233,12 +240,13 @@ def main(argv):
 	opt_outformat = "bin"
 	try:
 		(opts, args) = getopt.getopt(sys.argv[1:],
-			"hc:d:V:Qs:xp:P:e:E:f:F:o:l:L:BtI:O:",
+			"hc:d:V:Qs:xp:P:e:E:f:F:o:Ul:L:BtI:O:",
 			[ "help", "chip-id=", "device=", "verbose=", "noqueue",
 			  "read-sig=", "erase", "read-prog=", "write-prog=",
 			  "read-eeprom=", "write-eeprom=", "read-fuse=", "write-fuse=",
 			  "read-lock=", "write-lock=",
-			  "force=", "broken", "list", "in-format=", "out-format=", ])
+			  "force=", "force-upload", "broken", "list",
+			  "in-format=", "out-format=", ])
 		for (o, v) in opts:
 			if o in ("-h", "--help"):
 				usage()
@@ -258,6 +266,8 @@ def main(argv):
 				opt_verbose = int(v)
 			if o in ("-o", "--force"):
 				opt_forceLevel = int(v)
+			if o in ("-U", "--force-upload"):
+				opt_forceBitfileUpload = True
 			if o in ("-Q", "--noqueue"):
 				opt_noqueue = True
 			if o in ("-B", "--broken"):
@@ -318,7 +328,8 @@ def main(argv):
 
 		top = TOP(busDev = opt_device,
 			  verbose = opt_verbose, forceLevel = opt_forceLevel,
-			  noqueue = opt_noqueue, usebroken = opt_usebroken)
+			  noqueue = opt_noqueue, usebroken = opt_usebroken,
+			  forceBitfileUpload = opt_forceBitfileUpload)
 		top.initializeChip(opt_chipID)
 		if opt_action == "read-sig":
 			fileOut(opt_file, opt_outformat, top.readSignature())

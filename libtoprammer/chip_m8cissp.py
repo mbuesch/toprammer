@@ -30,7 +30,10 @@ class Chip_M8C_ISSP(Chip):
 	ISSPCMD_SENDVEC	= 3 # Send a vector
 	ISSPCMD_EXEC	= 4 # Do an "execute" transfer
 
-	STAT_BUSY	= 0x01 # Programmer is running a command
+	STAT_BUSY0		= 0x01
+	STAT_BUSY1		= 0x02
+	STAT_ISSPSTATE		= 0x1C
+	STAT_ISSPSTATE_SHIFT	= 2
 
 	STRVEC_SETFREQ = {
 		2	: "1001111110000000101000",
@@ -201,18 +204,17 @@ class Chip_M8C_ISSP(Chip):
 		"Turn the power to the device off"
 		self.printDebug("Powering device down...")
 		self.__runCommandSync(self.ISSPCMD_PWROFF)
-		self.top.flushCommands()
-		time.sleep(3)
+		self.top.delay(5)
 
 	def __powerOnReset(self):
 		"Perform a complete power-on-reset and initialization"
 		self.printDebug("Initializing supply power...")
 		self.top.gnd.setLayoutPins( (20,) )
-		self.top.cmdFlush()
+#		self.top.cmdFlush()
 		self.top.vccx.setLayoutPins( (21,) )
-		self.top.cmdFlush()
+#		self.top.cmdFlush()
 		self.top.cmdSetVCCXVoltage(5)
-		self.top.cmdFlush()
+#		self.top.cmdFlush()
 
 		self.__powerDown()
 		self.printDebug("Performing a power-on-reset...")
@@ -258,6 +260,7 @@ class Chip_M8C_ISSP(Chip):
 		self.top.cmdFPGAWrite(0x12, command & 0xFF)
 
 	def __runCommandSync(self, command):
+		self.printDebug("Running synchronous command %d" % command)
 		self.__loadCommand(command)
 		self.__busyWait()
 
@@ -292,17 +295,22 @@ class Chip_M8C_ISSP(Chip):
 	def __getStatusFlags(self):
 		self.top.cmdFPGAReadRaw(0x12)
 		stat = self.top.cmdReadStatusReg()
-		return ord(stat[0])
+		stat = ord(stat[0])
+		isspState = (stat & self.STAT_ISSPSTATE) >> self.STAT_ISSPSTATE_SHIFT
+		isBusy = bool(stat & self.STAT_BUSY0) != bool(stat & self.STAT_BUSY1)
+		self.printDebug("isspState = 0x%02X, isBusy = %d, busyFlags = 0x%01X" %\
+			(isspState, isBusy, (stat & (self.STAT_BUSY0 | self.STAT_BUSY1))))
+		return (isBusy, isspState)
 
 	def __busy(self):
-		return bool(self.__getStatusFlags() & self.STAT_BUSY)
+		(isBusy, isspState) = self.__getStatusFlags()
+		return isBusy
 
 	def __busyWait(self):
-#XXX		for i in range(0, 50):
-		while 1:
+		for i in range(0, 200):
 			if not self.__busy():
 				return
-			time.sleep(0.01)
+			self.top.delay(0.01)
 		self.throwError("Timeout in busywait. Chip not responding?")
 
 	def __getInputVector(self):

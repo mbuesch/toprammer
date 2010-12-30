@@ -43,11 +43,13 @@ class TOP:
 	TYPE_TOP2049		= "TOP2049"
 
 	def __init__(self, busDev=None, verbose=0,
-		     forceLevel=0, noqueue=False, usebroken=False):
+		     forceLevel=0, noqueue=False, usebroken=False,
+		     forceBitfileUpload=False):
 		"""busDev is a tuple (BUSID, DEVID) or None."""
 
 		self.verbose = verbose
 		self.forceLevel = forceLevel
+		self.forceBitfileUpload = forceBitfileUpload
 		self.noqueue = noqueue
 		self.usebroken = usebroken
 
@@ -226,7 +228,7 @@ class TOP:
 
 	def __bitfileUpload(self, requiredRuntimeID):
 		(requiredID, requiredRevision) = requiredRuntimeID
-		if requiredID and requiredRevision:
+		if requiredID and requiredRevision and not self.forceBitfileUpload:
 			# Check if the bitfile is already uploaded.
 			self.cmdFPGAReadRaw(0xFD)
 			self.cmdFPGAReadRaw(0xFE)
