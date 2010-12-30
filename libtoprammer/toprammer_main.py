@@ -36,6 +36,7 @@ except (ImportError), e:
 
 from top_xxxx import *
 from chip_xxxx import *
+from user_interface import *
 
 
 class TOP:
@@ -44,7 +45,8 @@ class TOP:
 
 	def __init__(self, busDev=None, verbose=0,
 		     forceLevel=0, noqueue=False, usebroken=False,
-		     forceBitfileUpload=False):
+		     forceBitfileUpload=False,
+		     userInterface=ConsoleUserInterface()):
 		"""busDev is a tuple (BUSID, DEVID) or None."""
 
 		self.verbose = verbose
@@ -52,6 +54,7 @@ class TOP:
 		self.forceBitfileUpload = forceBitfileUpload
 		self.noqueue = noqueue
 		self.usebroken = usebroken
+		self.userInterface = userInterface
 
 		self.chip = None
 		self.commandQueue = []
@@ -142,32 +145,32 @@ class TOP:
 	def getForceLevel(self):
 		return self.forceLevel
 
+	def progressMeterInit(self, meterId, message, nrSteps):
+		if self.verbose >= 1:
+			self.userInterface.progressMeterInit(meterId, message, nrSteps)
+
+	def progressMeterFinish(self, meterId):
+		if self.verbose >= 1:
+			self.userInterface.progressMeterFinish(meterId)
+
+	def progressMeter(self, meterId, step):
+		if self.verbose >= 1:
+			self.userInterface.progressMeter(meterId, step)
+
 	def printWarning(self, message, newline=True):
 		if self.verbose >= 0:
 			self.flushCommands()
-			if newline:
-				print message
-			else:
-				sys.stdout.write(message)
-				sys.stdout.flush()
+			self.userInterface.warningMessage(message, newline)
 
 	def printInfo(self, message, newline=True):
 		if self.verbose >= 1:
 			self.flushCommands()
-			if newline:
-				print message
-			else:
-				sys.stdout.write(message)
-				sys.stdout.flush()
+			self.userInterface.infoMessage(message, newline)
 
 	def printDebug(self, message, newline=True):
 		if self.verbose >= 2:
 			self.flushCommands()
-			if newline:
-				print message
-			else:
-				sys.stdout.write(message)
-				sys.stdout.flush()
+			self.userInterface.debugMessage(message, newline)
 
 	@staticmethod
 	def __isTOP(usbdev):

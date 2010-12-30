@@ -22,6 +22,7 @@
 
 from util import *
 from layout_generator import *
+from user_interface import *
 
 
 class Chip:
@@ -115,32 +116,15 @@ class Chip:
 			self.top.gnd.setLayoutMask(0)
 
 	def progressMeterInit(self, message, nrSteps):
-		self.progressNrSteps = nrSteps
-		self.progress = range(0, 100)
-		self.printInfo(message + " [0%", newline=False)
+		self.top.progressMeterInit(AbstractUserInterface.PROGRESSMETER_CHIPACCESS,
+					   message, nrSteps)
 
 	def progressMeterFinish(self):
-		if not self.progressNrSteps:
-			self.progressMeter(0)
-		self.printInfo("100%]")
+		self.top.progressMeterFinish(AbstractUserInterface.PROGRESSMETER_CHIPACCESS)
 
 	def progressMeter(self, step):
-		if self.progressNrSteps:
-			percent = (step * 100 // self.progressNrSteps)
-		else:
-			percent = 100
-		for progress in list(self.progress):
-			if progress > percent:
-				break
-			if progress == 25:
-				self.printInfo("25%", newline=False)
-			elif progress == 50:
-				self.printInfo("50%", newline=False)
-			elif progress == 75:
-				self.printInfo("75%", newline=False)
-			elif progress % 2 == 0:
-				self.printInfo(".", newline=False)
-			self.progress.remove(progress)
+		self.top.progressMeter(AbstractUserInterface.PROGRESSMETER_CHIPACCESS,
+				       step)
 
 	def initializeChip(self):
 		pass # Override me in the subclass, if required.
