@@ -26,6 +26,54 @@ from user_interface import *
 
 
 class Chip:
+	SUPPORT_ERASE		= (1 << 0)
+	SUPPORT_SIGREAD		= (1 << 1)
+	SUPPORT_PROGMEMREAD	= (1 << 2)
+	SUPPORT_PROGMEMWRITE	= (1 << 3)
+	SUPPORT_EEPROMREAD	= (1 << 4)
+	SUPPORT_EEPROMWRITE	= (1 << 5)
+	SUPPORT_FUSEREAD	= (1 << 6)
+	SUPPORT_FUSEWRITE	= (1 << 7)
+	SUPPORT_LOCKREAD	= (1 << 8)
+	SUPPORT_LOCKWRITE	= (1 << 9)
+
+	@staticmethod
+	def chipSupportsAttr(chipImplClass, attribute):
+		"""Check if a chip implementation supports a feature.
+		'attribute' is the class member function to check for"""
+		# This works by checking whether the subclass overloaded
+		# the member function attribute.
+		if str(type(chipImplClass)) == "<type 'instance'>":
+			# This is an instance. Get the class
+			chipImplClass = chipImplClass.registeredChip.chipImplClass
+		return getattr(chipImplClass, attribute) != getattr(Chip, attribute)
+
+	@staticmethod
+	def getSupportFlags(chip):
+		"Get the SUPPORT_... flags for this chip"
+		flags = 0
+		if Chip.chipSupportsAttr(chip, "erase"):
+			flags |= Chip.SUPPORT_ERASE
+		if Chip.chipSupportsAttr(chip, "readSignature"):
+			flags |= Chip.SUPPORT_SIGREAD
+		if Chip.chipSupportsAttr(chip, "readProgmem"):
+			flags |= Chip.SUPPORT_PROGMEMREAD
+		if Chip.chipSupportsAttr(chip, "writeProgmem"):
+			flags |= Chip.SUPPORT_PROGMEMWRITE
+		if Chip.chipSupportsAttr(chip, "readEEPROM"):
+			flags |= Chip.SUPPORT_EEPROMREAD
+		if Chip.chipSupportsAttr(chip, "writeEEPROM"):
+			flags |= Chip.SUPPORT_EEPROMWRITE
+		if Chip.chipSupportsAttr(chip, "readFuse"):
+			flags |= Chip.SUPPORT_FUSEREAD
+		if Chip.chipSupportsAttr(chip, "writeFuse"):
+			flags |= Chip.SUPPORT_FUSEWRITE
+		if Chip.chipSupportsAttr(chip, "readLockbits"):
+			flags |= Chip.SUPPORT_LOCKREAD
+		if Chip.chipSupportsAttr(chip, "writeLockbits"):
+			flags |= Chip.SUPPORT_LOCKWRITE
+		return flags
+
 	def __init__(self, chipPackage=None, chipPinVCCX=None, chipPinsVPP=None, chipPinGND=None):
 		"""chipPackage is the ID string for the package.
 		May be None, if no initial auto-layout is required.
@@ -213,6 +261,7 @@ class RegisteredChip:
 				continue
 			if chip.chipID.lower() == chipID.lower():
 				instance = chip.chipImplClass()
+				instance.registeredChip = chip
 				instance.setChipID(chip.chipID)
 				instance.setProgrammerType(programmerType)
 				instance.generateVoltageLayouts()
@@ -251,19 +300,20 @@ class RegisteredChip:
 				fd.write("%25s:  %s%s\n" % ("Supported package", package, description))
 		if verbose >= 4:
 			supportedFeatures = (
-				("erase", "Full chip erase"),
-				("readSignature", "Chip signature reading"),
-				("readProgmem", "Program memory reading (flash)"),
-				("writeProgmem", "Program memory writing (flash)"),
-				("readEEPROM", "(E)EPROM memory reading"),
-				("writeEEPROM", "(E)EPROM memory writing"),
-				("readFuse", "Fuse bits reading"),
-				("writeFuse", "Fuse bits writing"),
-				("readLockbits", "Lock bits reading"),
-				("writeLockbits", "Lock bits writing"),
+				(Chip.SUPPORT_ERASE,		"Full chip erase"),
+				(Chip.SUPPORT_SIGREAD,		"Chip signature reading"),
+				(Chip.SUPPORT_PROGMEMREAD,	"Program memory reading (flash)"),
+				(Chip.SUPPORT_PROGMEMWRITE,	"Program memory writing (flash)"),
+				(Chip.SUPPORT_EEPROMREAD,	"(E)EPROM memory reading"),
+				(Chip.SUPPORT_EEPROMWRITE,	"(E)EPROM memory writing"),
+				(Chip.SUPPORT_FUSEREAD,		"Fuse bits reading"),
+				(Chip.SUPPORT_FUSEWRITE,	"Fuse bits writing"),
+				(Chip.SUPPORT_LOCKREAD,		"Lock bits reading"),
+				(Chip.SUPPORT_LOCKWRITE,	"Lock bits writing"),
 			)
-			for (attr, description) in supportedFeatures:
-				if getattr(self.chipImplClass, attr) != getattr(Chip, attr):
+			supportFlags = Chip.getSupportFlags(self.chipImplClass)
+			for (flag, description) in supportedFeatures:
+				if flag & supportFlags:
 					fd.write("%25s:  %s\n" % ("Support for", description))
 		if verbose >= 2 and self.comment:
 			fd.write("%25s:  %s\n" % ("Comment", self.comment))
