@@ -138,9 +138,14 @@ class TOP:
 		self.chip.initializeChip()
 
 	def shutdownChip(self):
-		self.chip.shutdownChip()
-		self.flushCommands()
-		self.chip = None
+		if self.chip:
+			self.chip.shutdownChip()
+			self.flushCommands()
+			self.chip = None
+
+	def __checkChip(self):
+		if not self.chip:
+			raise TOPException("Target chip not selected")
 
 	def getForceLevel(self):
 		return self.forceLevel
@@ -268,6 +273,7 @@ class TOP:
 	def readSignature(self):
 		"""Reads the device signature and returns it."""
 		self.printDebug("Reading signature from chip...")
+		self.__checkChip()
 		sig = self.chip.readSignature()
 		self.printDebug("Done reading %d bytes." % len(sig))
 		return sig
@@ -275,11 +281,13 @@ class TOP:
 	def eraseChip(self):
 		"""Erase the chip."""
 		self.printDebug("Erasing chip...")
+		self.__checkChip()
 		self.chip.erase()
 
 	def readProgmem(self):
 		"""Reads the program memory image and returns it."""
 		self.printDebug("Reading program memory from chip...")
+		self.__checkChip()
 		image = self.chip.readProgmem()
 		self.printDebug("Done reading %d bytes." % len(image))
 		return image
@@ -287,12 +295,14 @@ class TOP:
 	def writeProgmem(self, image):
 		"""Writes a program memory image to the chip."""
 		self.printDebug("Writing %d bytes of program memory to chip..." % len(image))
+		self.__checkChip()
 		self.chip.writeProgmem(image)
 		self.printDebug("Done writing image.")
 
 	def readEEPROM(self):
 		"""Reads the EEPROM image and returns it."""
 		self.printDebug("Reading EEPROM from chip...")
+		self.__checkChip()
 		image = self.chip.readEEPROM()
 		self.printDebug("Done reading %d bytes." % len(image))
 		return image
@@ -300,12 +310,14 @@ class TOP:
 	def writeEEPROM(self, image):
 		"""Writes an EEPROM image to the chip."""
 		self.printDebug("Writing %d bytes of EEPROM to chip..." % len(image))
+		self.__checkChip()
 		self.chip.writeEEPROM(image)
 		self.printDebug("Done writing image.")
 
 	def readFuse(self):
 		"""Reads the fuses image and returns it."""
 		self.printDebug("Reading fuses from chip...")
+		self.__checkChip()
 		image = self.chip.readFuse()
 		self.printDebug("Done reading %d bytes." % len(image))
 		return image
@@ -313,12 +325,14 @@ class TOP:
 	def writeFuse(self, image):
 		"""Writes a fuses image to the chip."""
 		self.printDebug("Writing %d bytes of fuses to chip..." % len(image))
+		self.__checkChip()
 		self.chip.writeFuse(image)
 		self.printDebug("Done writing image.")
 
 	def readLockbits(self):
 		"""Reads the Lock bits image and returns it."""
 		self.printDebug("Reading lock-bits from chip...")
+		self.__checkChip()
 		image = self.chip.readLockbits()
 		self.printDebug("Done reading %d bytes." % len(image))
 		return image
@@ -326,6 +340,7 @@ class TOP:
 	def writeLockbits(self, image):
 		"""Writes a Lock bits image to the chip."""
 		self.printDebug("Writing %d bytes of lock-bits to chip..." % len(image))
+		self.__checkChip()
 		self.chip.writeLockbits(image)
 		self.printDebug("Done writing image.")
 

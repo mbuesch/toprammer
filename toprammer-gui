@@ -1,0 +1,405 @@
+#!/usr/bin/env python
+"""
+#    TOP2049 Open Source programming suite
+#
+#    Qt-based graphical user interface
+#
+#    Copyright (c) 2010 Michael Buesch <mb@bu3sch.de>
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License along
+#    with this program; if not, write to the Free Software Foundation, Inc.,
+#    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+
+from libtoprammer.toprammer_main import *
+from PyQt4.QtCore import *
+from PyQt4.QtGui import *
+import sys
+import time
+
+
+class GuiUserInterface(AbstractUserInterface):
+	def __init__(self, hwThread):
+		self.hwThread = hwThread
+
+	def progressMeterInit(self, meterId, message, nrSteps):
+		self.hwThread.appendMessage("progrInit", (meterId, message, nrSteps))
+
+	def progressMeterFinish(self, meterId):
+		self.hwThread.appendMessage("progrFinish", meterId)
+
+	def progressMeter(self, meterId, step):
+		self.hwThread.appendMessage("progress", (meterId, step))
+
+	def __consoleMessage(self, message, newline=True):
+		if newline:
+			message += "\n"
+		self.hwThread.appendMessage("console", message)
+
+	def warningMessage(self, message, newline=True):
+		self.__consoleMessage(message, newline)
+
+	def infoMessage(self, message, newline=True):
+		self.__consoleMessage(message, newline)
+
+	def debugMessage(self, message, newline=True):
+		self.__consoleMessage(message, newline)
+
+class HwThread(QThread):
+	TASK_SHUTDOWN		= 0
+	TASK_INITCHIP		= 1
+	TASK_READSIG		= 2
+	TASK_ERASE		= 3
+	TASK_READPROG		= 4
+	TASK_WRITEPROG		= 5
+	TASK_READEEPROM		= 6
+	TASK_WRITEEEPROM	= 7
+	TASK_READFUSE		= 8
+	TASK_WRITEFUSE		= 9
+	TASK_READLOCK		= 10
+	TASK_WRITELOCK		= 11
+
+	def __init__(self, mainWindow):
+		QThread.__init__(self, mainWindow)
+
+		self.mainWindow = mainWindow
+		self.killRequest = False
+		self.messageQueue = []
+		self.top = None
+		self.task = None
+		self.taskParameter = None
+
+		self.pollTimer = QTimer(self)
+		self.pollTimer.setSingleShot(False)
+		self.connect(self.pollTimer, SIGNAL("timeout()"), self.__poll)
+
+		self.waitCondition = QWaitCondition()
+		self.mutex = QMutex()
+		self.setTopParameters()
+		self.start()
+
+	def killThread(self):
+		if self.isRunning():
+			self.mutex.lock()
+			self.task = self.TASK_SHUTDOWN
+			self.killRequest = True
+			self.waitCondition.wakeAll()
+			self.mutex.unlock()
+			self.wait()
+
+	def setTopParameters(self, busDev=None, verbose=2, forceLevel=0,
+			     usebroken=False, forceBitfileUpload=False):
+		assert(self.top is None and self.task is None)
+		self.param_busDev = busDev
+		self.param_verbose = verbose
+		self.param_forceLevel = forceLevel
+		self.param_usebroken = usebroken
+		self.param_forceBitfileUpload = forceBitfileUpload
+
+	def triggerTask(self, task, taskParameter=None):
+		self.mutex.lock()
+		self.task = task
+		self.taskParameter = taskParameter
+		self.pollTimer.start(200)
+		self.waitCondition.wakeAll()
+		self.mutex.unlock()
+
+	def run(self):
+		self.mutex.lock()
+		while True:
+			if not self.killRequest and self.task is None:
+				self.waitCondition.wait(self.mutex)
+			self.mutex.unlock()
+			self.__taskWorker()
+			self.mutex.lock()
+			if self.killRequest and self.task is None:
+				break
+		self.mutex.unlock()
+
+	def appendMessage(self, message, data):
+		if self.pollTimer.isActive():
+			self.mutex.lock()
+			self.messageQueue.append( (message, data) )
+			self.mutex.unlock()
+
+	def __taskWorker(self):
+		try:
+			result = self.__runTask(self.task)
+			failed = False
+		except (TOPException, Exception), e:
+			result = e
+			failed = True
+		self.appendMessage("finished", (self.task, failed, result))
+		self.task = None
+		self.taskParameter = None
+
+	def __runTask(self, task):
+		retval = None
+		if task == self.TASK_SHUTDOWN:
+			print "TOP hardware shutdown..."
+			if self.top:
+				self.top.shutdownChip()
+				self.top = None
+			return retval
+		if not self.top:
+			# Initialize Hardware access
+			self.top = TOP(busDev = self.param_busDev,
+				       verbose = self.param_verbose,
+				       forceLevel = self.param_forceLevel,
+				       usebroken = self.param_usebroken,
+				       forceBitfileUpload = self.param_forceBitfileUpload,
+				       userInterface = GuiUserInterface(self))
+		if task == self.TASK_INITCHIP:
+			self.top.initializeChip(self.taskParameter)
+		elif task == self.TASK_READSIG:
+			retval = self.top.readSignature()
+		elif task == self.TASK_ERASE:
+			self.top.eraseChip()
+		elif task == self.TASK_READPROG:
+			retval = self.top.readProgmem()
+		elif task == self.TASK_WRITEPROG:
+			self.top.writeProgmem(self.taskParameter)
+		elif task == self.TASK_READEEPROM:
+			retval = self.top.readEEPROM()
+		elif task == self.TASK_WRITEEEPROM:
+			self.top.writeEEPROM(self.taskParameter)
+		elif task == self.TASK_READFUSE:
+			retval = self.top.readFuse()
+		elif task == self.TASK_WRITEFUSE:
+			self.top.writeFuse(self.taskParameter)
+		elif task == self.TASK_READLOCK:
+			retval = self.top.readLockbits()
+		elif task == self.TASK_WRITELOCK:
+			self.top.writeLockbits(self.taskParameter)
+		else:
+			raise TOPException("INTERNAL ERROR: HwThread: unknown task")
+		return retval
+
+	def __poll(self):
+		self.mutex.lock()
+		for (message, data) in self.messageQueue:
+			if message == "finished":
+				self.pollTimer.stop()
+				self.mainWindow.hardwareTaskFinished(
+					task=data[0], failed=data[1], returnValue=data[2])
+			elif message == "console":
+				self.mainWindow.console.showMessage(data)
+			elif message == "progrInit":
+				(meterId, message, nrSteps) = data
+				self.mainWindow.console.showMessage(message + "\n")
+				self.mainWindow.console.progressMeterInit(meterId, nrSteps)
+			elif message == "progrFinish":
+				meterId = data
+				self.mainWindow.console.progressMeter(meterId, -1)
+			elif message == "progress":
+				(meterId, step) = data
+				self.mainWindow.console.progressMeter(meterId, step)
+			else:
+				assert(0)
+		self.messageQueue = []
+		self.mutex.unlock()
+
+class Console(QDockWidget):
+	def __init__(self, mainWindow):
+		QDockWidget.__init__(self, mainWindow)
+
+		self.setFeatures(self.DockWidgetMovable | self.DockWidgetFloatable)
+		self.setWidget(QWidget(self))
+		self.widget().show()
+		self.widget().setLayout(QGridLayout(self))
+
+		self.consoleText = QTextEdit(self)
+		self.consoleText.setReadOnly(True)
+		self.widget().layout().addWidget(self.consoleText, 0, 0)
+
+		self.progress = QProgressBar(self)
+		self.widget().layout().addWidget(self.progress, 1, 0)
+
+	def showMessage(self, message):
+		text = self.consoleText.toPlainText()
+		text += message
+		self.consoleText.setPlainText(text)
+
+	def progressMeterInit(self, meterId, nrSteps):
+		if meterId != GuiUserInterface.PROGRESSMETER_CHIPACCESS:
+			return
+		self.progress.setMinimum(0)
+		self.progress.setMaximum(max(0, nrSteps - 1))
+		self.progress.setValue(self.progress.maximum())
+		self.progress.setValue(0)
+
+	def progressMeter(self, meterId, step):
+		if meterId != GuiUserInterface.PROGRESSMETER_CHIPACCESS:
+			return
+		if step == -1:
+			step = self.progress.maximum()
+		if self.progress.maximum() == 0:
+			self.progress.setMaximum(1)
+			self.progress.setValue(1)
+		else:
+			self.progress.setValue(step)
+
+class BufferWidget(QWidget):
+	def __init__(self, mainWindow):
+		QWidget.__init__(self, mainWindow)
+		self.setLayout(QGridLayout(self))
+
+		self.browser = QTextBrowser(self)
+		self.layout().addWidget(self.browser, 0, 0)
+
+class BufferTabWidget(QTabWidget):
+	def __init__(self, mainWindow):
+		QTabWidget.__init__(self, mainWindow)
+
+		self.progmemBuffer = BufferWidget(mainWindow)
+		self.eepromBuffer = BufferWidget(mainWindow)
+
+		self.setTabPosition(self.South)
+		self.addTab(self.progmemBuffer, "Program memory")
+		self.addTab(self.eepromBuffer, "(E)EPROM memory")
+
+class StatusBar(QStatusBar):
+	def __init__(self, mainWindow):
+		QStatusBar.__init__(self, mainWindow)
+
+class TopToolBar(QToolBar):
+	def __init__(self, mainWindow):
+		QToolBar.__init__(self, mainWindow)
+
+		self.addAction("&Open\nfile", mainWindow.loadFile)
+		self.addAction("S&ave\nfile as", mainWindow.saveFileAs)
+		self.addAction("&Select\nchip", mainWindow.selectChip)
+		self.addSeparator()
+		self.addAction("&Read\nchip", mainWindow.readChip)
+		self.addAction("&Erase", mainWindow.eraseChip)
+		self.addAction("Write\n&program\nmemory", mainWindow.writeChipProgmem)
+		self.addAction("Write\n(E)EP&ROM", mainWindow.writeChipEeprom)
+		self.addAction("Write\n&fuses", mainWindow.writeChipFuses)
+		self.addAction("Write\n&lock bits", mainWindow.writeChipLockbits)
+
+class LeftToolBar(QToolBar):
+	def __init__(self, mainWindow):
+		QToolBar.__init__(self, mainWindow)
+
+class MainWindow(QMainWindow):
+	def __init__(self, parent=None):
+		QMainWindow.__init__(self, parent)
+		self.setWindowTitle("TOPrammer - Open Source programming suite")
+
+		self.setStatusBar(StatusBar(self))
+		self.topToolBar = TopToolBar(self)
+		self.addToolBar(Qt.TopToolBarArea, self.topToolBar)
+		self.leftToolBar = LeftToolBar(self)
+		self.addToolBar(Qt.LeftToolBarArea, self.leftToolBar)
+
+		self.setMenuBar(QMenuBar(self))
+
+		menu = QMenu("&File", self)
+		menu.addAction("&Open file...", self.loadFile)
+		menu.addAction("&Save file", self.saveFile)
+		menu.addAction("S&ave file as...", self.saveFileAs)
+		menu.addSeparator()
+		menu.addAction("&Exit", self.close)
+		self.menuBar().addMenu(menu)
+
+		menu = QMenu("&Run", self)
+		menu.addAction("&Select chip", self.selectChip)
+		menu.addSeparator()
+		menu.addAction("&Read chip", self.readChip)
+		menu.addAction("&Erase", self.eraseChip)
+		menu.addAction("Write &program memory", self.writeChipProgmem)
+		menu.addAction("Write (E)EP&ROM", self.writeChipEeprom)
+		menu.addAction("Write &fuses", self.writeChipFuses)
+		menu.addAction("Write &lock bits", self.writeChipLockbits)
+		self.menuBar().addMenu(menu)
+
+		menu = QMenu("&Help", self)
+		menu.addAction("&About", self.showAbout)
+		self.menuBar().addMenu(menu)
+
+		self.setCentralWidget(BufferTabWidget(self))
+
+		self.console = Console(self)
+		self.addDockWidget(Qt.BottomDockWidgetArea, self.console)
+
+		self.hwThread = HwThread(self)
+
+	def closeEvent(self, e):
+		self.hwThread.killThread()
+		e.accept()
+
+	def showAbout(self):
+		QMessageBox.information(self, "About TOPrammer",
+			"Copyright (c) Michael Buesch <mb@bu3sch.de>")
+
+	def loadFile(self):
+		pass#TODO
+
+	def saveFile(self):
+		pass#TODO
+
+	def saveFileAs(self):
+		pass#TODO
+
+	def selectChip(self):
+		self.runHardwareTask(HwThread.TASK_INITCHIP, "atmega8dip28")#TODO
+		pass#TODO
+
+	def readChip(self):
+		self.runHardwareTask(HwThread.TASK_READPROG)
+		#TODO read others
+
+	def eraseChip(self):
+		self.runHardwareTask(HwThread.TASK_ERASE)
+
+	def writeChipProgmem(self):
+		pass#TODO
+
+	def writeChipEeprom(self):
+		pass#TODO
+
+	def writeChipFuses(self):
+		pass#TODO
+
+	def writeChipLockbits(self):
+		pass#TODO
+
+	def guiEnable(self, enable):
+		self.menuBar().setEnabled(enable)
+		self.topToolBar.setEnabled(enable)
+		self.leftToolBar.setEnabled(enable)
+
+	def runHardwareTask(self, task, taskParameter=None):
+		self.console.progressMeterInit(GuiUserInterface.PROGRESSMETER_CHIPACCESS, 0)
+		self.guiEnable(False)
+		self.hwThread.triggerTask(task, taskParameter)
+
+	def hardwareTaskFinished(self, task, failed, returnValue):
+		if failed:
+			self.console.showMessage("[HW op %d failed] %s\n" %\
+					(task, str(returnValue)))
+			self.console.progressMeterInit(GuiUserInterface.PROGRESSMETER_CHIPACCESS, 100)
+		else:
+			self.console.showMessage("Ok.\n")
+			self.console.progressMeter(GuiUserInterface.PROGRESSMETER_CHIPACCESS, -1)
+			#TODO Interpret the results for some tasks
+		self.guiEnable(True)
+
+def main():
+	app = QApplication(sys.argv)
+	mainwnd = MainWindow()
+	mainwnd.show()
+	return app.exec_()
+
+if __name__ == "__main__":
+	sys.exit(main())
