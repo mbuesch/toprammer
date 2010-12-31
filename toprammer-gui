@@ -36,12 +36,16 @@ def getIcon(name):
 	return QIcon(getIconPath(name))
 
 def bin2hex(bindata):
+	if not bindata:
+		return ""
 	hexdata = []
 	for c in bindata:
 		hexdata.append("%02X" % ord(c))
 	return "".join(hexdata)
 
 def bin2ascii(bindata):
+	if not bindata:
+		return ""
 	asciidata = []
 	for c in bindata:
 		if ord(c) >= 32 and ord(c) <= 126:
@@ -187,7 +191,12 @@ class HwThread(QThread):
 				       userInterface = GuiUserInterface(self))
 		if task == self.TASK_INITCHIP:
 			self.top.initializeChip(self.taskParameter)
-			retval = Chip.getSupportFlags(self.top.getChip())
+			chip = self.top.getChip()
+			asciiArtLayout = None
+			layoutGen = chip.getLayoutGenerator()
+			if layoutGen:
+				asciiArtLayout = layoutGen.zifLayoutAsciiArt()
+			retval = (Chip.getSupportFlags(chip), asciiArtLayout)
 		elif task == self.TASK_READSIG:
 			retval = self.top.readSignature()
 		elif task == self.TASK_ERASE:
@@ -315,9 +324,11 @@ class Console(QDockWidget):
 		if len(self.consoleMsgs) > limit:
 			self.consoleMsgs.pop(0)
 			assert(len(self.consoleMsgs) == limit)
-		self.consoleText.setPlainText("".join(self.consoleMsgs))
+		self.consoleText.setPlainText("".join(self.consoleMsgs).strip())
 		# Scroll to end
 		scroll = self.consoleText.verticalScrollBar()
+		scroll.setTracking(True)
+		scroll.setSliderPosition(scroll.maximum())
 		scroll.setValue(scroll.maximum())
 
 	def showMessage(self, message):
@@ -352,7 +363,9 @@ class Console(QDockWidget):
 	def progressMeter(self, meterId, step):
 		progress = self.__meterIdToProgressBar(meterId)
 		if step == -1:
-			step = progress.maximum()
+			progress.setMaximum(1)
+			progress.reset()
+			return
 		if progress.maximum() == 0:
 			progress.setMaximum(1)
 			progress.setValue(1)
@@ -396,17 +409,24 @@ class InfoBufferWidget(BufferWidget):
 	def __init__(self, mainWindow, name):
 		BufferWidget.__init__(self, mainWindow, name)
 
+		self.zifLayout = QLabel(self)
+		font = self.zifLayout.font()
+		font.setFixedPitch(True)
+		font.setFamily("monospace")
+		self.zifLayout.setFont(font)
+		self.layout().addWidget(self.zifLayout, 0, 0, 3, 1)
+
 		l = QLabel("Chip name:", self)
-		self.layout().addWidget(l, 0, 0)
+		self.layout().addWidget(l, 0, 1)
 		self.chipName = QLabel(self)
-		self.layout().addWidget(self.chipName, 0, 1)
+		self.layout().addWidget(self.chipName, 0, 2)
 
 		l = QLabel("Chip signature bytes:", self)
-		self.layout().addWidget(l, 1, 0)
+		self.layout().addWidget(l, 1, 1)
 		self.chipSig = QLabel(self)
-		self.layout().addWidget(self.chipSig, 1, 1)
+		self.layout().addWidget(self.chipSig, 1, 2)
 
-		self.layout().setColumnStretch(2, 99)
+		self.layout().setColumnStretch(3, 99)
 		self.layout().setRowStretch(2, 99)
 
 		self.clear()
@@ -420,6 +440,14 @@ class InfoBufferWidget(BufferWidget):
 
 	def setChipSignature(self, bindata):
 		self.chipSig.setText(bin2hex(bindata))
+
+	def setChipLayout(self, asciiArtLayout):
+		if asciiArtLayout:
+			self.zifLayout.setText(asciiArtLayout)
+			self.zifLayout.setFrameShape(QFrame.StyledPanel)
+		else:
+			self.zifLayout.clear()
+			self.zifLayout.setFrameShape(QFrame.NoFrame)
 
 class ImageBufferWidget(BufferWidget):
 	def __init__(self, mainWindow, name):
@@ -476,17 +504,58 @@ class BitBufferWidget(BufferWidget):
 	def __init__(self, mainWindow, name):
 		BufferWidget.__init__(self, mainWindow, name)
 
+		self.bitsAreaScroll = QScrollArea(self)
+		self.layout().addWidget(self.bitsAreaScroll, 0, 0)
+		self.bitsAreaScroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+		self.bitsAreaScroll.setWidgetResizable(False)
+
+		self.bitsArea = None
 		self.image = None
+		self.checkboxes = []
 
 	def loadImage(self, image):
 		self.image = image
-		pass#TODO
+		for checkbox in self.checkboxes:
+			checkbox.deleteLater()
+		self.checkboxes = []
+		if self.bitsArea:
+			self.bitsArea.deleteLater()
+			self.bitsArea = None
+		if not self.image:
+			return
+		self.bitsArea = QWidget(self)
+		self.bitsArea.setLayout(QGridLayout(self.bitsArea))
+		for i in range(0, len(image) * 8):
+			checkbox = QCheckBox("Bit %d programmed" % i, self.bitsArea)
+			if ord(image[i // 8]) & (1 << (i % 8)):
+				checkbox.setCheckState(Qt.Checked)
+			self.bitsArea.layout().addWidget(checkbox, i, 0)
+			self.connect(checkbox, SIGNAL("stateChanged(int)"),
+				     self.__bitStateChanged)
+			self.checkboxes.append(checkbox)
+		self.bitsAreaScroll.setWidget(self.bitsArea)
+
+	def __bitStateChanged(self, unused):
+		self.image = ""
+		tmp = 0
+		i = 0
+		for checkbox in self.checkboxes:
+			if checkbox.checkState() == Qt.Checked:
+				tmp |= (1 << i)
+			i += 1
+			if i == 8:
+				self.image += chr(tmp)
+				i = 0
+				tmp = 0
+		assert(i == 0)
 
 	def getRawData(self):
 		return self.image
 
 	def setRawData(self, data):
 		if self.isReadOnly():
+			return False
+		if len(data) > 32: # Don't want huge files
 			return False
 		self.loadImage(data)
 		return True
@@ -528,6 +597,7 @@ class BufferTabWidget(QTabWidget):
 		self.__removeAll()
 
 	def setupBuffers(self, chipSupportFlags):
+		prevSelect = self.getCurrentBuffer()
 		self.__removeAll()
 		if chipSupportFlags & (Chip.SUPPORT_PROGMEMREAD | Chip.SUPPORT_PROGMEMWRITE):
 			self.__addBufferTab(self.progmemBuffer,
@@ -541,6 +611,8 @@ class BufferTabWidget(QTabWidget):
 		if chipSupportFlags & (Chip.SUPPORT_LOCKREAD | Chip.SUPPORT_LOCKWRITE):
 			self.__addBufferTab(self.lockBuffer,
 				not bool(chipSupportFlags & Chip.SUPPORT_LOCKWRITE))
+		if prevSelect and prevSelect.isAvailable():
+			self.setCurrentIndex(self.indexOf(prevSelect))
 
 	def loadBuffers(self, progmemImage, eepromImage,
 			fuseImage, lockbitsImage):
@@ -707,7 +779,9 @@ class MainWindow(QMainWindow):
 				"Failed to read %s:\n%s" %\
 				(str(fn), str(e.strerror)))
 			return
-		bufWidget.setRawData(data)
+		if not bufWidget.setRawData(data):
+			QMessageBox.critical(self, "Failed to load data",
+				"Failed to load the file into the buffer")
 
 	def saveBuffer(self):
 		bufWidget = self.bufferTab.getCurrentBuffer()
@@ -788,6 +862,7 @@ class MainWindow(QMainWindow):
 		self.menuBar().setEnabled(not self.taskRunning)
 		self.topToolBar.setEnabled(not self.taskRunning)
 		self.leftToolBar.setEnabled(not self.taskRunning)
+		self.bufferTab.setEnabled(not self.taskRunning)
 
 	def runHardwareTask(self, task, taskParameter=None):
 		assert(not self.taskRunning)
@@ -812,10 +887,11 @@ class MainWindow(QMainWindow):
 		if task == HwThread.TASK_SHUTDOWN:
 			pass # Nothing to do
 		elif task == HwThread.TASK_INITCHIP:
-			self.chipSupportFlags = returnValue
+			(self.chipSupportFlags, asciiArtLayout) = returnValue
 			self.bufferTab.setupBuffers(self.chipSupportFlags)
 			self.bufferTab.infoBuffer.clear()
 			self.bufferTab.infoBuffer.setChipName(self.currentRegisteredChip.description)
+			self.bufferTab.infoBuffer.setChipLayout(asciiArtLayout)
 		elif task == HwThread.TASK_READSIG:
 			pass # Nothing to do
 		elif task == HwThread.TASK_ERASE:

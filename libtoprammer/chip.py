@@ -127,6 +127,11 @@ class Chip:
 					       gndPin=self.__chipPinGND)
 			self.generator.recalculate()
 
+	def getLayoutGenerator(self):
+		if self.__chipPackage:
+			return self.generator
+		return None
+
 	def applyVCCX(self, turnOn):
 		"Turn VCCX on, using the auto-layout."
 		if turnOn:
