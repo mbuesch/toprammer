@@ -28,6 +28,7 @@ class AbstractUserInterface:
 
 	# Progress meter IDs
 	PROGRESSMETER_CHIPACCESS	= 0 # Programming/reading progress meter
+	PROGRESSMETER_USER		= 100 # IDs equal or bigger than this are available to the app
 
 	def progressMeterInit(self, meterId, message, nrSteps):
 		pass # Do nothing by default

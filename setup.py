@@ -10,6 +10,6 @@ setup(	name		= "toprammer",
 	author_email	= "mb@bu3sch.de",
 	url		= "http://bu3sch.de/joomla/index.php/toprammer-top2049",
 	packages	= [ "libtoprammer", "libtoprammer/top2049", ],
-	package_data	= { "libtoprammer" : [ "bit/*.bit" ], },
+	package_data	= { "libtoprammer" : [ "bit/*.bit", "icons/*.png", ], },
 	scripts		= [ "toprammer", "toprammer-layout", "toprammer-unitest", ],
 )

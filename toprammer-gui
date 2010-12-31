@@ -28,7 +28,32 @@ import sys
 import time
 
 
+def getIconPath(name):
+	return pkg_resources.resource_filename("libtoprammer",
+					       "icons/" + name + ".png")
+
+def getIcon(name):
+	return QIcon(getIconPath(name))
+
+def bin2hex(bindata):
+	hexdata = []
+	for c in bindata:
+		hexdata.append("%02X" % ord(c))
+	return "".join(hexdata)
+
+def bin2ascii(bindata):
+	asciidata = []
+	for c in bindata:
+		if ord(c) >= 32 and ord(c) <= 126:
+			asciidata.append(c)
+		else:
+			asciidata.append(".")
+	return "".join(asciidata)
+
 class GuiUserInterface(AbstractUserInterface):
+	# Global progress
+	PROGRESSMETER_USER_GLOBAL	= AbstractUserInterface.PROGRESSMETER_USER + 0
+
 	def __init__(self, hwThread):
 		self.hwThread = hwThread
 
@@ -184,6 +209,7 @@ class HwThread(QThread):
 		elif task == self.TASK_WRITELOCK:
 			self.top.writeLockbits(self.taskParameter)
 		elif task == self.TASK_READALL:
+			self.__globalProgressInit(6)
 			self.top.checkChip()
 			sigImage = None
 			progmemImage = None
@@ -193,18 +219,33 @@ class HwThread(QThread):
 			supportFlags = Chip.getSupportFlags(self.top.getChip())
 			if supportFlags & Chip.SUPPORT_SIGREAD:
 				sigImage = self.top.readSignature()
+			self.__globalProgress(1)
 			if supportFlags & Chip.SUPPORT_PROGMEMREAD:
 				progmemImage = self.top.readProgmem()
+			self.__globalProgress(2)
 			if supportFlags & Chip.SUPPORT_EEPROMREAD:
 				eepromImage = self.top.readEEPROM()
+			self.__globalProgress(3)
 			if supportFlags & Chip.SUPPORT_FUSEREAD:
 				fuseImage = self.top.readFuse()
+			self.__globalProgress(4)
 			if supportFlags & Chip.SUPPORT_LOCKREAD:
 				lockbitsImage = self.top.readLockbits()
+			self.__globalProgress(5)
 			retval = (sigImage, progmemImage, eepromImage, fuseImage, lockbitsImage)
 		else:
 			raise TOPException("INTERNAL ERROR: HwThread: unknown task")
 		return retval
+
+	def __globalProgressInit(self, nrSteps):
+		self.appendMessage("progrInit",
+				   (GuiUserInterface.PROGRESSMETER_USER_GLOBAL,
+				    None, nrSteps))
+
+	def __globalProgress(self, step):
+		self.appendMessage("progress",
+				   (GuiUserInterface.PROGRESSMETER_USER_GLOBAL,
+				    step))
 
 	def __poll(self):
 		self.mutex.lock()
@@ -217,7 +258,6 @@ class HwThread(QThread):
 				self.mainWindow.console.showMessage(data)
 			elif message == "progrInit":
 				(meterId, message, nrSteps) = data
-				self.mainWindow.console.showMessage(message + "\n")
 				self.mainWindow.console.progressMeterInit(meterId, nrSteps)
 			elif message == "progrFinish":
 				meterId = data
@@ -231,6 +271,10 @@ class HwThread(QThread):
 		self.mutex.unlock()
 
 class Console(QDockWidget):
+	STAT_OK		= 0
+	STAT_ERROR	= 1
+	STAT_PROGRESS	= 2
+
 	def __init__(self, mainWindow):
 		QDockWidget.__init__(self, mainWindow)
 
@@ -242,10 +286,29 @@ class Console(QDockWidget):
 		self.consoleMsgs = []
 		self.consoleText = QPlainTextEdit(self)
 		self.consoleText.setReadOnly(True)
-		self.widget().layout().addWidget(self.consoleText, 0, 0)
+		self.widget().layout().addWidget(self.consoleText, 0, 0, 1, 2)
 
-		self.progress = QProgressBar(self)
-		self.widget().layout().addWidget(self.progress, 1, 0)
+		self.statusLabel = QLabel(self)
+		self.widget().layout().addWidget(self.statusLabel, 1, 0, 2, 1)
+
+		self.chipaccessProgress = QProgressBar(self)
+		self.widget().layout().addWidget(self.chipaccessProgress, 1, 1)
+
+		self.globalProgress = QProgressBar(self)
+		self.widget().layout().addWidget(self.globalProgress, 2, 1)
+
+		self.setStatus(self.STAT_OK)
+
+	def setStatus(self, status):
+		if status == self.STAT_OK:
+			path = getIconPath("ok")
+		elif status == self.STAT_ERROR:
+			path = getIconPath("error")
+		elif status == self.STAT_PROGRESS:
+			path = getIconPath("progress")
+		else:
+			assert(0)
+		self.statusLabel.setPixmap(QPixmap(path))
 
 	def __commitText(self):
 		limit = 100
@@ -270,24 +333,31 @@ class Console(QDockWidget):
 			self.consoleMsgs.append(message)
 		self.__commitText()
 
+	def __meterIdToProgressBar(self, meterId):
+		if meterId == GuiUserInterface.PROGRESSMETER_CHIPACCESS:
+			progress = self.chipaccessProgress
+		elif meterId == GuiUserInterface.PROGRESSMETER_USER_GLOBAL:
+			progress = self.globalProgress
+		else:
+			assert(0)
+		return progress
+
 	def progressMeterInit(self, meterId, nrSteps):
-		if meterId != GuiUserInterface.PROGRESSMETER_CHIPACCESS:
-			return
-		self.progress.setMinimum(0)
-		self.progress.setMaximum(max(0, nrSteps - 1))
-		self.progress.setValue(self.progress.maximum())
-		self.progress.setValue(0)
+		progress = self.__meterIdToProgressBar(meterId)
+		progress.setMinimum(0)
+		progress.setMaximum(max(0, nrSteps - 1))
+		progress.setValue(progress.maximum())
+		progress.setValue(0)
 
 	def progressMeter(self, meterId, step):
-		if meterId != GuiUserInterface.PROGRESSMETER_CHIPACCESS:
-			return
+		progress = self.__meterIdToProgressBar(meterId)
 		if step == -1:
-			step = self.progress.maximum()
-		if self.progress.maximum() == 0:
-			self.progress.setMaximum(1)
-			self.progress.setValue(1)
+			step = progress.maximum()
+		if progress.maximum() == 0:
+			progress.setMaximum(1)
+			progress.setValue(1)
 		else:
-			self.progress.setValue(step)
+			progress.setValue(step)
 
 class BufferWidget(QWidget):
 	def __init__(self, mainWindow, name):
@@ -295,10 +365,17 @@ class BufferWidget(QWidget):
 		self.name = name
 		self.hide()
 		self.setLayout(QGridLayout(self))
+		self.setAvailable(False)
 		self.setReadOnly()
 
 	def getName(self):
 		return self.name
+
+	def setAvailable(self, available):
+		self.available = available
+
+	def isAvailable(self):
+		return self.available
 
 	def setReadOnly(self, readOnly=True):
 		self.readOnly = readOnly
@@ -311,6 +388,38 @@ class BufferWidget(QWidget):
 
 	def setRawData(self, data):
 		return False
+
+	def clear(self):
+		pass
+
+class InfoBufferWidget(BufferWidget):
+	def __init__(self, mainWindow, name):
+		BufferWidget.__init__(self, mainWindow, name)
+
+		l = QLabel("Chip name:", self)
+		self.layout().addWidget(l, 0, 0)
+		self.chipName = QLabel(self)
+		self.layout().addWidget(self.chipName, 0, 1)
+
+		l = QLabel("Chip signature bytes:", self)
+		self.layout().addWidget(l, 1, 0)
+		self.chipSig = QLabel(self)
+		self.layout().addWidget(self.chipSig, 1, 1)
+
+		self.layout().setColumnStretch(2, 99)
+		self.layout().setRowStretch(2, 99)
+
+		self.clear()
+
+	def clear(self):
+		self.setChipName("<No chip selected>")
+		self.setChipSignature("")
+
+	def setChipName(self, name):
+		self.chipName.setText(name)
+
+	def setChipSignature(self, bindata):
+		self.chipSig.setText(bin2hex(bindata))
 
 class ImageBufferWidget(BufferWidget):
 	def __init__(self, mainWindow, name):
@@ -326,13 +435,11 @@ class ImageBufferWidget(BufferWidget):
 
 		self.image = None
 
-	def __toAscii(self, char):
-		if char >= 32 and char <= 126:
-			return chr(char)
-		return "."
-
 	def loadImage(self, image):
 		self.image = image
+		if not self.image:
+			self.browser.setPlainText("<The %s buffer is empty>" % self.getName())
+			return
 		text = []
 		asc = []
 		for i in range(0, len(image)):
@@ -342,10 +449,9 @@ class ImageBufferWidget(BufferWidget):
 					asc = []
 				text.append("[%08X]: " % i)
 			if i % 2 == 0:
-				text.append(" %02X" % ord(image[i]))
-			else:
-				text.append("%02X" % ord(image[i]))
-			asc.append(self.__toAscii(ord(image[i])))
+				text.append(" ")
+			text.append(bin2hex(image[i]))
+			asc.append(bin2ascii(image[i]))
 		if asc:
 			if len(image) % 16:
 				nrLeft = 16 - (len(image) % 16)
@@ -363,20 +469,60 @@ class ImageBufferWidget(BufferWidget):
 		self.loadImage(data)
 		return True
 
+	def clear(self):
+		self.loadImage(None)
+
+class BitBufferWidget(BufferWidget):
+	def __init__(self, mainWindow, name):
+		BufferWidget.__init__(self, mainWindow, name)
+
+		self.image = None
+
+	def loadImage(self, image):
+		self.image = image
+		pass#TODO
+
+	def getRawData(self):
+		return self.image
+
+	def setRawData(self, data):
+		if self.isReadOnly():
+			return False
+		self.loadImage(data)
+		return True
+
+	def clear(self):
+		self.loadImage(None)
+
 class BufferTabWidget(QTabWidget):
 	def __init__(self, mainWindow):
 		QTabWidget.__init__(self, mainWindow)
 
+		self.infoBuffer = InfoBufferWidget(mainWindow, "chip info")
 		self.progmemBuffer = ImageBufferWidget(mainWindow, "program memory")
 		self.eepromBuffer = ImageBufferWidget(mainWindow, "(E)EPROM memory")
+		self.fuseBuffer = BitBufferWidget(mainWindow, "fuse bits")
+		self.lockBuffer = BitBufferWidget(mainWindow, "lock bits")
 
 		self.setTabPosition(self.South)
+		self.__addBufferTab(self.infoBuffer)
 		self.removeAll()
 
+	def __addBufferTab(self, bufferWidget, readOnly=True):
+		self.addTab(bufferWidget, bufferWidget.getName())
+		bufferWidget.setReadOnly(readOnly)
+		bufferWidget.setAvailable(True)
+
+	def __removeBufferTab(self, bufferWidget):
+		self.removeTab(self.indexOf(bufferWidget))
+		bufferWidget.clear()
+		bufferWidget.setAvailable(False)
+
 	def __removeAll(self):
-		self.clear()
-		self.progmemBuffer.hide()
-		self.eepromBuffer.hide()
+		self.__removeBufferTab(self.progmemBuffer)
+		self.__removeBufferTab(self.eepromBuffer)
+		self.__removeBufferTab(self.fuseBuffer)
+		self.__removeBufferTab(self.lockBuffer)
 
 	def removeAll(self):
 		self.__removeAll()
@@ -384,26 +530,28 @@ class BufferTabWidget(QTabWidget):
 	def setupBuffers(self, chipSupportFlags):
 		self.__removeAll()
 		if chipSupportFlags & (Chip.SUPPORT_PROGMEMREAD | Chip.SUPPORT_PROGMEMWRITE):
-			self.addTab(self.progmemBuffer, "Program memory")
-			self.progmemBuffer.setReadOnly(
+			self.__addBufferTab(self.progmemBuffer,
 				not bool(chipSupportFlags & Chip.SUPPORT_PROGMEMWRITE))
 		if chipSupportFlags & (Chip.SUPPORT_EEPROMREAD | Chip.SUPPORT_EEPROMWRITE):
-			self.addTab(self.eepromBuffer, "(E)EPROM memory")
-			self.eepromBuffer.setReadOnly(
+			self.__addBufferTab(self.eepromBuffer,
 				not bool(chipSupportFlags & Chip.SUPPORT_EEPROMWRITE))
+		if chipSupportFlags & (Chip.SUPPORT_FUSEREAD | Chip.SUPPORT_FUSEWRITE):
+			self.__addBufferTab(self.fuseBuffer,
+				not bool(chipSupportFlags & Chip.SUPPORT_FUSEWRITE))
+		if chipSupportFlags & (Chip.SUPPORT_LOCKREAD | Chip.SUPPORT_LOCKWRITE):
+			self.__addBufferTab(self.lockBuffer,
+				not bool(chipSupportFlags & Chip.SUPPORT_LOCKWRITE))
 
-	def loadBuffers(self, sigImage, progmemImage, eepromImage,
+	def loadBuffers(self, progmemImage, eepromImage,
 			fuseImage, lockbitsImage):
-		if sigImage is not None:
-			pass#TODO
 		if progmemImage is not None:
 			self.progmemBuffer.loadImage(progmemImage)
 		if eepromImage is not None:
 			self.eepromBuffer.loadImage(eepromImage)
 		if fuseImage is not None:
-			pass#TODO
+			self.fuseBuffer.loadImage(fuseImage)
 		if lockbitsImage is not None:
-			pass#TODO
+			self.lockBuffer.loadImage(lockbitsImage)
 
 	def getCurrentBuffer(self):
 		return self.currentWidget()
@@ -447,7 +595,7 @@ class ChipSelectDialog(QDialog):
 		if not item:
 			return None
 		registeredChip = item.data(Qt.UserRole).toPyObject()
-		return registeredChip.chipID
+		return registeredChip
 
 class StatusBar(QStatusBar):
 	def __init__(self, mainWindow):
@@ -457,16 +605,20 @@ class TopToolBar(QToolBar):
 	def __init__(self, mainWindow):
 		QToolBar.__init__(self, mainWindow)
 
-		self.addAction("&Load\nbuffer", mainWindow.loadBuffer)
-		self.addAction("S&ave\nbuffer", mainWindow.saveBuffer)
-		self.addAction("&Select\nchip", mainWindow.selectChip)
+		self.addAction(getIcon("open"), "Load buffer", mainWindow.loadBuffer)
+		self.addAction(getIcon("save"), "Save buffer", mainWindow.saveBuffer)
+		self.addAction(getIcon("chip"), "Select chip", mainWindow.selectChip)
 		self.addSeparator()
-		self.addAction("&Read\nchip", mainWindow.readChip)
-		self.addAction("&Erase", mainWindow.eraseChip)
-		self.addAction("Write\n&program\nmemory", mainWindow.writeChipProgmem)
-		self.addAction("Write\n(E)EP&ROM", mainWindow.writeChipEeprom)
-		self.addAction("Write\n&fuses", mainWindow.writeChipFuses)
-		self.addAction("Write\n&lock bits", mainWindow.writeChipLockbits)
+		self.addAction(getIcon("up"), "Read chip", mainWindow.readChip)
+		self.addSeparator()
+		self.addAction(getIcon("erase"), "Erase", mainWindow.eraseChip)
+		self.addAction(getIcon("memory"), "Write progmem", mainWindow.writeChipProgmem)
+		self.addAction(getIcon("memory"), "Write EPROM", mainWindow.writeChipEeprom)
+		self.addAction(getIcon("memory"), "Write fuses", mainWindow.writeChipFuses)
+		self.addAction(getIcon("lock"), "Write lockbits", mainWindow.writeChipLockbits)
+		self.addAction(getIcon("verify"), "Verify", mainWindow.verifyChip)
+
+		self.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
 
 class LeftToolBar(QToolBar):
 	def __init__(self, mainWindow):
@@ -503,6 +655,7 @@ class MainWindow(QMainWindow):
 		menu.addAction("Write (E)EP&ROM", self.writeChipEeprom)
 		menu.addAction("Write &fuses", self.writeChipFuses)
 		menu.addAction("Write &lock bits", self.writeChipLockbits)
+		menu.addAction("&Verify chip", self.verifyChip)
 		self.menuBar().addMenu(menu)
 
 		menu = QMenu("&Help", self)
@@ -519,6 +672,12 @@ class MainWindow(QMainWindow):
 		self.taskRunning = False
 
 	def closeEvent(self, e):
+		if self.taskRunning:
+			QMessageBox.critical(self, "Task running",
+				"A hardware access task is running. Wait for it "
+				"to finish before closing the application.")
+			e.ignore()
+			return
 		self.hwThread.killThread()
 		e.accept()
 
@@ -526,6 +685,7 @@ class MainWindow(QMainWindow):
 		QMessageBox.information(self, "About TOPrammer",
 			"Copyright (c) Michael Buesch <mb@bu3sch.de>")
 
+	#TODO support ihex
 	def loadBuffer(self):
 		bufWidget = self.bufferTab.getCurrentBuffer()
 		if not bufWidget:
@@ -570,11 +730,14 @@ class MainWindow(QMainWindow):
 
 	def selectChip(self):
 		dlg = ChipSelectDialog(self)
-		if dlg.exec_() == QDialog.Accepted:
-			chipId = dlg.getSelectedChip()
-			if chipId:
-				self.runHardwareTask(HwThread.TASK_INITCHIP,
-						     chipId)
+		if dlg.exec_() != QDialog.Accepted:
+			return
+		registeredChip = dlg.getSelectedChip()
+		if not registeredChip:
+			return
+		self.currentRegisteredChip = registeredChip
+		self.runHardwareTask(HwThread.TASK_INITCHIP,
+				     registeredChip.chipID)
 
 	def readChip(self):
 		self.runHardwareTask(HwThread.TASK_READALL)
@@ -583,15 +746,42 @@ class MainWindow(QMainWindow):
 		self.runHardwareTask(HwThread.TASK_ERASE)
 
 	def writeChipProgmem(self):
-		pass#TODO
+		bufferWidget = self.bufferTab.progmemBuffer
+		data = bufferWidget.getRawData()
+		if not bufferWidget.isAvailable() or not data:
+			QMessageBox.critical(self, "No program memory",
+				"No program memory available")
+			return
+		self.runHardwareTask(HwThread.TASK_WRITEPROG, data)
 
 	def writeChipEeprom(self):
-		pass#TODO
+		bufferWidget = self.bufferTab.eepromBuffer
+		data = bufferWidget.getRawData()
+		if not bufferWidget.isAvailable() or not data:
+			QMessageBox.critical(self, "No (E)EPROM memory",
+				"No (E)EPROM memory available")
+			return
+		self.runHardwareTask(HwThread.TASK_WRITEEEPROM, data)
 
 	def writeChipFuses(self):
-		pass#TODO
+		bufferWidget = self.bufferTab.fuseBuffer
+		data = bufferWidget.getRawData()
+		if not bufferWidget.isAvailable() or not data:
+			QMessageBox.critical(self, "No fuse bits",
+				"No fuse bits available")
+			return
+		self.runHardwareTask(HwThread.TASK_WRITEFUSE, data)
 
 	def writeChipLockbits(self):
+		bufferWidget = self.bufferTab.lockBuffer
+		data = bufferWidget.getRawData()
+		if not bufferWidget.isAvailable() or not data:
+			QMessageBox.critical(self, "No lock bits",
+				"No lock bits available")
+			return
+		self.runHardwareTask(HwThread.TASK_WRITELOCK, data)
+
+	def verifyChip(self):
 		pass#TODO
 
 	def guiUpdateEnable(self):
@@ -602,6 +792,8 @@ class MainWindow(QMainWindow):
 	def runHardwareTask(self, task, taskParameter=None):
 		assert(not self.taskRunning)
 		self.console.progressMeterInit(GuiUserInterface.PROGRESSMETER_CHIPACCESS, 0)
+		self.console.progressMeterInit(GuiUserInterface.PROGRESSMETER_USER_GLOBAL, 0)
+		self.console.setStatus(Console.STAT_PROGRESS)
 		self.taskRunning = True
 		self.guiUpdateEnable()
 		self.hwThread.triggerTask(task, taskParameter)
@@ -612,6 +804,8 @@ class MainWindow(QMainWindow):
 			self.console.showMessage("[HW op %d failed] %s\n" %\
 					(task, str(returnValue)))
 			self.console.progressMeterInit(GuiUserInterface.PROGRESSMETER_CHIPACCESS, 100)
+			self.console.progressMeterInit(GuiUserInterface.PROGRESSMETER_USER_GLOBAL, 100)
+			self.console.setStatus(Console.STAT_ERROR)
 			self.guiUpdateEnable()
 			return
 		# Task succeed
@@ -620,6 +814,8 @@ class MainWindow(QMainWindow):
 		elif task == HwThread.TASK_INITCHIP:
 			self.chipSupportFlags = returnValue
 			self.bufferTab.setupBuffers(self.chipSupportFlags)
+			self.bufferTab.infoBuffer.clear()
+			self.bufferTab.infoBuffer.setChipName(self.currentRegisteredChip.description)
 		elif task == HwThread.TASK_READSIG:
 			pass # Nothing to do
 		elif task == HwThread.TASK_ERASE:
@@ -643,18 +839,23 @@ class MainWindow(QMainWindow):
 		elif task == HwThread.TASK_READALL:
 			(sigImage, progmemImage, eepromImage, fuseImage, lockbitsImage) = returnValue
 			self.bufferTab.setupBuffers(self.chipSupportFlags)
-			self.bufferTab.loadBuffers(sigImage, progmemImage, eepromImage,
+			self.bufferTab.loadBuffers(progmemImage, eepromImage,
 						   fuseImage, lockbitsImage)
+			self.bufferTab.infoBuffer.setChipSignature(sigImage)
 		else:
 			assert(0)
 		self.console.showMessage("Ok.\n")
 		self.console.progressMeter(GuiUserInterface.PROGRESSMETER_CHIPACCESS, -1)
+		self.console.progressMeter(GuiUserInterface.PROGRESSMETER_USER_GLOBAL, -1)
 		self.guiUpdateEnable()
+		self.console.setStatus(Console.STAT_OK)
 
 def main():
 	app = QApplication(sys.argv)
 	mainwnd = MainWindow()
 	mainwnd.show()
+	mainwnd.resize(int(mainwnd.width() * 1.0),
+		       int(mainwnd.height() * 1.4))
 	return app.exec_()
 
 if __name__ == "__main__":
