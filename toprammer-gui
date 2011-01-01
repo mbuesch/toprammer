@@ -1066,6 +1066,7 @@ class MainWindow(QMainWindow):
 			self.console.progressMeterInit(GuiUserInterface.PROGRESSMETER_USER_GLOBAL, 100)
 			self.console.setTaskRunning(False, False)
 			self.guiUpdateEnable()
+			self.operation = self.OP_NONE
 			return
 		# Task succeed
 		self.console.progressMeter(GuiUserInterface.PROGRESSMETER_CHIPACCESS, -1)
