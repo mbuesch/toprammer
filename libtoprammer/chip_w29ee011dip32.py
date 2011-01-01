@@ -69,12 +69,18 @@ class Chip_w29ee011dip32(Chip):
 		)
 
 		self.progressMeterInit("Erasing chip", 0)
+		self.__setCEOE(CE=0, OE=1)
+
+		self.__resetBufferPointers()
+		self.__swDataProtect(False)
+		self.__runCommandSync(self.PROGCMD_WRITEBUF)
+		self.top.delay(0.05)
 		self.__resetBufferPointers()
 		for command in commands:
 			self.__appendJEDEC(command[0], command[1])
-		self.__setCEOE(CE=0, OE=1)
 		self.__runCommandSync(self.PROGCMD_WRITEBUF)
-		self.top.delay(0.050)
+		self.top.delay(0.05)
+
 		self.__setCEOE(CE=1, OE=1)
 		self.progressMeterFinish()
 
@@ -83,13 +89,25 @@ class Chip_w29ee011dip32(Chip):
 		self.applyVPP(True)
 		self.applyGND(True)
 
-		image = ""
 		self.progressMeterInit("Reading EEPROM", 0x20000)
 		self.__setCEOE(CE=0, OE=0)
-		prevAddr = 0xFFFFFFFF
+		image = self.__readRange(0, 0x20000, progress=True)
+		self.__setCEOE(CE=1, OE=1)
+		self.progressMeterFinish()
+
+		return image
+
+	def __readRange(self, baseAddress, size, progress=False):
+		image = ""
 		byteCount = 0
-		for addr in range(0, 0x20000):
-			self.progressMeter(addr)
+		prevAddr = baseAddress
+		self.__loadReadAddrLo(baseAddress)
+		self.__loadReadAddrMed(baseAddress >> 8)
+		self.__loadReadAddrHi(baseAddress >> 16)
+		for offset in range(0, size):
+			addr = baseAddress + offset
+			if progress:
+				self.progressMeter(addr)
 			if (addr & 0xFF) != (prevAddr & 0xFF):
 				self.__loadReadAddrLo(addr)
 			if (addr & 0xFF00) != (prevAddr & 0xFF00):
@@ -102,10 +120,8 @@ class Chip_w29ee011dip32(Chip):
 			if byteCount == 64:
 				image += self.top.cmdReadBufferReg()
 				byteCount = 0
-		assert(byteCount == 0)
-		self.__setCEOE(CE=1, OE=1)
-		self.progressMeterFinish()
-
+		if byteCount:
+			image += self.top.cmdReadBufferReg()[0:byteCount]
 		return image
 
 	def writeEEPROM(self, image):
@@ -127,21 +143,44 @@ class Chip_w29ee011dip32(Chip):
 		self.__setCEOE(CE=1, OE=1)
 		self.progressMeterFinish()
 
-	def __writePage(self, pageAddress, pageData):
-		commands = (
-			(0x5555, 0xAA),
-			(0x2AAA, 0x55),
-			(0x5555, 0xA0),
-		)
-		self.__resetBufferPointers()
-		for command in commands:
+	def __swDataProtect(self, enable):
+		if enable:
+			jedecCommands = (
+				(0x5555, 0xAA),
+				(0x2AAA, 0x55),
+				(0x5555, 0xA0),
+			)
+		else:
+			jedecCommands = (
+				(0x5555, 0xAA),
+				(0x2AAA, 0x55),
+				(0x5555, 0x80),
+				(0x5555, 0xAA),
+				(0x2AAA, 0x55),
+				(0x5555, 0x20),
+			)
+		for command in jedecCommands:
 			self.__appendJEDEC(command[0], command[1])
-		assert(len(pageData) <= 128)
-		for byte in pageData:
-			self.__writeBufAppend(ord(byte))
-		self.__loadWriteAddr(pageAddress)
-		self.__runCommandSync(self.PROGCMD_WRITEBUF)
-		self.top.delay(0.010)
+
+	def __writePage(self, pageAddress, pageData):
+		for t in range(0, 15):
+			self.__resetBufferPointers()
+			self.__swDataProtect(True)
+			assert(len(pageData) <= 128)
+			for byte in pageData:
+				self.__writeBufAppend(ord(byte))
+			self.__loadWriteAddr(pageAddress)
+			self.__runCommandSync(self.PROGCMD_WRITEBUF)
+			self.top.delay(0.01)
+			# Verify
+			self.__setCEOE(CE=0, OE=0)
+			verifyImage = self.__readRange(pageAddress, len(pageData))
+			self.__setCEOE(CE=0, OE=1)
+			if verifyImage == pageData:
+				break
+			self.top.delay(0.1)
+		else:
+			self.throwError("Verify error on page write at address 0x%05X" % pageAddress)
 
 	def __writeBufAppend(self, byte):
 		# This also auto-increments the write buffer pointer
