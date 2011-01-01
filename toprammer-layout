@@ -96,7 +96,7 @@ def main(argv):
 			raise ValueError()
 
 		generator = None
-		(unused, chip) = RegisteredChip.find(programmer, package, allowBroken=True)
+		(unused, chip) = ChipDescription.find(programmer, package, allowBroken=True)
 		if not chip:
 			if vccxPin is None or gndPin is None:
 				print "-v|--vccx and  -g|--gnd  " +\

@@ -375,6 +375,7 @@ class Console(QDockWidget):
 class BufferWidget(QWidget):
 	def __init__(self, mainWindow, name):
 		QWidget.__init__(self, mainWindow)
+		self.mainWindow = mainWindow
 		self.name = name
 		self.hide()
 		self.setLayout(QGridLayout(self))
@@ -419,11 +420,17 @@ class InfoBufferWidget(BufferWidget):
 		l = QLabel("Chip name:", self)
 		self.layout().addWidget(l, 0, 1)
 		self.chipName = QLabel(self)
+		font = self.chipName.font()
+		font.setBold(True)
+		self.chipName.setFont(font)
 		self.layout().addWidget(self.chipName, 0, 2)
 
 		l = QLabel("Chip signature bytes:", self)
 		self.layout().addWidget(l, 1, 1)
 		self.chipSig = QLabel(self)
+		font = self.chipSig.font()
+		font.setBold(True)
+		self.chipSig.setFont(font)
 		self.layout().addWidget(self.chipSig, 1, 2)
 
 		self.layout().setColumnStretch(3, 99)
@@ -501,8 +508,9 @@ class ImageBufferWidget(BufferWidget):
 		self.loadImage(None)
 
 class BitBufferWidget(BufferWidget):
-	def __init__(self, mainWindow, name):
+	def __init__(self, mainWindow, name, bitDescriptionsAttr):
 		BufferWidget.__init__(self, mainWindow, name)
+		self.bitDescriptionsAttr = bitDescriptionsAttr
 
 		self.bitsAreaScroll = QScrollArea(self)
 		self.layout().addWidget(self.bitsAreaScroll, 0, 0)
@@ -512,6 +520,19 @@ class BitBufferWidget(BufferWidget):
 		self.bitsArea = None
 		self.image = None
 		self.checkboxes = []
+
+	def __getBitDescription(self, bitNr):
+		if not self.mainWindow.currentChipDescription:
+			return ""
+		bitDescList = getattr(self.mainWindow.currentChipDescription,
+				      self.bitDescriptionsAttr, None)
+		if not bitDescList:
+			return ""
+		bitDesc = filter(lambda x: x.bitNr == bitNr,
+				 bitDescList)
+		if not bitDesc:
+			return ""
+		return bitDesc[0].description
 
 	def loadImage(self, image):
 		self.image = image
@@ -525,14 +546,29 @@ class BitBufferWidget(BufferWidget):
 			return
 		self.bitsArea = QWidget(self)
 		self.bitsArea.setLayout(QGridLayout(self.bitsArea))
+		self.bitsArea.layout().addWidget(QLabel("Currently set %s:" % self.getName(),
+							self.bitsArea),
+						 0, 0)
+		self.hexView = QLabel(self.bitsArea)
+		font = self.hexView.font()
+		font.setBold(True)
+		self.hexView.setFont(font)
+		self.bitsArea.layout().addWidget(self.hexView, 0, 1)
 		for i in range(0, len(image) * 8):
-			checkbox = QCheckBox("Bit %d programmed" % i, self.bitsArea)
+			desc = self.__getBitDescription(i)
+			if desc:
+				desc = " (%s)" % desc
+			checkbox = QCheckBox("bit %d%s" % (i, desc), self.bitsArea)
 			if ord(image[i // 8]) & (1 << (i % 8)):
 				checkbox.setCheckState(Qt.Checked)
-			self.bitsArea.layout().addWidget(checkbox, i, 0)
+			self.bitsArea.layout().addWidget(checkbox, 1 + i, 0, 1, 2)
 			self.connect(checkbox, SIGNAL("stateChanged(int)"),
 				     self.__bitStateChanged)
 			self.checkboxes.append(checkbox)
+		self.__updateHexView()
+
+	def __updateHexView(self):
+		self.hexView.setText(bin2hex(self.image))
 		self.bitsAreaScroll.setWidget(self.bitsArea)
 
 	def __bitStateChanged(self, unused):
@@ -548,6 +584,7 @@ class BitBufferWidget(BufferWidget):
 				i = 0
 				tmp = 0
 		assert(i == 0)
+		self.__updateHexView()
 
 	def getRawData(self):
 		return self.image
@@ -571,8 +608,8 @@ class BufferTabWidget(QTabWidget):
 		self.infoBuffer = InfoBufferWidget(mainWindow, "chip info")
 		self.progmemBuffer = ImageBufferWidget(mainWindow, "program memory")
 		self.eepromBuffer = ImageBufferWidget(mainWindow, "(E)EPROM memory")
-		self.fuseBuffer = BitBufferWidget(mainWindow, "fuse bits")
-		self.lockBuffer = BitBufferWidget(mainWindow, "lock bits")
+		self.fuseBuffer = BitBufferWidget(mainWindow, "fuse bits", "fuseDesc")
+		self.lockBuffer = BitBufferWidget(mainWindow, "lock bits", "lockbitDesc")
 
 		self.setTabPosition(self.South)
 		self.__addBufferTab(self.infoBuffer)
@@ -655,14 +692,14 @@ class ChipSelectDialog(QDialog):
 		self.setLayout(QGridLayout(self))
 
 		self.chipList = QListWidget(self)
-		for registeredChip in registeredChips:
-			if registeredChip.broken:
+		for chipDescription in registeredChips:
+			if chipDescription.broken:
 				continue
-			if registeredChip.internal:
+			if chipDescription.internal:
 				continue
-			item = QListWidgetItem(registeredChip.description,
+			item = QListWidgetItem(chipDescription.description,
 					       self.chipList)
-			item.setData(Qt.UserRole, registeredChip)
+			item.setData(Qt.UserRole, chipDescription)
 		self.chipList.sortItems()
 		self.layout().addWidget(self.chipList, 0, 0, 1, 2)
 
@@ -691,8 +728,8 @@ class ChipSelectDialog(QDialog):
 		item = self.chipList.currentItem()
 		if not item:
 			return None
-		registeredChip = item.data(Qt.UserRole).toPyObject()
-		return registeredChip
+		chipDescription = item.data(Qt.UserRole).toPyObject()
+		return chipDescription
 
 class StatusBar(QStatusBar):
 	def __init__(self, mainWindow):
@@ -730,6 +767,7 @@ class MainWindow(QMainWindow):
 		self.setWindowTitle("TOPrammer - Open Source programming suite")
 
 		self.chipSupportFlags = 0 # Chip.SUPPORT_... for the loaded chip
+		self.currentChipDescription = None
 
 		self.setStatusBar(StatusBar(self))
 		self.topToolBar = TopToolBar(self)
@@ -869,12 +907,12 @@ class MainWindow(QMainWindow):
 		dlg = ChipSelectDialog(self)
 		if dlg.exec_() != QDialog.Accepted:
 			return
-		registeredChip = dlg.getSelectedChip()
-		if not registeredChip:
+		chipDescription = dlg.getSelectedChip()
+		if not chipDescription:
 			return
-		self.currentRegisteredChip = registeredChip
+		self.currentChipDescription = chipDescription
 		self.runHardwareTask(HwThread.TASK_INITCHIP,
-				     registeredChip.chipID)
+				     chipDescription.chipID)
 
 	def readChip(self):
 		self.runHardwareTask(HwThread.TASK_READALL)
@@ -958,7 +996,7 @@ class MainWindow(QMainWindow):
 			(self.chipSupportFlags, asciiArtLayout) = returnValue
 			self.bufferTab.setupBuffers(self.chipSupportFlags)
 			self.bufferTab.infoBuffer.clear()
-			self.bufferTab.infoBuffer.setChipName(self.currentRegisteredChip.description)
+			self.bufferTab.infoBuffer.setChipName(self.currentChipDescription.description)
 			self.bufferTab.infoBuffer.setChipLayout(asciiArtLayout)
 		elif task == HwThread.TASK_ERASE:
 			pass # Nothing to do

@@ -358,7 +358,7 @@ class Chip_AtTiny13dip8(Chip):
 			self.top.delay(0.01)
 		self.throwError("Timeout waiting for SDO.")
 
-RegisteredChip(
+ChipDescription(
 	Chip_AtTiny13dip8,
 	bitfile = "attiny13dip8",
 	runtimeID = (0x0001, 0x01),

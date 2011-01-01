@@ -36,10 +36,43 @@ class Chip_ATMega8DIP28(Chip_ATMega_common):
 			eepromPageSize = 4,
 			eepromPages = 128)
 
-RegisteredChip(
+fuseDesc = (
+	BitDescription(0, "CKSEL0"),
+	BitDescription(1, "CKSEL1"),
+	BitDescription(2, "CKSEL2"),
+	BitDescription(3, "CKSEL3"),
+	BitDescription(4, "SUT0"),
+	BitDescription(5, "SUT1"),
+	BitDescription(6, "BODEN"),
+	BitDescription(7, "BODLEVEL"),
+	BitDescription(8, "BOOTRST"),
+	BitDescription(9, "BOOTSZ0"),
+	BitDescription(10, "BOOTSZ1"),
+	BitDescription(11, "EESAVE"),
+	BitDescription(12, "CKOPT"),
+	BitDescription(13, "SPIEN"),
+	BitDescription(14, "WDTON"),
+	BitDescription(15, "RSTDISBL"),
+)
+
+lockbitDesc = (
+	BitDescription(0, "LB1"),
+	BitDescription(1, "LB2"),
+	BitDescription(2, "BLB01"),
+	BitDescription(3, "BLB02"),
+	BitDescription(4, "BLB11"),
+	BitDescription(5, "BLB12"),
+	BitDescription(6, "Unused"),
+	BitDescription(7, "Unused"),
+	BitDescription(8, "Unused"),
+)
+
+ChipDescription(
 	Chip_ATMega8DIP28,
 	bitfile = "atmega8dip28",
 	runtimeID = (0x0003, 0x01),
 	description = "Atmel AtMega8",
+	fuseDesc = fuseDesc,
+	lockbitDesc = lockbitDesc,
 	packages = ( ("DIP28", ""), )
 )

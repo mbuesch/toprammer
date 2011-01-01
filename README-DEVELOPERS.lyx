@@ -1,4 +1,4 @@
-#LyX 1.6.5 created this file. For more info see http://www.lyx.org/
+#LyX 1.6.7 created this file. For more info see http://www.lyx.org/
 \lyxformat 345
 \begin_document
 \begin_header
@@ -500,11 +500,11 @@ Chip
 \end_inset
 
 -derived class you need to register it.
- This is done by calling RegisteredChip():
+ This is done by defining a ChipDescription():
 \end_layout
 
 \begin_layout LyX-Code
-RegisteredChip(Chip_MyDevice, bitfile = 
+ChipDescription(Chip_MyDevice, bitfile = 
 \begin_inset Quotes eld
 \end_inset
 
@@ -524,11 +524,11 @@ myChipID
 \end_layout
 
 \begin_layout Standard
-The class (_not_ an instance of it) is passed as first parameter.
+The chip class (_not_ an instance of it) is passed as first parameter.
  The ID string of the required bitfile is past as second parameter.
  A chipID might also be passed.
  If the chipID is omitted, the bitfileID is used as chipID.
- There are more optional parameters to RegisteredChip().
+ There are more optional parameters to ChipDescription().
  See the inline sourcecode documentation for details.
 \end_layout
 

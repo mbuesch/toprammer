@@ -227,12 +227,18 @@ class Chip:
 
 registeredChips = []
 
-class RegisteredChip:
+class BitDescription:
+	def __init__(self, bitNr, description):
+		self.bitNr = bitNr
+		self.description = description
+
+class ChipDescription:
 	def __init__(self, chipImplClass, bitfile, chipID="",
 		     runtimeID=(0,0),
-		     description="", packages=None, comment="",
+		     description="", fuseDesc=(), lockbitDesc=(),
+		     packages=None, comment="",
 		     broken=False, internal=False):
-		"""Register a chip implementation class.
+		"""Chip implementation class description.
 		chipImplClass	=> The implementation class of the chip.
 		bitfile		=> The bitfile ID string of the chip.
 		chipID		=> The chip-ID string. Will default to the bitfile ID string.
@@ -240,6 +246,8 @@ class RegisteredChip:
 				   identifies a loaded FPGA configuration. The first number in the
 				   tuple is an ID number and the second number is a revision number.
 		description	=> Human readable chip description string.
+		fuseDesc	=> Tuple of fuse bits descriptions (BitDescription(), ...)
+		lockbitDesc	=> Tuple of lock bits descriptions (BitDescription(), ...)
 		packages	=> List of supported packages.
 				   Each entry is a tuple of two strings: ("PACKAGE", "description")
 		comment		=> Additional comment string.
@@ -254,6 +262,8 @@ class RegisteredChip:
 		self.chipID = chipID
 		self.runtimeID = runtimeID
 		self.description = description
+		self.fuseDesc = fuseDesc
+		self.lockbitDesc = lockbitDesc
 		self.packages = packages
 		self.comment = comment
 		self.broken = broken
@@ -326,4 +336,3 @@ class RegisteredChip:
 					fd.write("%25s:  %s\n" % ("Support for", description))
 		if verbose >= 2 and self.comment:
 			fd.write("%25s:  %s\n" % ("Comment", self.comment))
-

@@ -204,7 +204,7 @@ def main(argv):
 
 	try:
 		if opt_action == "print-list":
-			RegisteredChip.dumpAll(sys.stdout, verbose=opt_verbose, showBroken=True)
+			ChipDescription.dumpAll(sys.stdout, verbose=opt_verbose, showBroken=True)
 			return 0
 
 		top = TOP(busDev = opt_device,

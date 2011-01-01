@@ -352,7 +352,7 @@ class Chip_M8C_ISSP(Chip):
 		self.__loadVectorInputMask(inputMask)
 		self.__loadVector(vector)
 
-RegisteredChip(
+ChipDescription(
 	Chip_M8C_ISSP,
 	bitfile = "m8c-issp",
 	runtimeID = (0x0007, 0x01),

@@ -36,7 +36,7 @@ class Chip_ATTiny26DIP20(Chip_ATMega_common):
 			eepromPageSize = 4,
 			eepromPages = 32)
 
-RegisteredChip(
+ChipDescription(
 	Chip_ATTiny26DIP20,
 	bitfile = "attiny26dip20",
 	runtimeID = (0x0002, 0x01),

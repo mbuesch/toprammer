@@ -170,7 +170,7 @@ class Chip_M2764A(Chip):
 			self.top.delay(0.01)
 		self.throwError("Timeout in busywait.")
 
-RegisteredChip(
+ChipDescription(
 	Chip_M2764A,
 	bitfile = "m2764a",
 	runtimeID = (0x0006, 0x01),

@@ -222,7 +222,7 @@ class Chip_w29ee011dip32(Chip):
 			self.top.delay(0.01)
 		self.throwError("Timeout in busywait.")
 
-RegisteredChip(
+ChipDescription(
 	Chip_w29ee011dip32,
 	bitfile = "w29ee011dip32",
 	runtimeID = (0x0009, 0x01),

@@ -139,7 +139,7 @@ class Chip_Unitest(Chip):
 		self.__updateOut()
 		self.top.flushCommands()
 
-RegisteredChip(
+ChipDescription(
 	Chip_Unitest,
 	bitfile = "unitest",
 	runtimeID = (0x0008, 0x01),

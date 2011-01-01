@@ -36,7 +36,7 @@ class Chip_ATMega32DIP40(Chip_ATMega_common):
 			eepromPageSize = 4,
 			eepromPages = 256)
 
-RegisteredChip(
+ChipDescription(
 	Chip_ATMega32DIP40,
 	bitfile = "atmega32dip40",
 	runtimeID = (0x0004, 0x01),

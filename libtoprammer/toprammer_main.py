@@ -121,7 +121,7 @@ class TOP:
 		if self.chip:
 			self.shutdownChip()
 		# Find the implementation of the chip.
-		(descriptor, self.chip) = RegisteredChip.find(self.topType, chipID, self.usebroken)
+		(descriptor, self.chip) = ChipDescription.find(self.topType, chipID, self.usebroken)
 		if not self.chip:
 			raise TOPException("Did not find an implementation for the chip %s" % chipID)
 		self.chip.setTOP(self)
