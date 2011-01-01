@@ -135,7 +135,7 @@ Reads the programmer identification and versioning string and returns it.
 \end_layout
 
 \begin_layout Subsection
-cmdReadStatusReg()
+cmdReadBufferReg()
 \end_layout
 
 \begin_layout Standard
@@ -143,30 +143,47 @@ Reads the
 \begin_inset Quotes eld
 \end_inset
 
-status register
+buffer register
 \begin_inset Quotes erd
 \end_inset
 
  from the microcontroller.
- That register is used for buffering of status information and for buffering
- of data fetched from the FPGA.
+ That register is used for buffering of data fetched from the FPGA.
 \end_layout
 
 \begin_layout Subsection
-cmdReadStatusReg32()
+cmdReadBufferReg8()
 \end_layout
 
 \begin_layout Standard
-Same as cmdReadStatusReg(), but just returns a 32bit int which was formed
+Same as cmdReadBufferReg(), but just returns a 8bit int which was formed
+ by the first 1 byte of the register.
+\end_layout
+
+\begin_layout Subsection
+cmdReadBufferReg16()
+\end_layout
+
+\begin_layout Standard
+Same as cmdReadBufferReg(), but just returns a 16bit int which was formed
+ by the first 2 bytes of the register (little endian).
+\end_layout
+
+\begin_layout Subsection
+cmdReadBufferReg32()
+\end_layout
+
+\begin_layout Standard
+Same as cmdReadBufferReg(), but just returns a 32bit int which was formed
  by the first 4 bytes of the register (little endian).
 \end_layout
 
 \begin_layout Subsection
-cmdReadStatusReg48()
+cmdReadBufferReg48()
 \end_layout
 
 \begin_layout Standard
-Same as cmdReadStatusReg(), but just returns a 48bit int which was formed
+Same as cmdReadBufferReg(), but just returns a 48bit int which was formed
  by the first 6 bytes of the register (little endian).
 \end_layout
 
@@ -263,7 +280,7 @@ address
  So issueing several cmdFPGAReadRaw() in a row will result in all the bytes
  being put one after each other into the status register.
  The status register can hold up to 64 bytes.
- Reading the status register (cmdReadStatusReg()) will reset the automagic
+ Reading the status register (cmdReadBufferReg()) will reset the automagic
  pointer to zero.
 \end_layout
 
@@ -351,7 +368,7 @@ class TOP
 \end_layout
 
 \begin_layout Itemize
-Commands are automatically flushed on cmdReadStatusReg() before reading
+Commands are automatically flushed on cmdReadBufferReg() before reading
  the data from the device.
  This is to ensure sequential consistency of the commands.
 \end_layout

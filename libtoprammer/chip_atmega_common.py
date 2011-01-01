@@ -91,10 +91,10 @@ class Chip_ATMega_common(Chip):
 				self.__readWordToStatusReg()
 				readWords += 1
 				if readWords >= 32:
-					image += self.top.cmdReadStatusReg()
+					image += self.top.cmdReadBufferReg()
 					readWords = 0
 			if readWords:
-				data = self.top.cmdReadStatusReg()
+				data = self.top.cmdReadBufferReg()
 				image += data[0:readWords*2]
 		self.progressMeterFinish()
 		return image
@@ -134,7 +134,7 @@ class Chip_ATMega_common(Chip):
 				self.__loadCommand(self.CMD_READEEPROM)
 				self.__loadAddr((page * self.eepromPageSize) + byte)
 				self.__readLowByteToStatusReg()
-			data = self.top.cmdReadStatusReg()
+			data = self.top.cmdReadBufferReg()
 			image += data[0:self.eepromPageSize]
 		self.progressMeterFinish()
 		return image
@@ -219,7 +219,7 @@ class Chip_ATMega_common(Chip):
 			self.__loadCommand(self.CMD_READSIG)
 			self.__loadAddr(addr)
 			self.__readWordToStatusReg()
-			data = self.top.cmdReadStatusReg()
+			data = self.top.cmdReadBufferReg()
 			if addr <= 2:
 				signature += data[0]
 			calibration += data[1]
@@ -234,7 +234,7 @@ class Chip_ATMega_common(Chip):
 		self.__setBS2(1)
 		self.__readWordToStatusReg()
 		self.__setBS2(0)
-		data = self.top.cmdReadStatusReg()
+		data = self.top.cmdReadBufferReg()
 		fuses = data[0] + data[3]
 		lock = data[1]
 		return (fuses, lock)
@@ -375,7 +375,7 @@ class Chip_ATMega_common(Chip):
 	def __getStatus(self):
 		"""Read the programmer status register"""
 		self.top.cmdFPGAReadRaw(0x12)
-		stat = self.top.cmdReadStatusReg()
+		stat = self.top.cmdReadBufferReg()
 		return ord(stat[0])
 
 	def __setOE(self, high):

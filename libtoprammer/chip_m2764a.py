@@ -69,7 +69,7 @@ class Chip_M2764A(Chip):
 			self.__readDataToStatusReg(addr)
 			byteCount += 1
 			if byteCount == 64:
-				image += self.top.cmdReadStatusReg()
+				image += self.top.cmdReadBufferReg()
 				byteCount = 0
 		assert(byteCount == 0)
 		self.__setEG(E=1, G=1)
@@ -111,7 +111,7 @@ class Chip_M2764A(Chip):
 		self.__runCommandSync(self.PROGCMD_PPULSE)
 		for i in range(0, 25):
 			self.__readDataToStatusReg(addr)
-			stat = self.top.cmdReadStatusReg()
+			stat = self.top.cmdReadBufferReg()
 			r = ord(stat[0])
 			if r == data:
 				break
@@ -157,7 +157,7 @@ class Chip_M2764A(Chip):
 
 	def __getStatusFlags(self):
 		self.top.cmdFPGAReadRaw(0x12)
-		stat = self.top.cmdReadStatusReg()
+		stat = self.top.cmdReadBufferReg()
 		return ord(stat[0])
 
 	def __busy(self):

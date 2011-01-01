@@ -117,7 +117,7 @@ class Chip_Unitest(Chip):
 		self.top.cmdFPGAReadRaw(0x33)
 		self.top.cmdFPGAReadRaw(0x34)
 		self.top.cmdFPGAReadRaw(0x35)
-		inputs = self.top.cmdReadStatusReg48()
+		inputs = self.top.cmdReadBufferReg48()
 		return inputs
 
 	def setOscDivider(self, div):

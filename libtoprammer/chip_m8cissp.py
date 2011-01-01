@@ -294,7 +294,7 @@ class Chip_M8C_ISSP(Chip):
 
 	def __getStatusFlags(self):
 		self.top.cmdFPGAReadRaw(0x12)
-		stat = self.top.cmdReadStatusReg()
+		stat = self.top.cmdReadBufferReg()
 		stat = ord(stat[0])
 		isspState = (stat & self.STAT_ISSPSTATE) >> self.STAT_ISSPSTATE_SHIFT
 		isBusy = bool(stat & self.STAT_BUSY0) != bool(stat & self.STAT_BUSY1)
@@ -317,7 +317,7 @@ class Chip_M8C_ISSP(Chip):
 		self.top.cmdFPGAReadRaw(0x13)
 		self.top.cmdFPGAReadRaw(0x14)
 		self.top.cmdFPGAReadRaw(0x15)
-		stat = self.top.cmdReadStatusReg()
+		stat = self.top.cmdReadBufferReg()
 		return ord(stat[0]) | (ord(stat[1]) << 8) | (ord(stat[2]) << 16)
 
 	def __stringVectorToBinary(self, vector):

@@ -217,7 +217,7 @@ class TOP:
 			assert(0)
 
 		self.queueCommand("\x0D")
-		stat = self.cmdReadStatusReg32()
+		stat = self.cmdReadBufferReg32()
 		if stat != 0x00020C69:
 			raise TOPException("Init: Unexpected status register (a): 0x%08X" % stat)
 
@@ -234,7 +234,7 @@ class TOP:
 		self.queueCommand("\x0E\x20\x00\x00")
 		self.cmdFlush()
 		self.queueCommand("\x0E\x25\x00\x00")
-		stat = self.cmdReadStatusReg32()
+		stat = self.cmdReadBufferReg32()
 		if stat != 0x0000686C:
 			raise TOPException("Init: Unexpected status register (b): 0x%08X" % stat)
 
@@ -245,7 +245,7 @@ class TOP:
 			self.cmdFPGAReadRaw(0xFD)
 			self.cmdFPGAReadRaw(0xFE)
 			self.cmdFPGAReadRaw(0xFF)
-			data = self.cmdReadStatusReg()
+			data = self.cmdReadBufferReg()
 			gotID = ord(data[0]) | (ord(data[1]) << 8)
 			if gotID == 0xFEFD or gotID == 0xFFFF:
 				gotID = 0
@@ -262,7 +262,7 @@ class TOP:
 		self.printDebug("Uploading bitfile %s..." % self.bitfile.getFilename())
 
 		self.cmdFPGAInitiateConfig()
-		stat = self.cmdReadStatusReg8()
+		stat = self.cmdReadBufferReg8()
 		expected = 0x01
 		if stat != expected:
 			raise TOPException("bit-upload: Failed to initiate " +\
@@ -355,39 +355,39 @@ class TOP:
 		self.queueCommand(chr(0x1B) * count)
 		self.flushCommands()
 
-	def cmdReadStatusReg(self):
-		"""Read the status register. Returns 64 bytes."""
+	def cmdReadBufferReg(self):
+		"""Read the buffer register. Returns 64 bytes."""
 		self.queueCommand(chr(0x07))
 		return self.receive(64)
 
-	def cmdReadStatusReg8(self):
-		"""Read a 8bit value from the status register."""
-		stat = self.cmdReadStatusReg()
+	def cmdReadBufferReg8(self):
+		"""Read a 8bit value from the buffer register."""
+		stat = self.cmdReadBufferReg()
 		stat = ord(stat[0])
 		return stat
 
-	def cmdReadStatusReg16(self):
-		"""Read a 16bit value from the status register."""
-		stat = self.cmdReadStatusReg()
+	def cmdReadBufferReg16(self):
+		"""Read a 16bit value from the buffer register."""
+		stat = self.cmdReadBufferReg()
 		stat = ord(stat[0]) | (ord(stat[1]) << 8)
 		return stat
 
-	def cmdReadStatusReg24(self):
-		"""Read a 24bit value from the status register."""
-		stat = self.cmdReadStatusReg()
+	def cmdReadBufferReg24(self):
+		"""Read a 24bit value from the buffer register."""
+		stat = self.cmdReadBufferReg()
 		stat = ord(stat[0]) | (ord(stat[1]) << 8) | (ord(stat[2]) << 16)
 		return stat
 
-	def cmdReadStatusReg32(self):
-		"""Read a 32bit value from the status register."""
-		stat = self.cmdReadStatusReg()
+	def cmdReadBufferReg32(self):
+		"""Read a 32bit value from the buffer register."""
+		stat = self.cmdReadBufferReg()
 		stat = ord(stat[0]) | (ord(stat[1]) << 8) | \
 		       (ord(stat[2]) << 16) | (ord(stat[3]) << 24)
 		return stat
 
-	def cmdReadStatusReg48(self):
-		"""Read a 48bit value from the status register."""
-		stat = self.cmdReadStatusReg()
+	def cmdReadBufferReg48(self):
+		"""Read a 48bit value from the buffer register."""
+		stat = self.cmdReadBufferReg()
 		stat = ord(stat[0]) | (ord(stat[1]) << 8) | \
 		       (ord(stat[2]) << 16) | (ord(stat[3]) << 24) | \
 		       (ord(stat[4]) << 32) | (ord(stat[5]) << 40)
@@ -396,7 +396,7 @@ class TOP:
 	def cmdRequestVersion(self):
 		"""Returns the device ID and versioning string."""
 		self.queueCommand("\x0E\x11\x00\x00")
-		data = self.cmdReadStatusReg()
+		data = self.cmdReadBufferReg()
 		return data[0:16].strip()
 
 	def cmdFPGAInitiateConfig(self):

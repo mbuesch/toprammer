@@ -100,7 +100,7 @@ class Chip_w29ee011dip32(Chip):
 			self.top.cmdFPGAReadByte()
 			byteCount += 1
 			if byteCount == 64:
-				image += self.top.cmdReadStatusReg()
+				image += self.top.cmdReadBufferReg()
 				byteCount = 0
 		assert(byteCount == 0)
 		self.__setCEOE(CE=1, OE=1)
@@ -209,7 +209,7 @@ class Chip_w29ee011dip32(Chip):
 
 	def __getStatusFlags(self):
 		self.top.cmdFPGAReadRaw(0x12)
-		stat = self.top.cmdReadStatusReg()
+		stat = self.top.cmdReadBufferReg()
 		return ord(stat[0])
 
 	def __busy(self):

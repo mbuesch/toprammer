@@ -67,7 +67,7 @@ class Chip_AT89C2051dip20(Chip):
 		self.__setP3x(P33=0, P34=0, P35=0, IA=1)
 		self.__setP3x(P33=0, P34=0, P35=0, IA=0)
 		self.top.cmdFPGAReadByte()
-		data += self.top.cmdReadStatusReg()
+		data += self.top.cmdReadBufferReg()
 		self.__setP3x(P33=0, P34=1, P35=0, IA=0)
 		self.__loadCommand(6) # VPP off
 		signature = ""
@@ -116,7 +116,7 @@ class Chip_AT89C2051dip20(Chip):
 			self.__setP3x(P33=0, P34=0, P35=1, IA=0)
 			byteCount += 1
 			if byteCount == 64:
-				image += self.top.cmdReadStatusReg()
+				image += self.top.cmdReadBufferReg()
 				byteCount = 0
 		assert(byteCount == 0)
 		self.applyVPP(False)
@@ -203,7 +203,7 @@ class Chip_AT89C2051dip20(Chip):
 
 	def __getStatusFlags(self):
 		self.top.cmdFPGAReadRaw(0x12)
-		stat = self.top.cmdReadStatusReg()
+		stat = self.top.cmdReadBufferReg()
 		return ord(stat[0])
 
 	def __busy(self):
@@ -219,7 +219,7 @@ class Chip_AT89C2051dip20(Chip):
 	def __progWait(self):
 		for i in range(0,4):
 			self.top.cmdFPGAReadRaw(0x12)
-			stat = self.top.cmdReadStatusReg()
+			stat = self.top.cmdReadBufferReg()
 			if (ord(stat[0]) & self.STAT_BUSY) == 0:
 				return ord(stat[0])
 			self.top.delay(0.001)

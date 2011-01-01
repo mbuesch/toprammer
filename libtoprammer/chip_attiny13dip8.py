@@ -90,7 +90,7 @@ class Chip_AtTiny13dip8(Chip):
 			self.__readSDOBufferHigh()
 			bufferedBytes += 1
 			if bufferedBytes == 64 or word == nrWords - 1:
-				image += self.top.cmdReadStatusReg()[0:bufferedBytes]
+				image += self.top.cmdReadBufferReg()[0:bufferedBytes]
 				bufferedBytes = 0
 		assert(bufferedBytes == 0)
 		self.progressMeterFinish()
@@ -145,7 +145,7 @@ class Chip_AtTiny13dip8(Chip):
 			self.__readSDOBufferHigh()
 			bufferedBytes += 1
 			if bufferedBytes == 64 or i == nrBytes - 1:
-				image += self.top.cmdReadStatusReg()[0:bufferedBytes]
+				image += self.top.cmdReadBufferReg()[0:bufferedBytes]
 				bufferedBytes = 0
 		assert(bufferedBytes == 0)
 		self.progressMeterFinish()
@@ -180,12 +180,12 @@ class Chip_AtTiny13dip8(Chip):
 		self.__sendInstr(SDI=0x00, SII=0x68)
 		self.__sendInstr(SDI=0x00, SII=0x6C)
 		self.__readSDOBufferHigh()
-		fuses += self.top.cmdReadStatusReg()[0]
+		fuses += self.top.cmdReadBufferReg()[0]
 		self.__sendInstr(SDI=0x04, SII=0x4C)
 		self.__sendInstr(SDI=0x00, SII=0x7A)
 		self.__sendInstr(SDI=0x00, SII=0x7E)
 		self.__readSDOBufferHigh()
-		data = ord(self.top.cmdReadStatusReg()[0])
+		data = ord(self.top.cmdReadBufferReg()[0])
 		fuses += chr(data | 0xE0)
 		self.progressMeterFinish()
 		return fuses
@@ -215,7 +215,7 @@ class Chip_AtTiny13dip8(Chip):
 		self.__sendInstr(SDI=0x00, SII=0x78)
 		self.__sendInstr(SDI=0x00, SII=0x7C)
 		self.__readSDOBufferHigh()
-		data = ord(self.top.cmdReadStatusReg()[0])
+		data = ord(self.top.cmdReadBufferReg()[0])
 		lockbits = chr(data | 0xFC)
 		self.progressMeterFinish()
 		return lockbits
@@ -240,7 +240,7 @@ class Chip_AtTiny13dip8(Chip):
 			self.__sendInstr(SDI=0x00, SII=0x68)
 			self.__sendInstr(SDI=0x00, SII=0x6C)
 			self.__readSDOBufferHigh()
-		return self.top.cmdReadStatusReg()[0:3]
+		return self.top.cmdReadBufferReg()[0:3]
 
 	def __enterPM(self):
 		"Enter HV programming mode."
@@ -332,7 +332,7 @@ class Chip_AtTiny13dip8(Chip):
 
 	def __getStatusFlags(self):
 		self.top.cmdFPGAReadRaw(0x12)
-		stat = self.top.cmdReadStatusReg()
+		stat = self.top.cmdReadBufferReg()
 		return ord(stat[0])
 
 	def __readSDOBufferHigh(self):
