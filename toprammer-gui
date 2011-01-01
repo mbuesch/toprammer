@@ -148,6 +148,7 @@ class HwThread(QThread):
 		self.taskParameter = taskParameter
 		self.waitCondition.wakeAll()
 		self.mutex.unlock()
+		return True
 
 	def run(self):
 		self.mutex.lock()
@@ -356,6 +357,11 @@ class Console(QDockWidget):
 
 		self.setStatus(self.STAT_OK)
 
+		self.idToProgressBar = {
+			GuiUserInterface.PROGRESSMETER_CHIPACCESS	: self.chipaccessProgress,
+			GuiUserInterface.PROGRESSMETER_USER_GLOBAL	: self.globalProgress,
+		}
+
 		self.connect(self.cancelButton, SIGNAL("released()"),
 			     mainWindow.cancelHardwareTask)
 
@@ -363,11 +369,17 @@ class Console(QDockWidget):
 		self.cancelButton.setEnabled(running)
 		if running:
 			self.setStatus(Console.STAT_PROGRESS)
+			# Set progress meters to "busy"
+			for meterId in self.idToProgressBar.keys():
+				self.progressMeterInit(meterId, 0)
 		else:
 			if success:
 				self.setStatus(Console.STAT_OK)
 			else:
 				self.setStatus(Console.STAT_ERROR)
+			# Reset progress meters to 0%
+			for meterId in self.idToProgressBar.keys():
+				self.progressMeterInit(meterId, 2)
 
 	def setStatus(self, status):
 		if status == self.STAT_OK:
@@ -415,28 +427,15 @@ class Console(QDockWidget):
 			self.consoleMsgs.append(message)
 		self.__commitText()
 
-	def __meterIdToProgressBar(self, meterId):
-		if meterId == GuiUserInterface.PROGRESSMETER_CHIPACCESS:
-			progress = self.chipaccessProgress
-		elif meterId == GuiUserInterface.PROGRESSMETER_USER_GLOBAL:
-			progress = self.globalProgress
-		else:
-			assert(0)
-		return progress
-
 	def progressMeterInit(self, meterId, nrSteps):
-		progress = self.__meterIdToProgressBar(meterId)
+		progress = self.idToProgressBar[meterId]
 		progress.setMinimum(0)
 		progress.setMaximum(max(0, nrSteps - 1))
 		progress.setValue(progress.maximum())
 		progress.setValue(0)
 
 	def progressMeter(self, meterId, step):
-		progress = self.__meterIdToProgressBar(meterId)
-		if step == -1:
-			progress.setMaximum(1)
-			progress.reset()
-			return
+		progress = self.idToProgressBar[meterId]
 		if progress.maximum() == 0:
 			progress.setMaximum(1)
 			progress.setValue(1)
@@ -734,13 +733,11 @@ class BufferTabWidget(QTabWidget):
 		if lockbitsImage is not None:
 			self.lockBuffer.loadImage(lockbitsImage)
 
-	def verifyBuffers(self, progmemImage, eepromImage,
-			  fuseImage, lockbitsImage):
+	def verifyBuffers(self, progmemImage, eepromImage, fuseImage):
 		fail = False
 		for (image, bufferWidget) in ((progmemImage, self.progmemBuffer),
 					      (eepromImage, self.eepromBuffer),
-					      (fuseImage, self.fuseBuffer),
-					      (lockbitsImage, self.lockBuffer)):
+					      (fuseImage, self.fuseBuffer)):
 			if image is None:
 				continue
 			if bufferWidget.getRawData() != image:
@@ -825,9 +822,144 @@ class TopToolBar(QToolBar):
 
 		self.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
 
-class LeftToolBar(QToolBar):
+class AutorunWidget(QDockWidget):
 	def __init__(self, mainWindow):
-		QToolBar.__init__(self, mainWindow)
+		QDockWidget.__init__(self, mainWindow)
+		self.mainWindow = mainWindow
+
+		self.running = False
+		self.currentAction = -1
+
+		self.setFeatures(self.DockWidgetMovable | self.DockWidgetFloatable)
+		self.setup(0)
+
+	def __addCheckBox(self, row, condition, text, checked):
+		if condition:
+			checkbox = QCheckBox(text, self.widget())
+			if checked:
+				checkbox.setCheckState(Qt.Checked)
+			self.widget().layout().addWidget(checkbox, row, 0)
+			row += 1
+			return (checkbox, row)
+		return (None, row)
+
+	def setup(self, chipSupportFlags):
+		self.setWidget(QWidget(self))
+		self.widget().show()
+		self.widget().setLayout(QGridLayout(self.widget()))
+		row = 0
+
+		l = QLabel("Autorun", self.widget())
+		font = l.font()
+		font.setItalic(True)
+		l.setFont(font)
+		self.widget().layout().addWidget(l, row, 0)
+		row += 1
+
+		(self.eraseCheckBox, row) = self.__addCheckBox(row,
+				chipSupportFlags & Chip.SUPPORT_ERASE,
+				"Erase", True)
+		(self.progmemCheckBox, row) = self.__addCheckBox(row,
+				chipSupportFlags & Chip.SUPPORT_PROGMEMWRITE,
+				"Write program memory", True)
+		(self.eepromCheckBox, row) = self.__addCheckBox(row,
+				chipSupportFlags & Chip.SUPPORT_EEPROMWRITE,
+				"Write (E)EPROM", True)
+		(self.fusesCheckBox, row) = self.__addCheckBox(row,
+				chipSupportFlags & Chip.SUPPORT_FUSEWRITE,
+				"Write fuses", True)
+		(self.verifyCheckBox, row) = self.__addCheckBox(row,
+				chipSupportFlags != 0,
+				"Verify", True)
+		(self.lockbitsCheckBox, row) = self.__addCheckBox(row,
+				chipSupportFlags & Chip.SUPPORT_LOCKWRITE,
+				"Write lock bits", False)
+
+		self.runButton = None
+		if chipSupportFlags != 0:
+			self.runButton = QPushButton("Run", self.widget())
+			self.runButton.setIconSize(QSize(32, 32))
+			self.runButton.setIcon(getIcon("run"))
+			self.widget().layout().addWidget(self.runButton, row, 0)
+			row += 1
+			self.connect(self.runButton, SIGNAL("released()"),
+				     self.runNextChip)
+
+		self.widget().layout().setRowStretch(row, 99)
+
+	def isRunning(self):
+		return self.running
+
+	def abortRun(self, withMessage=False):
+		if withMessage:
+			QMessageBox.critical(self, "Aborting autorun",
+				"One action failed. Aborting autorun.")
+		self.running = False
+		self.currentAction = -1;
+		self.mainWindow.guiUpdateEnable()
+
+	def runNextChip(self):
+		self.running = True
+		self.currentAction = 0
+		res = QMessageBox.information(self, "Insert chip",
+			"Please insert a new %s chip into the ZIF socket "
+			"and press Ok to perform the operations..." %\
+			self.mainWindow.currentChipDescription.description,
+			QMessageBox.Ok | QMessageBox.Cancel,
+			QMessageBox.Ok)
+		if res != QMessageBox.Ok:
+			self.abortRun()
+			return
+		self.runNextAction()
+
+	def runNextAction(self):
+		assert(self.currentAction >= 0)
+		action = 0
+		if self.eraseCheckBox:
+			if self.currentAction == action:
+				self.__runAction(self.mainWindow.eraseChip,
+						 "Erase")
+				return
+			action += 1
+		if self.progmemCheckBox:
+			if self.currentAction == action:
+				self.__runAction(self.mainWindow.writeChipProgmem,
+						 "Write program memory")
+				return
+			action += 1
+		if self.eepromCheckBox:
+			if self.currentAction == action:
+				self.__runAction(self.mainWindow.writeChipEeprom,
+						 "Write (E)EPROM")
+				return
+			action += 1
+		if self.fusesCheckBox:
+			if self.currentAction == action:
+				self.__runAction(self.mainWindow.writeChipFuses,
+						 "Write fuses")
+				return
+			action += 1
+		if self.verifyCheckBox:
+			if self.currentAction == action:
+				self.__runAction(self.mainWindow.verifyChip,
+						 "Verify")
+				return
+			action += 1
+		if self.lockbitsCheckBox:
+			if self.currentAction == action:
+				self.__runAction(self.mainWindow.writeChipLockbits,
+						 "Write lock bits")
+				return
+			action += 1
+		self.runNextChip()
+
+	def __runAction(self, function, actionName):
+		self.mainWindow.console.showMessage(
+			"Running action: %s\n" % actionName, bold=True)
+		if not function():
+			self.abortRun(withMessage=True)
+			return
+		self.currentAction += 1
 
 class MainWindow(QMainWindow):
 	OP_NONE		= 0
@@ -843,8 +975,6 @@ class MainWindow(QMainWindow):
 		self.setStatusBar(StatusBar(self))
 		self.topToolBar = TopToolBar(self)
 		self.addToolBar(Qt.TopToolBarArea, self.topToolBar)
-		self.leftToolBar = LeftToolBar(self)
-		self.addToolBar(Qt.LeftToolBarArea, self.leftToolBar)
 
 		self.setMenuBar(QMenuBar(self))
 
@@ -876,6 +1006,9 @@ class MainWindow(QMainWindow):
 
 		self.console = Console(self)
 		self.addDockWidget(Qt.BottomDockWidgetArea, self.console)
+
+		self.autorun = AutorunWidget(self)
+		self.addDockWidget(Qt.LeftDockWidgetArea, self.autorun)
 
 		self.hwThread = HwThread(self)
 		self.taskRunning = False
@@ -989,14 +1122,14 @@ class MainWindow(QMainWindow):
 		if not chipDescription:
 			return
 		self.currentChipDescription = chipDescription
-		self.runHardwareTask(HwThread.TASK_INITCHIP,
-				     chipDescription.chipID)
+		return self.runHardwareTask(HwThread.TASK_INITCHIP,
+					    chipDescription.chipID)
 
 	def readChip(self):
-		self.runHardwareTask(HwThread.TASK_READALL)
+		return self.runHardwareTask(HwThread.TASK_READALL)
 
 	def eraseChip(self):
-		self.runHardwareTask(HwThread.TASK_ERASE)
+		return self.runHardwareTask(HwThread.TASK_ERASE)
 
 	def writeChipProgmem(self):
 		bufferWidget = self.bufferTab.progmemBuffer
@@ -1004,8 +1137,8 @@ class MainWindow(QMainWindow):
 		if not bufferWidget.isAvailable() or not data:
 			QMessageBox.critical(self, "No program memory",
 				"No program memory available")
-			return
-		self.runHardwareTask(HwThread.TASK_WRITEPROG, data)
+			return False
+		return self.runHardwareTask(HwThread.TASK_WRITEPROG, data)
 
 	def writeChipEeprom(self):
 		bufferWidget = self.bufferTab.eepromBuffer
@@ -1013,8 +1146,8 @@ class MainWindow(QMainWindow):
 		if not bufferWidget.isAvailable() or not data:
 			QMessageBox.critical(self, "No (E)EPROM memory",
 				"No (E)EPROM memory available")
-			return
-		self.runHardwareTask(HwThread.TASK_WRITEEEPROM, data)
+			return False
+		return self.runHardwareTask(HwThread.TASK_WRITEEEPROM, data)
 
 	def writeChipFuses(self):
 		bufferWidget = self.bufferTab.fuseBuffer
@@ -1022,8 +1155,8 @@ class MainWindow(QMainWindow):
 		if not bufferWidget.isAvailable() or not data:
 			QMessageBox.critical(self, "No fuse bits",
 				"No fuse bits available")
-			return
-		self.runHardwareTask(HwThread.TASK_WRITEFUSE, data)
+			return False
+		return self.runHardwareTask(HwThread.TASK_WRITEFUSE, data)
 
 	def writeChipLockbits(self):
 		bufferWidget = self.bufferTab.lockBuffer
@@ -1031,46 +1164,47 @@ class MainWindow(QMainWindow):
 		if not bufferWidget.isAvailable() or not data:
 			QMessageBox.critical(self, "No lock bits",
 				"No lock bits available")
-			return
-		self.runHardwareTask(HwThread.TASK_WRITELOCK, data)
+			return False
+		return self.runHardwareTask(HwThread.TASK_WRITELOCK, data)
 
 	def verifyChip(self):
-		self.runHardwareTask(HwThread.TASK_READALL)
+		if not self.runHardwareTask(HwThread.TASK_READALL):
+			return False
 		self.operation = self.OP_VERIFY
+		return True
 
 	def guiUpdateEnable(self):
-		self.menuBar().setEnabled(not self.taskRunning)
-		self.topToolBar.setEnabled(not self.taskRunning)
-		self.leftToolBar.setEnabled(not self.taskRunning)
-		self.bufferTab.setEnabled(not self.taskRunning)
+		enable = not self.taskRunning and not self.autorun.isRunning()
+		self.menuBar().setEnabled(enable)
+		self.topToolBar.setEnabled(enable)
+		self.autorun.setEnabled(enable)
+		self.bufferTab.setEnabled(enable)
 
 	def cancelHardwareTask(self):
+		if self.autorun.isRunning():
+			self.autorun.abortRun()
 		if self.taskRunning:
 			self.hwThread.cancelTask()
 
 	def runHardwareTask(self, task, taskParameter=None):
 		assert(not self.taskRunning)
-		self.console.progressMeterInit(GuiUserInterface.PROGRESSMETER_CHIPACCESS, 0)
-		self.console.progressMeterInit(GuiUserInterface.PROGRESSMETER_USER_GLOBAL, 0)
 		self.console.setTaskRunning(True)
 		self.taskRunning = True
 		self.guiUpdateEnable()
-		self.hwThread.triggerTask(task, taskParameter)
+		return self.hwThread.triggerTask(task, taskParameter)
 
 	def hardwareTaskFinished(self, task, failed, returnValue):
 		self.taskRunning = False
 		if failed:
 			self.console.showMessage("[HW op %d failed] %s\n" %\
 					(task, str(returnValue)))
-			self.console.progressMeterInit(GuiUserInterface.PROGRESSMETER_CHIPACCESS, 100)
-			self.console.progressMeterInit(GuiUserInterface.PROGRESSMETER_USER_GLOBAL, 100)
 			self.console.setTaskRunning(False, False)
 			self.guiUpdateEnable()
 			self.operation = self.OP_NONE
+			if self.autorun.isRunning():
+				self.autorun.abortRun(withMessage=True)
 			return
 		# Task succeed
-		self.console.progressMeter(GuiUserInterface.PROGRESSMETER_CHIPACCESS, -1)
-		self.console.progressMeter(GuiUserInterface.PROGRESSMETER_USER_GLOBAL, -1)
 		self.guiUpdateEnable()
 		self.console.setTaskRunning(False)
 		if task == HwThread.TASK_SHUTDOWN:
@@ -1081,6 +1215,7 @@ class MainWindow(QMainWindow):
 			self.bufferTab.infoBuffer.clear()
 			self.bufferTab.infoBuffer.setChipName(self.currentChipDescription.description)
 			self.bufferTab.infoBuffer.setChipLayout(asciiArtLayout)
+			self.autorun.setup(self.chipSupportFlags)
 		elif task == HwThread.TASK_ERASE:
 			pass # Nothing to do
 		elif task == HwThread.TASK_WRITEPROG:
@@ -1094,8 +1229,7 @@ class MainWindow(QMainWindow):
 		elif task == HwThread.TASK_READALL:
 			(sigImage, progmemImage, eepromImage, fuseImage, lockbitsImage) = returnValue
 			if self.operation == self.OP_VERIFY:
-				self.bufferTab.verifyBuffers(progmemImage, eepromImage,
-							     fuseImage, lockbitsImage)
+				self.bufferTab.verifyBuffers(progmemImage, eepromImage, fuseImage)
 			else:
 				self.bufferTab.setupBuffers(self.chipSupportFlags)
 				self.bufferTab.loadBuffers(progmemImage, eepromImage,
@@ -1104,6 +1238,8 @@ class MainWindow(QMainWindow):
 			self.operation = self.OP_NONE
 		else:
 			assert(0)
+		if self.autorun.isRunning():
+			QTimer.singleShot(0, self.autorun.runNextAction)
 
 def main():
 	app = QApplication(sys.argv)
