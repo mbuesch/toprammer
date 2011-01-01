@@ -30,6 +30,9 @@ import time
 import cgi
 
 
+EVENT_HWTHREAD		= QEvent.User + 0
+
+
 def htmlEscape(plaintext):
 	return cgi.escape(plaintext)
 
@@ -109,10 +112,6 @@ class HwThread(QThread):
 		self.task = None
 		self.taskParameter = None
 
-		self.pollTimer = QTimer(self)
-		self.pollTimer.setSingleShot(False)
-		self.connect(self.pollTimer, SIGNAL("timeout()"), self.__poll)
-
 		self.waitCondition = QWaitCondition()
 		self.mutex = QMutex()
 		self.setTopParameters()
@@ -140,7 +139,6 @@ class HwThread(QThread):
 		self.mutex.lock()
 		self.task = task
 		self.taskParameter = taskParameter
-		self.pollTimer.start(200)
 		self.waitCondition.wakeAll()
 		self.mutex.unlock()
 
@@ -157,10 +155,10 @@ class HwThread(QThread):
 		self.mutex.unlock()
 
 	def appendMessage(self, message, data):
-		if self.pollTimer.isActive():
-			self.mutex.lock()
-			self.messageQueue.append( (message, data) )
-			self.mutex.unlock()
+		self.mutex.lock()
+		self.messageQueue.append( (message, data) )
+		self.mutex.unlock()
+		self.__notifyMainWindow()
 
 	def __taskWorker(self):
 		try:
@@ -246,11 +244,13 @@ class HwThread(QThread):
 				   (GuiUserInterface.PROGRESSMETER_USER_GLOBAL,
 				    step))
 
-	def __poll(self):
+	def __notifyMainWindow(self):
+		QApplication.postEvent(self.mainWindow, QEvent(EVENT_HWTHREAD))
+
+	def handleMessageQueue(self):
 		self.mutex.lock()
 		for (message, data) in self.messageQueue:
 			if message == "finished":
-				self.pollTimer.stop()
 				self.mainWindow.hardwareTaskFinished(
 					task=data[0], failed=data[1], returnValue=data[2])
 			elif message == "console":
@@ -809,6 +809,13 @@ class MainWindow(QMainWindow):
 		self.hwThread = HwThread(self)
 		self.taskRunning = False
 		self.operation = self.OP_NONE
+
+	def event(self, e):
+		if e.type() == EVENT_HWTHREAD:
+			self.hwThread.handleMessageQueue()
+			e.accept()
+			return True
+		return QMainWindow.event(self, e)
 
 	def closeEvent(self, e):
 		if self.taskRunning:
