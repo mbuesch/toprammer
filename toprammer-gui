@@ -764,7 +764,7 @@ class MainWindow(QMainWindow):
 
 	def __init__(self, parent=None):
 		QMainWindow.__init__(self, parent)
-		self.setWindowTitle("TOPrammer - Open Source programming suite")
+		self.setWindowTitle("TOPrammer v%s - Open Source programming suite" % VERSION)
 
 		self.chipSupportFlags = 0 # Chip.SUPPORT_... for the loaded chip
 		self.currentChipDescription = None
