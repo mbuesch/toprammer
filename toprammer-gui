@@ -836,7 +836,7 @@ class MainWindow(QMainWindow):
 			return
 		selectedFilter = QString()
 		fn = QFileDialog.getOpenFileName(self,
-			"%s - binary file" % bufWidget.getName(),
+			"%s - open file" % bufWidget.getName(),
 			QString(),
 			"Intel hex file (*.hex *.ihex);;"
 			"Binary file (*)",
@@ -876,7 +876,7 @@ class MainWindow(QMainWindow):
 			return
 		selectedFilter = QString()
 		fn = QFileDialog.getSaveFileName(self,
-			"%s - binary file" % bufWidget.getName(),
+			"%s - save file" % bufWidget.getName(),
 			QString(),
 			"Intel hex file (*.hex);;"
 			"Binary file (*)",
