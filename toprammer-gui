@@ -27,7 +27,11 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import sys
 import time
+import cgi
 
+
+def htmlEscape(plaintext):
+	return cgi.escape(plaintext)
 
 def getIconPath(name):
 	return pkg_resources.resource_filename("libtoprammer",
@@ -88,17 +92,12 @@ class GuiUserInterface(AbstractUserInterface):
 class HwThread(QThread):
 	TASK_SHUTDOWN		= 0
 	TASK_INITCHIP		= 1
-	TASK_READSIG		= 2
-	TASK_ERASE		= 3
-	TASK_READPROG		= 4
-	TASK_WRITEPROG		= 5
-	TASK_READEEPROM		= 6
-	TASK_WRITEEEPROM	= 7
-	TASK_READFUSE		= 8
-	TASK_WRITEFUSE		= 9
-	TASK_READLOCK		= 10
-	TASK_WRITELOCK		= 11
-	TASK_READALL		= 12
+	TASK_ERASE		= 2
+	TASK_WRITEPROG		= 3
+	TASK_WRITEEEPROM	= 4
+	TASK_WRITEFUSE		= 5
+	TASK_WRITELOCK		= 6
+	TASK_READALL		= 7
 
 	def __init__(self, mainWindow):
 		QThread.__init__(self, mainWindow)
@@ -198,24 +197,14 @@ class HwThread(QThread):
 			if layoutGen:
 				asciiArtLayout = layoutGen.zifLayoutAsciiArt()
 			retval = (Chip.getSupportFlags(chip), asciiArtLayout)
-		elif task == self.TASK_READSIG:
-			retval = self.top.readSignature()
 		elif task == self.TASK_ERASE:
 			self.top.eraseChip()
-		elif task == self.TASK_READPROG:
-			retval = self.top.readProgmem()
 		elif task == self.TASK_WRITEPROG:
 			self.top.writeProgmem(self.taskParameter)
-		elif task == self.TASK_READEEPROM:
-			retval = self.top.readEEPROM()
 		elif task == self.TASK_WRITEEEPROM:
 			self.top.writeEEPROM(self.taskParameter)
-		elif task == self.TASK_READFUSE:
-			retval = self.top.readFuse()
 		elif task == self.TASK_WRITEFUSE:
 			self.top.writeFuse(self.taskParameter)
-		elif task == self.TASK_READLOCK:
-			retval = self.top.readLockbits()
 		elif task == self.TASK_WRITELOCK:
 			self.top.writeLockbits(self.taskParameter)
 		elif task == self.TASK_READALL:
@@ -294,7 +283,7 @@ class Console(QDockWidget):
 		self.widget().setLayout(QGridLayout(self.widget()))
 
 		self.consoleMsgs = []
-		self.consoleText = QPlainTextEdit(self)
+		self.consoleText = QTextEdit(self)
 		self.consoleText.setReadOnly(True)
 		self.widget().layout().addWidget(self.consoleText, 0, 0, 1, 2)
 
@@ -325,21 +314,31 @@ class Console(QDockWidget):
 		if len(self.consoleMsgs) > limit:
 			self.consoleMsgs.pop(0)
 			assert(len(self.consoleMsgs) == limit)
-		self.consoleText.setPlainText("".join(self.consoleMsgs).strip())
+		html = "<HTML><BODY>" + "".join(self.consoleMsgs) + "</BODY></HTML>"
+		self.consoleText.setHtml(html)
 		# Scroll to end
 		scroll = self.consoleText.verticalScrollBar()
 		scroll.setTracking(True)
 		scroll.setSliderPosition(scroll.maximum())
 		scroll.setValue(scroll.maximum())
 
-	def showMessage(self, message):
+	def showMessage(self, message, bold=False):
 		message = str(message)
 		if not message:
 			return
+		newline = False
+		if message.endswith("\n"):
+			newline = True
+			message = message[:-1]
+		message = htmlEscape(message)
+		if bold:
+			message = "<B>" + message + "</B>"
+		if newline:
+			message += "<BR />"
 		lastmsg = None
 		if self.consoleMsgs:
 			lastmsg = self.consoleMsgs[-1]
-		if lastmsg and lastmsg[-1] != "\n":
+		if lastmsg and not lastmsg.endswith("<BR />"):
 			self.consoleMsgs[-1] = self.consoleMsgs[-1] + message
 		else:
 			self.consoleMsgs.append(message)
@@ -567,6 +566,7 @@ class BitBufferWidget(BufferWidget):
 class BufferTabWidget(QTabWidget):
 	def __init__(self, mainWindow):
 		QTabWidget.__init__(self, mainWindow)
+		self.mainWindow = mainWindow
 
 		self.infoBuffer = InfoBufferWidget(mainWindow, "chip info")
 		self.progmemBuffer = ImageBufferWidget(mainWindow, "program memory")
@@ -625,6 +625,26 @@ class BufferTabWidget(QTabWidget):
 			self.fuseBuffer.loadImage(fuseImage)
 		if lockbitsImage is not None:
 			self.lockBuffer.loadImage(lockbitsImage)
+
+	def verifyBuffers(self, progmemImage, eepromImage,
+			  fuseImage, lockbitsImage):
+		fail = False
+		for (image, bufferWidget) in ((progmemImage, self.progmemBuffer),
+					      (eepromImage, self.eepromBuffer),
+					      (fuseImage, self.fuseBuffer),
+					      (lockbitsImage, self.lockBuffer)):
+			if image is None:
+				continue
+			if bufferWidget.getRawData() != image:
+				self.mainWindow.console.showMessage(
+					"Chip verify of %s FAILED!\n" % bufferWidget.getName(),
+					bold=True)
+				fail = True
+		if fail:
+			self.mainWindow.console.setStatus(Console.STAT_ERROR)
+		else:
+			self.mainWindow.console.showMessage("Chip verify succeed\n", bold=True)
+			self.mainWindow.console.setStatus(Console.STAT_OK)
 
 	def getCurrentBuffer(self):
 		return self.currentWidget()
@@ -702,6 +722,9 @@ class LeftToolBar(QToolBar):
 		QToolBar.__init__(self, mainWindow)
 
 class MainWindow(QMainWindow):
+	OP_NONE		= 0
+	OP_VERIFY	= 1
+
 	def __init__(self, parent=None):
 		QMainWindow.__init__(self, parent)
 		self.setWindowTitle("TOPrammer - Open Source programming suite")
@@ -747,6 +770,7 @@ class MainWindow(QMainWindow):
 
 		self.hwThread = HwThread(self)
 		self.taskRunning = False
+		self.operation = self.OP_NONE
 
 	def closeEvent(self, e):
 		if self.taskRunning:
@@ -895,7 +919,8 @@ class MainWindow(QMainWindow):
 		self.runHardwareTask(HwThread.TASK_WRITELOCK, data)
 
 	def verifyChip(self):
-		pass#TODO
+		self.runHardwareTask(HwThread.TASK_READALL)
+		self.operation = self.OP_VERIFY
 
 	def guiUpdateEnable(self):
 		self.menuBar().setEnabled(not self.taskRunning)
@@ -923,6 +948,10 @@ class MainWindow(QMainWindow):
 			self.guiUpdateEnable()
 			return
 		# Task succeed
+		self.console.progressMeter(GuiUserInterface.PROGRESSMETER_CHIPACCESS, -1)
+		self.console.progressMeter(GuiUserInterface.PROGRESSMETER_USER_GLOBAL, -1)
+		self.guiUpdateEnable()
+		self.console.setStatus(Console.STAT_OK)
 		if task == HwThread.TASK_SHUTDOWN:
 			pass # Nothing to do
 		elif task == HwThread.TASK_INITCHIP:
@@ -931,39 +960,29 @@ class MainWindow(QMainWindow):
 			self.bufferTab.infoBuffer.clear()
 			self.bufferTab.infoBuffer.setChipName(self.currentRegisteredChip.description)
 			self.bufferTab.infoBuffer.setChipLayout(asciiArtLayout)
-		elif task == HwThread.TASK_READSIG:
-			pass # Nothing to do
 		elif task == HwThread.TASK_ERASE:
-			pass # Nothing to do
-		elif task == HwThread.TASK_READPROG:
 			pass # Nothing to do
 		elif task == HwThread.TASK_WRITEPROG:
 			pass # Nothing to do
-		elif task == HwThread.TASK_READEEPROM:
-			pass # Nothing to do
 		elif task == HwThread.TASK_WRITEEEPROM:
 			pass # Nothing to do
-		elif task == HwThread.TASK_READFUSE:
-			pass # Nothing to do
 		elif task == HwThread.TASK_WRITEFUSE:
-			pass # Nothing to do
-		elif task == HwThread.TASK_READLOCK:
 			pass # Nothing to do
 		elif task == HwThread.TASK_WRITELOCK:
 			pass # Nothing to do
 		elif task == HwThread.TASK_READALL:
 			(sigImage, progmemImage, eepromImage, fuseImage, lockbitsImage) = returnValue
-			self.bufferTab.setupBuffers(self.chipSupportFlags)
-			self.bufferTab.loadBuffers(progmemImage, eepromImage,
-						   fuseImage, lockbitsImage)
-			self.bufferTab.infoBuffer.setChipSignature(sigImage)
+			if self.operation == self.OP_VERIFY:
+				self.bufferTab.verifyBuffers(progmemImage, eepromImage,
+							     fuseImage, lockbitsImage)
+			else:
+				self.bufferTab.setupBuffers(self.chipSupportFlags)
+				self.bufferTab.loadBuffers(progmemImage, eepromImage,
+							   fuseImage, lockbitsImage)
+				self.bufferTab.infoBuffer.setChipSignature(sigImage)
+			self.operation = self.OP_NONE
 		else:
 			assert(0)
-		self.console.showMessage("Ok.\n")
-		self.console.progressMeter(GuiUserInterface.PROGRESSMETER_CHIPACCESS, -1)
-		self.console.progressMeter(GuiUserInterface.PROGRESSMETER_USER_GLOBAL, -1)
-		self.guiUpdateEnable()
-		self.console.setStatus(Console.STAT_OK)
 
 def main():
 	app = QApplication(sys.argv)
