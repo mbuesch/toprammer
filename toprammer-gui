@@ -22,6 +22,7 @@
 """
 
 from libtoprammer.toprammer_main import *
+from libtoprammer.util import *
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import sys
@@ -761,7 +762,6 @@ class MainWindow(QMainWindow):
 		QMessageBox.information(self, "About TOPrammer",
 			"Copyright (c) Michael Buesch <mb@bu3sch.de>")
 
-	#TODO support ihex
 	def loadBuffer(self):
 		bufWidget = self.bufferTab.getCurrentBuffer()
 		if not bufWidget:
@@ -772,16 +772,34 @@ class MainWindow(QMainWindow):
 				"The buffer is read-only." %\
 				bufWidget.getName())
 			return
+		selectedFilter = QString()
 		fn = QFileDialog.getOpenFileName(self,
-			"%s - binary file" % bufWidget.getName())
+			"%s - binary file" % bufWidget.getName(),
+			QString(),
+			"Intel hex file (*.hex *.ihex);;"
+			"Binary file (*)",
+			selectedFilter)
 		if not fn:
 			return
+		extensions = str(selectedFilter).split("(")[1].\
+				 split(")")[0].replace("*", "").strip().split()
 		try:
 			data = file(fn, "rb").read()
 		except (IOError), e:
 			QMessageBox.critical(self, "Failed to read file",
 				"Failed to read %s:\n%s" %\
 				(str(fn), str(e.strerror)))
+			return
+		try:
+			if ".hex" in extensions or ".ihex" in extensions:
+				data = IO_ihex().toBinary(data)
+			elif not extensions:
+				data = IO_binary().toBinary(data)
+			else:
+				assert(0)
+		except (TOPException), e:
+			QMessageBox.critical(self, "Failed to convert data",
+				"Failed to convert the input file data to binary\n%s" % str(e))
 			return
 		if not bufWidget.setRawData(data):
 			QMessageBox.critical(self, "Failed to load data",
@@ -794,10 +812,27 @@ class MainWindow(QMainWindow):
 		data = bufWidget.getRawData()
 		if not data:
 			return
+		selectedFilter = QString()
 		fn = QFileDialog.getSaveFileName(self,
-			"%s - binary file" % bufWidget.getName())
+			"%s - binary file" % bufWidget.getName(),
+			QString(),
+			"Intel hex file (*.hex);;"
+			"Binary file (*)",
+			selectedFilter)
 		if not fn:
 			return
+		extensions = str(selectedFilter).split("(")[1].\
+				 split(")")[0].replace("*", "").strip().split()
+		if not extensions:
+			extensions = [ "" ]
+		if not fn.endsWith(extensions[0]):
+			fn += extensions[0]
+		if ".hex" in extensions or ".ihex" in extensions:
+			data = IO_ihex().fromBinary(data)
+		elif not extensions[0]:
+			data = IO_binary().fromBinary(data)
+		else:
+			assert(0)
 		try:
 			file(fn, "wb").write(data)
 		except (IOError), e:
