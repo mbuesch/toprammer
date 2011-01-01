@@ -231,7 +231,7 @@ class RegisteredChip:
 	def __init__(self, chipImplClass, bitfile, chipID="",
 		     runtimeID=(0,0),
 		     description="", packages=None, comment="",
-		     broken=False):
+		     broken=False, internal=False):
 		"""Register a chip implementation class.
 		chipImplClass	=> The implementation class of the chip.
 		bitfile		=> The bitfile ID string of the chip.
@@ -244,6 +244,7 @@ class RegisteredChip:
 				   Each entry is a tuple of two strings: ("PACKAGE", "description")
 		comment		=> Additional comment string.
 		broken		=> Boolean flag to mark the implementation as broken.
+		internal	=> Boolean flag to mark algorithms for internal use.
 		"""
 
 		if not chipID:
@@ -256,6 +257,7 @@ class RegisteredChip:
 		self.packages = packages
 		self.comment = comment
 		self.broken = broken
+		self.internal = internal
 		registeredChips.append(self)
 
 	@staticmethod
@@ -279,6 +281,8 @@ class RegisteredChip:
 		count = 0
 		for chip in registeredChips:
 			if chip.broken and not showBroken:
+				continue
+			if chip.internal:
 				continue
 			count = count + 1
 			if count >= 2:

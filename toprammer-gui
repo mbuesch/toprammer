@@ -634,7 +634,11 @@ class ChipSelectDialog(QDialog):
 		self.setLayout(QGridLayout(self))
 
 		self.chipList = QListWidget(self)
-		for registeredChip in filter(lambda x: not x.broken, registeredChips):
+		for registeredChip in registeredChips:
+			if registeredChip.broken:
+				continue
+			if registeredChip.internal:
+				continue
 			item = QListWidgetItem(registeredChip.description,
 					       self.chipList)
 			item.setData(Qt.UserRole, registeredChip)

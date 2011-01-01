@@ -144,4 +144,5 @@ RegisteredChip(
 	bitfile = "unitest",
 	runtimeID = (0x0008, 0x01),
 	description = "Universal device tester",
+	internal = True,
 )
