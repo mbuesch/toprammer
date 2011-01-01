@@ -143,6 +143,12 @@ class TOP:
 			self.flushCommands()
 			self.chip = None
 
+	def resetChip(self):
+		if self.chip:
+			self.chip.shutdownChip()
+			self.chip.initializeChip()
+			self.flushCommands()
+
 	def getChip(self):
 		"Get the chip. May return None"
 		return self.chip

@@ -102,6 +102,10 @@ class HwThread(QThread):
 	TASK_WRITELOCK		= 6
 	TASK_READALL		= 7
 
+	class CancelException(Exception):
+		def __init__(self):
+			Exception.__init__(self, "Operation cancelled")
+
 	def __init__(self, mainWindow):
 		QThread.__init__(self, mainWindow)
 
@@ -111,6 +115,8 @@ class HwThread(QThread):
 		self.top = None
 		self.task = None
 		self.taskParameter = None
+		self.cancel = False
+		self.cancellationBlocked = 0
 
 		self.waitCondition = QWaitCondition()
 		self.mutex = QMutex()
@@ -137,6 +143,7 @@ class HwThread(QThread):
 
 	def triggerTask(self, task, taskParameter=None):
 		self.mutex.lock()
+		self.cancel = False
 		self.task = task
 		self.taskParameter = taskParameter
 		self.waitCondition.wakeAll()
@@ -154,20 +161,60 @@ class HwThread(QThread):
 				break
 		self.mutex.unlock()
 
-	def appendMessage(self, message, data):
+	def cancelTask(self):
 		self.mutex.lock()
+		self.cancel = True
+		self.mutex.unlock()
+
+	def __blockCancellation(self):
+		self.cancellationBlocked += 1
+
+	def __unblockCancellation(self):
+		self.cancellationBlocked -= 1
+
+	def __cancellationPoint(self):
+		# Mutex must be locked
+		if not self.cancel:
+			return
+		if self.cancellationBlocked:
+			return
+		self.cancel = False
+		self.mutex.unlock()
+		raise HwThread.CancelException() # Caught in __taskWorker
+
+	def __doCancelTask(self):
+		# Make sure the device is in a consistent state.
+		self.__blockCancellation()
+		if self.top:
+			print "Operation cancelled. Resetting chip."
+			self.top.resetChip()
+		self.__unblockCancellation()
+
+	def appendMessage(self, message, data, nocancel=False):
+		# Append a message to the message queue.
+		# This is a cancellation point!
+		self.mutex.lock()
+		if not nocancel:
+			self.__cancellationPoint()
 		self.messageQueue.append( (message, data) )
 		self.mutex.unlock()
 		self.__notifyMainWindow()
 
 	def __taskWorker(self):
+		failed = True
 		try:
+			self.cancellationBlocked = 0
 			result = self.__runTask(self.task)
 			failed = False
-		except (TOPException, Exception), e:
+		except (TOPException), e:
 			result = e
-			failed = True
-		self.appendMessage("finished", (self.task, failed, result))
+		except (HwThread.CancelException), e:
+			self.__doCancelTask()
+			result = e
+		except (Exception), e:
+			result = e
+		self.appendMessage("finished", (self.task, failed, result),
+				   nocancel=True)
 		self.task = None
 		self.taskParameter = None
 
@@ -176,25 +223,32 @@ class HwThread(QThread):
 		if task == self.TASK_SHUTDOWN:
 			print "TOP hardware shutdown..."
 			if self.top:
+				self.__blockCancellation()
 				self.top.shutdownChip()
 				self.top = None
+				self.__unblockCancellation()
 			return retval
 		if not self.top:
 			# Initialize Hardware access
+			self.__blockCancellation()
 			self.top = TOP(busDev = self.param_busDev,
 				       verbose = self.param_verbose,
 				       forceLevel = self.param_forceLevel,
 				       usebroken = self.param_usebroken,
 				       forceBitfileUpload = self.param_forceBitfileUpload,
 				       userInterface = GuiUserInterface(self))
+			self.__unblockCancellation()
 		if task == self.TASK_INITCHIP:
+			self.__blockCancellation()
 			self.top.initializeChip(self.taskParameter)
 			chip = self.top.getChip()
 			asciiArtLayout = None
 			layoutGen = chip.getLayoutGenerator()
 			if layoutGen:
 				asciiArtLayout = layoutGen.zifLayoutAsciiArt()
-			retval = (Chip.getSupportFlags(chip), asciiArtLayout)
+			chipSupportFlags = Chip.getSupportFlags(chip)
+			self.__unblockCancellation()
+			retval = (chipSupportFlags, asciiArtLayout)
 		elif task == self.TASK_ERASE:
 			self.top.eraseChip()
 		elif task == self.TASK_WRITEPROG:
@@ -285,7 +339,7 @@ class Console(QDockWidget):
 		self.consoleMsgs = []
 		self.consoleText = QTextEdit(self)
 		self.consoleText.setReadOnly(True)
-		self.widget().layout().addWidget(self.consoleText, 0, 0, 1, 2)
+		self.widget().layout().addWidget(self.consoleText, 0, 0, 1, 3)
 
 		self.statusLabel = QLabel(self)
 		self.widget().layout().addWidget(self.statusLabel, 1, 0, 2, 1)
@@ -296,7 +350,24 @@ class Console(QDockWidget):
 		self.globalProgress = QProgressBar(self)
 		self.widget().layout().addWidget(self.globalProgress, 2, 1)
 
+		self.cancelButton = QPushButton("Cancel", self)
+		self.cancelButton.setEnabled(False)
+		self.widget().layout().addWidget(self.cancelButton, 1, 2, 2, 1)
+
 		self.setStatus(self.STAT_OK)
+
+		self.connect(self.cancelButton, SIGNAL("released()"),
+			     mainWindow.cancelHardwareTask)
+
+	def setTaskRunning(self, running, success=True):
+		self.cancelButton.setEnabled(running)
+		if running:
+			self.setStatus(Console.STAT_PROGRESS)
+		else:
+			if success:
+				self.setStatus(Console.STAT_OK)
+			else:
+				self.setStatus(Console.STAT_ERROR)
 
 	def setStatus(self, status):
 		if status == self.STAT_OK:
@@ -973,11 +1044,15 @@ class MainWindow(QMainWindow):
 		self.leftToolBar.setEnabled(not self.taskRunning)
 		self.bufferTab.setEnabled(not self.taskRunning)
 
+	def cancelHardwareTask(self):
+		if self.taskRunning:
+			self.hwThread.cancelTask()
+
 	def runHardwareTask(self, task, taskParameter=None):
 		assert(not self.taskRunning)
 		self.console.progressMeterInit(GuiUserInterface.PROGRESSMETER_CHIPACCESS, 0)
 		self.console.progressMeterInit(GuiUserInterface.PROGRESSMETER_USER_GLOBAL, 0)
-		self.console.setStatus(Console.STAT_PROGRESS)
+		self.console.setTaskRunning(True)
 		self.taskRunning = True
 		self.guiUpdateEnable()
 		self.hwThread.triggerTask(task, taskParameter)
@@ -989,14 +1064,14 @@ class MainWindow(QMainWindow):
 					(task, str(returnValue)))
 			self.console.progressMeterInit(GuiUserInterface.PROGRESSMETER_CHIPACCESS, 100)
 			self.console.progressMeterInit(GuiUserInterface.PROGRESSMETER_USER_GLOBAL, 100)
-			self.console.setStatus(Console.STAT_ERROR)
+			self.console.setTaskRunning(False, False)
 			self.guiUpdateEnable()
 			return
 		# Task succeed
 		self.console.progressMeter(GuiUserInterface.PROGRESSMETER_CHIPACCESS, -1)
 		self.console.progressMeter(GuiUserInterface.PROGRESSMETER_USER_GLOBAL, -1)
 		self.guiUpdateEnable()
-		self.console.setStatus(Console.STAT_OK)
+		self.console.setTaskRunning(False)
 		if task == HwThread.TASK_SHUTDOWN:
 			pass # Nothing to do
 		elif task == HwThread.TASK_INITCHIP:
