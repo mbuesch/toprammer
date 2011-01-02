@@ -281,7 +281,7 @@ class TOP:
 		self.flushCommands()
 
 	def readSignature(self):
-		"""Reads the device signature and returns it."""
+		"""Reads the chip signature and returns it."""
 		self.printDebug("Reading signature from chip...")
 		self.checkChip()
 		sig = self.chip.readSignature()
@@ -506,7 +506,7 @@ class TOP:
 		return data
 
 	def flushCommands(self):
-		"""Flush the command queue, but don't unblock it."""
+		"""Flush the command queue."""
 		command = ""
 		for oneCommand in self.commandQueue:
 			assert(len(oneCommand) <= 64)
