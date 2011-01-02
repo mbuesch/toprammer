@@ -230,7 +230,7 @@ class UnitestDialog(QDialog):
 					HwThread.TASK_INITCHIP,
 					"unitest")
 		if failed:
-			raise TOPException("Failed to load 'unitest' bitfile")
+			raise TOPException("Failed to load 'unitest' chip: %s" % str(returnValue))
 
 		# Query the hardware layer for common parameters
 		self.param_gndLayouts = self.queryTop("top.gnd.supportedLayouts()")
@@ -1516,7 +1516,8 @@ class MainWindow(QMainWindow):
 			dlg = UnitestDialog(self)
 			dlg.exec_()
 		except (TOPException), e:
-			self.console.showMessage("Failed to start Unitest: %s\n" % str(e))
+			self.console.showMessage("Failed to start Unitest: %s\n" % str(e),
+						 bold=True)
 		self.console.unblockStatusUpdate()
 		self.guiDisable -= 1
 		self.guiUpdateEnable()
