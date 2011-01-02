@@ -79,41 +79,13 @@ class TOP:
 			raise TOPException("TOP programmer device not found!")
 		self.usbbus = bus
 		self.usbdev = dev
-		self.bulkOut = None
-		self.bulkIn = None
-
-		# Set up the USB interface
-		try:
-			self.usbh = self.usbdev.open()
-			config = self.usbdev.configurations[0]
-			interface = config.interfaces[0][0]
-
-			# Find the endpoints
-			for ep in interface.endpoints:
-				if not self.bulkIn and \
-				   ep.type == usb.ENDPOINT_TYPE_BULK and \
-				   (ep.address & (usb.ENDPOINT_IN | usb.ENDPOINT_OUT)) == usb.ENDPOINT_IN:
-					self.bulkIn = ep
-				if not self.bulkOut and \
-				   ep.type == usb.ENDPOINT_TYPE_BULK and \
-				   (ep.address & (usb.ENDPOINT_IN | usb.ENDPOINT_OUT)) == usb.ENDPOINT_OUT:
-					self.bulkOut = ep
-			if not self.bulkIn or not self.bulkOut:
-				raise TOPException("Did not find all USB EPs")
-
-			self.usbh.setConfiguration(config)
-			self.usbh.claimInterface(interface)
-			self.usbh.setAltInterface(interface)
-			self.usbh.clearHalt(self.bulkOut.address)
-			self.usbh.clearHalt(self.bulkIn.address)
-		except (usb.USBError), e:
-			raise TOPException("USB error: " + str(e))
+		self.usbh = None
 
 		if self.noqueue:
 			self.printWarning("WARNING: Command queuing disabled. " +\
 				"Hardware access will be _really_ slow.")
 
-		self.__initializeHardware()
+		self.initializeProgrammer()
 
 	def initializeChip(self, chipID):
 		"Initialize the programmer for a chip"
@@ -195,8 +167,50 @@ class TOP:
 		)
 		return (usbdev.idVendor, usbdev.idProduct) in ids
 
-	def __initializeHardware(self):
+	def __initializeUSB(self):
+		# Set up the USB interface
+		self.__shutdownUSB()
+		try:
+			self.usbh = self.usbdev.open()
+			config = self.usbdev.configurations[0]
+			interface = config.interfaces[0][0]
+
+			# Find the endpoints
+			self.bulkOut = None
+			self.bulkIn = None
+			for ep in interface.endpoints:
+				if not self.bulkIn and \
+				   ep.type == usb.ENDPOINT_TYPE_BULK and \
+				   (ep.address & (usb.ENDPOINT_IN | usb.ENDPOINT_OUT)) == usb.ENDPOINT_IN:
+					self.bulkIn = ep
+				if not self.bulkOut and \
+				   ep.type == usb.ENDPOINT_TYPE_BULK and \
+				   (ep.address & (usb.ENDPOINT_IN | usb.ENDPOINT_OUT)) == usb.ENDPOINT_OUT:
+					self.bulkOut = ep
+			if not self.bulkIn or not self.bulkOut:
+				raise TOPException("Did not find all USB EPs")
+
+			self.usbh.setConfiguration(config)
+			self.usbh.claimInterface(interface)
+			self.usbh.setAltInterface(interface)
+			self.usbh.clearHalt(self.bulkOut.address)
+			self.usbh.clearHalt(self.bulkIn.address)
+		except (usb.USBError), e:
+			self.usbh = None
+			raise TOPException("USB error: " + str(e))
+
+	def __shutdownUSB(self):
+		try:
+			if self.usbh:
+				self.usbh.releaseInterface()
+				self.usbh = None
+		except (usb.USBError), e:
+			raise TOPException("USB error: " + str(e))
+
+	def initializeProgrammer(self):
 		"Initialize the hardware"
+
+		self.__initializeUSB()
 
 		versionRegex = (
 			(r"top2049\s+ver\s*(\d+\.\d+)", self.TYPE_TOP2049),
@@ -225,7 +239,7 @@ class TOP:
 		self.queueCommand("\x0D")
 		stat = self.cmdReadBufferReg32()
 		if stat != 0x00020C69:
-			raise TOPException("Init: Unexpected status register (a): 0x%08X" % stat)
+			self.printWarning("Init: Unexpected status (a): 0x%08X" % stat)
 
 		self.cmdSetVPPVoltage(0)
 		self.cmdSetVPPVoltage(0)
@@ -242,7 +256,10 @@ class TOP:
 		self.queueCommand("\x0E\x25\x00\x00")
 		stat = self.cmdReadBufferReg32()
 		if stat != 0x0000686C:
-			raise TOPException("Init: Unexpected status register (b): 0x%08X" % stat)
+			self.printWarning("Init: Unexpected status (b): 0x%08X" % stat)
+
+	def shutdownProgrammer(self):
+		self.__shutdownUSB()
 
 	def __bitfileUpload(self, requiredRuntimeID):
 		(requiredID, requiredRevision) = requiredRuntimeID
@@ -485,6 +502,13 @@ class TOP:
 			self.commandQueue.append(command)
 			if len(self.commandQueue) >= 128:
 				self.flushCommands()
+
+	def runCommandSync(self, command):
+		"""Run a command synchronously.
+		Warning: This is slow. Don't use it unless there's a very good reason."""
+		self.flushCommands()
+		self.queueCommand(command)
+		self.flushCommands()
 
 	def receive(self, size):
 		"""Receive 'size' bytes on the bulk-in ep."""
