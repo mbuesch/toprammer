@@ -243,6 +243,7 @@ class UnitestDialog(QDialog):
 		self.param_vppLayouts = self.queryTop("top.vpp.supportedLayouts()")
 		self.param_minVppVolt = self.queryTop("top.vpp.minVoltage()")
 		self.param_maxVppVolt = self.queryTop("top.vpp.maxVoltage()")
+		self.param_oscFreq = self.queryTop("top.getChip().getOscFreq()")
 
 		assert(self.param_nrZifPins % 2 == 0)
 		self.param_vppLayouts.sort(key=lambda (layId, layMask): layMask)
@@ -316,8 +317,8 @@ class UnitestDialog(QDialog):
 		self.oscDiv.setPrefix("Divider ")
 		self.oscDiv.setSingleStep(1)
 		self.oscDiv.setMinimum(1)
-		self.oscDiv.setMaximum(24000000)
-		self.oscDiv.setValue(24)
+		self.oscDiv.setMaximum(self.param_oscFreq)
+		self.oscDiv.setValue(self.param_oscFreq // 1000)
 		group.layout().addWidget(self.oscDiv, 1, 0)
 		self.oscFreq = QLabel(self)
 		group.layout().addWidget(self.oscFreq, 2, 0)
@@ -464,9 +465,9 @@ class UnitestDialog(QDialog):
 			fd.write("fileVersion=%d\r\n" % 1)
 			fd.write("programmerType=%s\r\n" % self.param_topType)
 			idx = self.gndLayout.currentIndex()
-			fd.write("gndLayout=%d\r\n" % self.gndLayout.itemData(idx).toInt()[0])
+			fd.write("gndLayout=%d\r\n" % self.gndLayout.itemData(idx).toPyObject())
 			idx = self.vccxLayout.currentIndex()
-			fd.write("vccxLayout=%d\r\n" % self.vccxLayout.itemData(idx).toInt()[0])
+			fd.write("vccxLayout=%d\r\n" % self.vccxLayout.itemData(idx).toPyObject())
 			fd.write("vccxVoltage=%f\r\n" % self.vccxVoltage.value())
 			vppLayouts = ""
 			for layId in self.vppLayouts.keys():
@@ -481,7 +482,7 @@ class UnitestDialog(QDialog):
 			fd.write("inputPollEnabled=%d\r\n" % int(self.inputPollEn.checkState() == Qt.Checked))
 			fd.write("inputPollInterval=%f\r\n" % self.inputPollInterval.value())
 			idx = self.oscPin.currentIndex()
-			fd.write("oscillatorMask=%X\r\n" % self.oscPin.itemData(idx).toInt()[0])
+			fd.write("oscillatorMask=%X\r\n" % self.oscPin.itemData(idx).toPyObject())
 			fd.write("oscillatorDiv=%d\r\n" % self.oscDiv.value())
 			fd.write("zifOutEnMask=%X\r\n" % self.zifWidget.getOutEnMask())
 			fd.write("zifOutMask=%X\r\n" % self.zifWidget.getOutMask())
@@ -519,11 +520,11 @@ class UnitestDialog(QDialog):
 		blockedPins = []
 		# GND
 		idx = self.gndLayout.currentIndex()
-		lay = self.gndLayout.itemData(idx).toInt()[0]
+		lay = self.gndLayout.itemData(idx).toPyObject()
 		blockedPins.extend(self.queryTop("top.gnd.ID2pinlist(...)", (lay, )))
 		# VCCX
 		idx = self.vccxLayout.currentIndex()
-		lay = self.vccxLayout.itemData(idx).toInt()[0]
+		lay = self.vccxLayout.itemData(idx).toPyObject()
 		blockedPins.extend(self.queryTop("top.vccx.ID2pinlist(...)", (lay, )))
 		# VPP
 		for key in self.vppLayouts.keys():
@@ -531,7 +532,7 @@ class UnitestDialog(QDialog):
 				blockedPins.extend(self.queryTop("top.vpp.ID2pinlist(...)", (key, )))
 		# OSC
 		idx = self.oscPin.currentIndex()
-		mask = self.oscPin.itemData(idx).toInt()[0]
+		mask = self.oscPin.itemData(idx).toPyObject()
 		for i in range(0, self.zifWidget.nrPins):
 			if mask & (1 << i):
 				blockedPins.append(i + 1)
@@ -539,7 +540,7 @@ class UnitestDialog(QDialog):
 
 	def gndLayoutChanged(self, unused=None):
 		idx = self.gndLayout.currentIndex()
-		selLayout = self.gndLayout.itemData(idx).toInt()[0]
+		selLayout = self.gndLayout.itemData(idx).toPyObject()
 		try:
 			self.queryTop("top.getChip().setGND(...)", (selLayout, ))
 		except (TOPException), e:
@@ -552,7 +553,7 @@ class UnitestDialog(QDialog):
 	def vccxLayoutChanged(self, unused=None):
 		selVoltage = self.vccxVoltage.value()
 		idx = self.vccxLayout.currentIndex()
-		selLayout = self.vccxLayout.itemData(idx).toInt()[0]
+		selLayout = self.vccxLayout.itemData(idx).toPyObject()
 		try:
 			self.queryTop("top.getChip().setVCCX(...)", (selVoltage, selLayout))
 		except (TOPException), e:
@@ -615,14 +616,14 @@ class UnitestDialog(QDialog):
 			div = self.oscDiv.value()
 			self.queryTop("top.getChip().setOscDivider(...)", (div, ))
 			idx = self.oscPin.currentIndex()
-			mask = self.oscPin.itemData(idx).toInt()[0]
+			mask = self.oscPin.itemData(idx).toPyObject()
 			self.queryTop("top.getChip().setOscMask(...)", (mask, ))
 		except (TOPException), e:
 			QMessageBox.critical(self, "TOP communication failed",
 				"Failed configure oscillator:\n" +\
 				str(e))
 			return
-		self.oscFreq.setText("%.03f Hz" % (24000000.0 / div))
+		self.oscFreq.setText("%.03f Hz" % (float(self.param_oscFreq) / div))
 		self.updateZifCheckboxes()
 
 class GuiUserInterface(AbstractUserInterface):

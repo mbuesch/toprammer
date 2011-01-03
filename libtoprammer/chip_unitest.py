@@ -120,6 +120,9 @@ class Chip_Unitest(Chip):
 		inputs = self.top.cmdReadBufferReg48()
 		return inputs
 
+	def getOscFreq(self):
+		return 24000000 # Hz
+
 	def setOscDivider(self, div):
 		self.top.cmdFPGAWrite(0x12, div & 0xFF)
 		self.top.cmdFPGAWrite(0x13, (div >> 8) & 0xFF)
