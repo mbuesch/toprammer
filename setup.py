@@ -11,5 +11,5 @@ setup(	name		= "toprammer",
 	url		= "http://bu3sch.de/joomla/index.php/toprammer-top2049",
 	packages	= [ "libtoprammer", "libtoprammer/top2049", ],
 	package_data	= { "libtoprammer" : [ "bit/*.bit", "icons/*.png", ], },
-	scripts		= [ "toprammer", "toprammer-gui", "toprammer-layout", "toprammer-unitest", ],
+	scripts		= [ "toprammer", "toprammer-gui", "toprammer-layout", ],
 )

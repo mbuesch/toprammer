@@ -260,6 +260,14 @@ class TOP:
 
 	def shutdownProgrammer(self):
 		self.__shutdownUSB()
+		self.topType = None
+		self.topVersion = None
+
+	def getProgrammerType(self):
+		return self.topType
+
+	def getProgrammerVersion(self):
+		return self.topVersion
 
 	def __bitfileUpload(self, requiredRuntimeID):
 		(requiredID, requiredRevision) = requiredRuntimeID

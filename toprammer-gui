@@ -28,6 +28,7 @@ from PyQt4.QtGui import *
 import sys
 import time
 import cgi
+import ConfigParser
 
 
 EVENT_HWTHREAD		= QEvent.User + 0
@@ -233,6 +234,7 @@ class UnitestDialog(QDialog):
 			raise TOPException("Failed to load 'unitest' chip: %s" % str(returnValue))
 
 		# Query the hardware layer for common parameters
+		self.param_topType = self.queryTop("top.getProgrammerType()")
 		self.param_gndLayouts = self.queryTop("top.gnd.supportedLayouts()")
 		self.param_nrZifPins = self.queryTop("top.gnd.getNrOfPins()")
 		self.param_vccxLayouts = self.queryTop("top.vccx.supportedLayouts()")
@@ -244,8 +246,13 @@ class UnitestDialog(QDialog):
 
 		assert(self.param_nrZifPins % 2 == 0)
 
+		self.menuBar = QMenuBar(self)
+		self.menuBar.addAction("&Load settings...", self.loadSettings)
+		self.menuBar.addAction("&Save settings...", self.saveSettings)
+		self.layout().addWidget(self.menuBar, 0, 0, 1, 3)
+
 		self.zifWidget = ZifWidget(self, self.param_nrZifPins)
-		self.layout().addWidget(self.zifWidget, 0, 0, 10, 1)
+		self.layout().addWidget(self.zifWidget, 1, 0, 10, 1)
 
 		group = QGroupBox("GND layout", self)
 		group.setLayout(QGridLayout())
@@ -260,7 +267,7 @@ class UnitestDialog(QDialog):
 					descr += str(i + 1) + " "
 			self.gndLayout.addItem(descr, QVariant(layId))
 		group.layout().addWidget(self.gndLayout, 0, 0)
-		self.layout().addWidget(group, 0, 1)
+		self.layout().addWidget(group, 1, 1)
 
 		group = QGroupBox("VCCX layout", self)
 		group.setLayout(QGridLayout())
@@ -281,7 +288,7 @@ class UnitestDialog(QDialog):
 					descr += str(i + 1) + " "
 			self.vccxLayout.addItem(descr, QVariant(layId))
 		group.layout().addWidget(self.vccxLayout, 1, 0)
-		self.layout().addWidget(group, 1, 1)
+		self.layout().addWidget(group, 2, 1)
 
 		group = QGroupBox("Input polling", self)
 		group.setLayout(QGridLayout())
@@ -295,7 +302,7 @@ class UnitestDialog(QDialog):
 		self.inputPollInterval.setSingleStep(0.25)
 		self.inputPollInterval.setValue(1.0)
 		group.layout().addWidget(self.inputPollInterval, 1, 0)
-		self.layout().addWidget(group, 2, 1)
+		self.layout().addWidget(group, 3, 1)
 
 		group = QGroupBox("Oscillator", self)
 		group.setLayout(QGridLayout())
@@ -313,7 +320,7 @@ class UnitestDialog(QDialog):
 		group.layout().addWidget(self.oscDiv, 1, 0)
 		self.oscFreq = QLabel(self)
 		group.layout().addWidget(self.oscFreq, 2, 0)
-		self.layout().addWidget(group, 3, 1)
+		self.layout().addWidget(group, 4, 1)
 
 		group = QGroupBox("VPP layout", self)
 		group.setLayout(QGridLayout())
@@ -341,7 +348,7 @@ class UnitestDialog(QDialog):
 			if yOffset == len(self.param_vppLayouts) // 2:
 				yOffset = 0
 				xOffset += 1
-		self.layout().addWidget(group, 0, 2, 8, 1)
+		self.layout().addWidget(group, 1, 2, 8, 1)
 
 		self.inputPollTimer = QTimer()
 		self.inputPollTimer.setSingleShot(True)
@@ -368,6 +375,127 @@ class UnitestDialog(QDialog):
 		self.vccxLayoutChanged()
 		self.inputPollChanged()
 		self.oscChanged()
+
+	def __loadFile(self, filename):
+		try:
+			p = ConfigParser.SafeConfigParser()
+			p.read((filename,))
+
+			sect = "TOPRAMMER-UNITEST-SETTINGS"
+			if not p.has_section(sect):
+				raise TOPException("Invalid file format")
+			ver = p.getint(sect, "fileVersion")
+			verExpected = 1
+			if ver != verExpected:
+				raise TOPException("Unsupported file version (got %d, expected %d)" %\
+						   (ver, verExpected))
+			pType = p.get(sect, "programmerType")
+			if pType.upper() != self.param_topType.upper():
+				raise TOPException("Programmer type mismatch (file = %s, connected = %s)" %\
+						   (pType, self.param_topType))
+
+			layout = p.getint(sect, "gndLayout")
+			idx = self.gndLayout.findData(QVariant(layout))
+			if idx < 0:
+				raise TOPException("Invalid GND layout")
+			self.gndLayout.setCurrentIndex(idx)
+
+			layout = p.getint(sect, "vccxLayout")
+			idx = self.vccxLayout.findData(QVariant(layout))
+			if idx < 0:
+				raise TOPException("Invalid VCCX layout")
+			self.vccxLayout.setCurrentIndex(idx)
+
+			voltage = p.getfloat(sect, "vccxVoltage")
+			self.vccxVoltage.setValue(voltage)
+
+			layouts = p.get(sect, "vppLayout").split(",")
+			for layId in self.vppLayouts.keys():
+				if layId in layouts:
+					self.vppLayouts[layId].setCheckState(Qt.Checked)
+				else:
+					self.vppLayouts[layId].setCheckState(Qt.Unchecked)
+
+			voltage = p.getfloat(sect, "vppVoltage")
+			self.vppVoltage.setValue(voltage)
+
+			interval = p.getfloat(sect, "inputPollInterval")
+			self.inputPollInterval.setValue(interval)
+
+			enabled = p.getboolean(sect, "inputPollEnabled")
+			if enabled:
+				self.inputPollEn.setCheckState(Qt.Checked)
+			else:
+				self.inputPollEn.setCheckState(Qt.Unchecked)
+
+			div = p.getint(sect, "oscillatorDiv")
+			self.oscDiv.setValue(div)
+
+			mask = int(p.get(sect, "oscillatorMask"), 16)
+			idx = self.oscPin.findData(QVariant(mask))
+			if idx < 0:
+				raise TOPException("Invalid oscillator mask")
+			self.oscPin.setCurrentIndex(idx)
+
+			mask = int(p.get(sect, "zifOutEnMask"), 16)
+			self.zifWidget.setOutEnMask(mask)
+
+			mask = int(p.get(sect, "zifOutMask"), 16)
+			self.zifWidget.setOutMask(mask)
+
+		except (ConfigParser.Error, TOPException, ValueError), e:
+			QMessageBox.critical(self, "Failed to load settings",
+					     "Failed to load settings: %s" % str(e))
+
+	def loadSettings(self):
+		fn = str(QFileDialog.getOpenFileName(self, "Load settings", "",
+						     "Toprammer-unitest settings (*.tus);;"
+						     "All files (*)"))
+		if not fn:
+			return
+		self.__loadFile(fn)
+
+	def __saveFile(self, filename):
+		try:
+			fd = file(filename, "w+b")
+
+			fd.write("[TOPRAMMER-UNITEST-SETTINGS]\r\n")
+			fd.write("fileVersion=%d\r\n" % 1)
+			fd.write("programmerType=%s\r\n" % self.param_topType)
+			idx = self.gndLayout.currentIndex()
+			fd.write("gndLayout=%d\r\n" % self.gndLayout.itemData(idx).toInt()[0])
+			idx = self.vccxLayout.currentIndex()
+			fd.write("vccxLayout=%d\r\n" % self.vccxLayout.itemData(idx).toInt()[0])
+			fd.write("vccxVoltage=%f\r\n" % self.vccxVoltage.value())
+			vppLayouts = ""
+			for layId in self.vppLayouts.keys():
+				if self.vppLayouts[layId].checkState() == Qt.Checked:
+					if vppLayouts:
+						vppLayouts += ","
+					vppLayouts += str(layId)
+			if not vppLayouts:
+				vppLayouts = "0"
+			fd.write("vppLayout=%s\r\n" % vppLayouts)
+			fd.write("vppVoltage=%f\r\n" % self.vppVoltage.value())
+			fd.write("inputPollEnabled=%d\r\n" % int(self.inputPollEn.checkState() == Qt.Checked))
+			fd.write("inputPollInterval=%f\r\n" % self.inputPollInterval.value())
+			idx = self.oscPin.currentIndex()
+			fd.write("oscillatorMask=%X\r\n" % self.oscPin.itemData(idx).toInt()[0])
+			fd.write("oscillatorDiv=%d\r\n" % self.oscDiv.value())
+			fd.write("zifOutEnMask=%X\r\n" % self.zifWidget.getOutEnMask())
+			fd.write("zifOutMask=%X\r\n" % self.zifWidget.getOutMask())
+		except (IOError), e:
+			QMessageBox.critical(self, "Failed to save settings",
+					     "Failed to write settings to file: %s" % str(e))
+
+	def saveSettings(self):
+		fn = str(QFileDialog.getSaveFileName(self, "Save settings", "",
+						     "Toprammer-unitest settings (*.tus)"))
+		if not fn:
+			return
+		if not fn.endswith(".tus"):
+			fn += ".tus"
+		self.__saveFile(fn)
 
 	def closeEvent(self, e):
 		self.inputPollTimer.stop()
@@ -459,9 +587,9 @@ class UnitestDialog(QDialog):
 			# Blocked. Reschedule.
 			self.inputPollTimer.start(1)
 			return
-		self.setEnabled(False) #FIXME this flickers
+		self.mainWindow.blockInputEvents()
 		result = self.zifWidget.readInputs()
-		self.setEnabled(True)
+		self.mainWindow.unblockInputEvents()
 		if not result:
 			# Whoops, error. Disable input polling
 			self.inputPollEn.setCheckState(Qt.Unchecked)
@@ -1430,6 +1558,7 @@ class MainWindow(QMainWindow):
 		self.setWindowTitle("TOPrammer v%s - Open Source programming suite" % VERSION)
 
 		self.guiDisable = 0
+		self.inputEventsBlocked = 0
 		self.chipSupportFlags = 0 # Chip.SUPPORT_... for the loaded chip
 		self.currentChipDescription = None
 		self.previousRawCommand = ""
@@ -1482,6 +1611,12 @@ class MainWindow(QMainWindow):
 		self.taskRunning = False
 		self.taskRetval = None
 		self.operation = self.OP_NONE
+
+	def blockInputEvents(self):
+		self.inputEventsBlocked += 1
+
+	def unblockInputEvents(self):
+		self.inputEventsBlocked -= 1
 
 	def event(self, e):
 		if e.type() == EVENT_HWTHREAD:
@@ -1719,7 +1854,10 @@ class MainWindow(QMainWindow):
 		if not self.runOperation(self.OP_SYNCHRONOUS, hwTask, taskParameter):
 			return (True, None)
 		while self.taskRunning:
-			QApplication.processEvents(QEventLoop.AllEvents, 50)
+			evFilter = QEventLoop.AllEvents
+			if self.inputEventsBlocked:
+				evFilter |= QEventLoop.ExcludeUserInputEvents
+			QApplication.processEvents(evFilter, 50)
 		(retTask, failed, returnValue) = self.taskRetval
 		self.taskRetval = None
 		assert(not self.taskRunning and retTask == hwTask and\
