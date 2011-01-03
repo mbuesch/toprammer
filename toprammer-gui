@@ -245,6 +245,7 @@ class UnitestDialog(QDialog):
 		self.param_maxVppVolt = self.queryTop("top.vpp.maxVoltage()")
 
 		assert(self.param_nrZifPins % 2 == 0)
+		self.param_vppLayouts.sort(key=lambda (layId, layMask): layMask)
 
 		self.menuBar = QMenuBar(self)
 		self.menuBar.addAction("&Load settings...", self.loadSettings)

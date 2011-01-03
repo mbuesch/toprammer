@@ -26,7 +26,6 @@ from libtoprammer.generic_layout import *
 class ShiftregLayout(GenericLayout):
 	def __init__(self, nrZifPins, nrShiftRegs):
 		GenericLayout.__init__(self, nrZifPins)
-		assert(nrShiftRegs <= 4)
 		self.nrShiftRegs = nrShiftRegs
 		self.layouts = []
 		for id in range(0, len(self.shiftreg_masks)):
@@ -42,18 +41,8 @@ class ShiftregLayout(GenericLayout):
 				self.layouts.append( (id, zif_mask) )
 
 	def __bitnr2shregId(self, bitNr):
-		if bitNr >= 24:
-			register = 3
-			pin = bitNr - 24
-		elif bitNr >= 16:
-			register = 2
-			pin = bitNr - 16
-		elif bitNr >= 8:
-			register = 1
-			pin = bitNr - 8
-		else:
-			register = 0
-			pin = bitNr
+		register = bitNr // 8
+		pin = bitNr % 8
 		return "%d.%d" % (register, pin)
 
 	def supportedLayouts(self):
