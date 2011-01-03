@@ -294,7 +294,7 @@ class UnitestDialog(QDialog):
 		group = QGroupBox("Input polling", self)
 		group.setLayout(QGridLayout())
 		self.inputPollEn = QCheckBox("Input polling enabled", self)
-		self.inputPollEn.setCheckState(Qt.Unchecked)
+		self.inputPollEn.setCheckState(Qt.Checked)
 		group.layout().addWidget(self.inputPollEn, 0, 0)
 		self.inputPollInterval = QDoubleSpinBox(self)
 		self.inputPollInterval.setPrefix("Interval ")
