@@ -1730,6 +1730,8 @@ class MainWindow(QMainWindow):
 			return
 		self.previousRawCommand = string
 		command = hex2bin(string)
+		if len(command) == 0:
+			return
 		self.runOperation(self.OP_RAWCOMMAND, HwThread.TASK_GENERICTOPCALL,
 				  ("top.runCommandSync(...)", command))
 
