@@ -244,7 +244,6 @@ class Chip_ATMega_common(Chip):
 		self.applyVPP(False)
 		self.applyVCCX(False)
 		self.applyGND(True)
-		self.top.queueCommand("\x0E\x28\x00\x00")
 		self.top.cmdSetVPPVoltage(0)
 		self.top.cmdSetVPPVoltage(12)
 		self.top.cmdSetVCCXVoltage(5)

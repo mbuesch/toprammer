@@ -257,6 +257,8 @@ class TOP:
 		stat = self.cmdReadBufferReg32()
 		if stat != 0x0000686C:
 			self.printWarning("Init: Unexpected status (b): 0x%08X" % stat)
+		self.cmdEnableZif()
+		self.flushCommands()
 
 	def shutdownProgrammer(self):
 		self.__shutdownUSB()
@@ -489,6 +491,14 @@ class TOP:
 		self.queueCommand(cmd)
 		self.delay(0.15)
 		self.cmdFlush()
+
+	def cmdEnableZif(self, enable=True):
+		"""Enable the ZIF socket."""
+		param = 1
+		if enable:
+			param = 0
+		cmd = chr(0x0E) + chr(0x28) + chr(param) + chr(0)
+		self.queueCommand(cmd)
 
 	def __doSend(self, command):
 		try:

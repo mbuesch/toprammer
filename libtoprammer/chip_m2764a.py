@@ -40,7 +40,6 @@ class Chip_M2764A(Chip):
 		self.applyVCCX(False)
 		self.applyVPP(False)
 		self.applyGND(False)
-		self.top.queueCommand("\x0E\x28\x01\x00")
 		self.top.cmdSetVCCXVoltage(5)
 		self.top.cmdSetVPPVoltage(0)
 		self.top.cmdSetVPPVoltage(5)

@@ -256,6 +256,7 @@ class UnitestDialog(QDialog):
 		self.menuBar = QMenuBar(self)
 		self.menuBar.addAction("&Load settings...", self.loadSettings)
 		self.menuBar.addAction("&Save settings...", self.saveSettings)
+		self.menuBar.addAction("&Raw command...", self.mainWindow.sendRawCommand)
 		self.layout().addWidget(self.menuBar, 0, 0, 1, 3)
 
 		self.zifWidget = ZifWidget(self, self.param_nrZifPins)

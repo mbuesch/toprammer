@@ -36,7 +36,6 @@ class Chip_Unitest(Chip):
 		self.__reset()
 
 	def __reset(self):
-		self.top.queueCommand("\x0E\x28\x00\x00")
 		self.top.vccx.setLayoutPins( [] )
 		self.vccxMask = 0
 		self.top.vpp.setLayoutPins( [] )
