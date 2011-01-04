@@ -3,7 +3,7 @@
 #
 #    Chip support
 #
-#    Copyright (c) 2009-2010 Michael Buesch <mb@bu3sch.de>
+#    Copyright (c) 2009-2011 Michael Buesch <mb@bu3sch.de>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -225,7 +225,11 @@ class Chip:
 		# Override me in the subclass, if required.
 		raise TOPException("Lockbit writing not supported on " + self.chipID)
 
-registeredChips = []
+__registeredChips = []
+
+def getRegisteredChips():
+	"Get a list of registered ChipDescriptions"
+	return __registeredChips
 
 class BitDescription:
 	def __init__(self, bitNr, description):
@@ -233,11 +237,19 @@ class BitDescription:
 		self.description = description
 
 class ChipDescription:
+	# Possible chip types
+	TYPE_MCU	= 0	# Microcontroller
+	TYPE_EPROM	= 1	# EPROM
+	TYPE_EEPROM	= 2	# EEPROM
+	TYPE_GAL	= 3	# PAL/GAL
+	TYPE_INTERNAL	= 999	# For internal use only
+
 	def __init__(self, chipImplClass, bitfile, chipID="",
 		     runtimeID=(0,0),
+		     chipType=TYPE_MCU,
 		     description="", fuseDesc=(), lockbitDesc=(),
 		     packages=None, comment="",
-		     broken=False, internal=False):
+		     broken=False):
 		"""Chip implementation class description.
 		chipImplClass	=> The implementation class of the chip.
 		bitfile		=> The bitfile ID string of the chip.
@@ -245,6 +257,7 @@ class ChipDescription:
 		runtimeID	=> The runtime-ID is a tuple of two numbers that uniquely
 				   identifies a loaded FPGA configuration. The first number in the
 				   tuple is an ID number and the second number is a revision number.
+		chipType	=> Chip type. Defaults to MCU.
 		description	=> Human readable chip description string.
 		fuseDesc	=> Tuple of fuse bits descriptions (BitDescription(), ...)
 		lockbitDesc	=> Tuple of lock bits descriptions (BitDescription(), ...)
@@ -252,7 +265,6 @@ class ChipDescription:
 				   Each entry is a tuple of two strings: ("PACKAGE", "description")
 		comment		=> Additional comment string.
 		broken		=> Boolean flag to mark the implementation as broken.
-		internal	=> Boolean flag to mark algorithms for internal use.
 		"""
 
 		if not chipID:
@@ -261,19 +273,20 @@ class ChipDescription:
 		self.bitfile = bitfile
 		self.chipID = chipID
 		self.runtimeID = runtimeID
+		self.chipType = chipType
 		self.description = description
 		self.fuseDesc = fuseDesc
 		self.lockbitDesc = lockbitDesc
 		self.packages = packages
 		self.comment = comment
 		self.broken = broken
-		self.internal = internal
-		registeredChips.append(self)
+
+		getRegisteredChips().append(self)
 
 	@staticmethod
 	def find(programmerType, chipID, allowBroken=False):
 		"Find a chip implementation by ID and return an instance of it."
-		for chip in registeredChips:
+		for chip in getRegisteredChips():
 			if chip.broken and not allowBroken:
 				continue
 			if chip.chipID.lower() == chipID.lower():
@@ -289,10 +302,10 @@ class ChipDescription:
 	def dumpAll(fd, verbose=1, showBroken=True):
 		"Dump all supported chips to file fd."
 		count = 0
-		for chip in registeredChips:
+		for chip in getRegisteredChips():
 			if chip.broken and not showBroken:
 				continue
-			if chip.internal:
+			if chip.chipType == ChipDescription.TYPE_INTERNAL:
 				continue
 			count = count + 1
 			if count >= 2:

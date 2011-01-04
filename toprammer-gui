@@ -698,7 +698,7 @@ class HwThread(QThread):
 			self.wait()
 
 	def setTopParameters(self, busDev=None, verbose=2, forceLevel=0,
-			     usebroken=False, forceBitfileUpload=True):
+			     usebroken=True, forceBitfileUpload=False):
 		assert(self.top is None and self.task is None)
 		self.param_busDev = busDev
 		self.param_verbose = verbose
@@ -1341,27 +1341,32 @@ class BufferTabWidget(QTabWidget):
 class ChipSelectDialog(QDialog):
 	def __init__(self, parent):
 		QDialog.__init__(self, parent)
+		self.setWindowTitle("Select chip")
 		self.setLayout(QGridLayout(self))
 
 		self.chipList = QListWidget(self)
-		for chipDescription in registeredChips:
-			if chipDescription.broken:
-				continue
-			if chipDescription.internal:
-				continue
-			item = QListWidgetItem(chipDescription.description,
-					       self.chipList)
-			item.setData(Qt.UserRole, chipDescription)
-		self.chipList.sortItems()
 		self.layout().addWidget(self.chipList, 0, 0, 1, 2)
+
+		groupBox = QGroupBox("Chip type", self)
+		groupBox.setLayout(QGridLayout(groupBox))
+		self.mcuRadio = QRadioButton("Microcontrollers", groupBox)
+		self.mcuRadio.setChecked(Qt.Checked)
+		groupBox.layout().addWidget(self.mcuRadio, 0, 0)
+		self.epromRadio = QRadioButton("EPROMs", groupBox)
+		groupBox.layout().addWidget(self.epromRadio, 1, 0)
+		self.eepromRadio = QRadioButton("EEPROMs", groupBox)
+		groupBox.layout().addWidget(self.eepromRadio, 2, 0)
+		self.galRadio = QRadioButton("PALs / GALs", groupBox)
+		groupBox.layout().addWidget(self.galRadio, 3, 0)
+		self.showBroken = QCheckBox("Show broken implementations", groupBox)
+		groupBox.layout().addWidget(self.showBroken, 4, 0)
+		self.layout().addWidget(groupBox, 0, 2)
 
 		self.okButton = QPushButton("&Ok", self)
 		self.layout().addWidget(self.okButton, 1, 0)
 
 		self.cancelButton = QPushButton("&Cancel", self)
 		self.layout().addWidget(self.cancelButton, 1, 1)
-
-		self.selectionChanged()
 
 		self.connect(self.okButton, SIGNAL("released()"),
 			     self.accept)
@@ -1371,6 +1376,41 @@ class ChipSelectDialog(QDialog):
 			     self.selectionChanged)
 		self.connect(self.chipList, SIGNAL("itemDoubleClicked(QListWidgetItem)"),
 			     self.accept)
+		self.connect(self.showBroken, SIGNAL("stateChanged(int)"),
+			     self.typeToggled)
+		for radio in (self.mcuRadio, self.epromRadio,
+			      self.eepromRadio, self.galRadio):
+			self.connect(radio, SIGNAL("toggled(bool)"), self.typeToggled)
+
+		self.__updateList()
+
+	def __updateList(self):
+		typeToRadioButton = {
+			ChipDescription.TYPE_MCU	: self.mcuRadio,
+			ChipDescription.TYPE_EPROM	: self.epromRadio,
+			ChipDescription.TYPE_EEPROM	: self.eepromRadio,
+			ChipDescription.TYPE_GAL	: self.galRadio,
+		}
+		self.chipList.clear()
+		chipsList = getRegisteredChips()[:]
+		chipsList.sort()
+		for chipDescription in chipsList:
+			if chipDescription.broken and\
+			   self.showBroken.checkState() != Qt.Checked:
+				continue
+			if chipDescription.chipType == ChipDescription.TYPE_INTERNAL:
+				continue
+			radioButton = typeToRadioButton[chipDescription.chipType]
+			if not radioButton.isChecked():
+				continue
+			item = QListWidgetItem(chipDescription.description,
+					       self.chipList)
+			item.setData(Qt.UserRole, chipDescription)
+		self.chipList.sortItems()
+		self.selectionChanged()
+
+	def typeToggled(self, unused):
+		self.__updateList()
 
 	def selectionChanged(self):
 		item = self.chipList.currentItem()

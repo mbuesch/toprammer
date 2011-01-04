@@ -146,6 +146,6 @@ ChipDescription(
 	Chip_Unitest,
 	bitfile = "unitest",
 	runtimeID = (0x0008, 0x01),
+	chipType = ChipDescription.TYPE_INTERNAL,
 	description = "Universal device tester",
-	internal = True,
 )
