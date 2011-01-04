@@ -39,7 +39,7 @@ def usage():
 	print " -p|--package DIPxx     The package type of the DUT."
 	print "                        Package may also be the name of a supported chip."
 	print "                        In this case, --vccx, --vpp and --gnd are ignored."
-	print " -v|--vccx PIN          Set VCCX pin number, relative to the package."
+	print " -v|--vcc PIN           Set VCC pin number, relative to the package."
 	print " -P|--vpp PIN(s)        Set VPP pin number(s), relative to the package."
 	print "                        May be one pin number or a comma separated list of pin numbers."
 	print "                        May be omitted or NONE, if no VPP pin is required."
@@ -61,7 +61,7 @@ def main(argv):
 	try:
 		(opts, args) = getopt.getopt(argv[1:],
 			"d:p:hv:P:g:IS",
-			[ "help", "device=", "package=", "vccx=", "vpp=", "gnd=",
+			[ "help", "device=", "package=", "vccx=", "vcc=", "vpp=", "gnd=",
 			  "only-insert", "only-supply", ])
 		for (o, v) in opts:
 			if o in ("-h", "--help"):
@@ -71,7 +71,7 @@ def main(argv):
 				programmer = v
 			if o in ("-p", "--package"):
 				package = v
-			if o in ("-v", "--vccx"):
+			if o in ("-v", "--vcc", "--vccx"):
 				vccxPin = int(v)
 			if o in ("-P", "--vpp"):
 				if v.upper() == "NONE":

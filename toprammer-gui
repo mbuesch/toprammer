@@ -4,7 +4,7 @@
 #
 #    Qt-based graphical user interface
 #
-#    Copyright (c) 2010 Michael Buesch <mb@bu3sch.de>
+#    Copyright (c) 2010-2011 Michael Buesch <mb@bu3sch.de>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -23,12 +23,17 @@
 
 from libtoprammer.toprammer_main import *
 from libtoprammer.util import *
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
 import sys
 import time
 import cgi
 import ConfigParser
+try:
+	from PyQt4.QtCore import *
+	from PyQt4.QtGui import *
+except (ImportError), e:
+	print "Failed to import PyQt4 modules: %s" % str(e)
+	print "Please install PyQt4. On Debian Linux run: aptitude install python-qt4"
+	sys.exit(1)
 
 
 EVENT_HWTHREAD		= QEvent.User + 0

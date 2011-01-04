@@ -1,4 +1,4 @@
-#LyX 1.6.5 created this file. For more info see http://www.lyx.org/
+#LyX 1.6.7 created this file. For more info see http://www.lyx.org/
 \lyxformat 345
 \begin_document
 \begin_header
@@ -46,7 +46,7 @@ Toprammer - TOPxxxx OpenSource suite
 \end_layout
 
 \begin_layout Author
-Copyright (c) 2009-2010 Michael Buesch <mb@bu3sch.de>
+Copyright (c) 2009-2011 Michael Buesch <mb@bu3sch.de>
 \end_layout
 
 \begin_layout Section
@@ -76,6 +76,14 @@ python-pkg-resources module is required 'pkg_resources' is part of the Python
 
 \begin_layout LyX-Code
 http://pypi.python.org/pypi/setuptools
+\end_layout
+
+\begin_layout Itemize
+PyQT4 is required for the graphical user interface (optional):
+\end_layout
+
+\begin_layout LyX-Code
+http://www.riverbankcomputing.co.uk/software/pyqt/intro
 \end_layout
 
 \begin_layout Section
@@ -108,7 +116,7 @@ Just execute
 \end_layout
 
 \begin_layout LyX-Code
-python setup.py install
+python ./setup.py install
 \end_layout
 
 \begin_layout Standard
@@ -126,7 +134,34 @@ setuptools
 \end_layout
 
 \begin_layout Section
-Usage
+Graphical user interface tool usage
+\end_layout
+
+\begin_layout Standard
+The toprammer GUI tool is called 
+\begin_inset Quotes eld
+\end_inset
+
+toprammer-gui
+\begin_inset Quotes erd
+\end_inset
+
+.
+ To start it just run:
+\end_layout
+
+\begin_layout LyX-Code
+toprammer-gui
+\end_layout
+
+\begin_layout Standard
+Note that, depending on your system config, you might need to run toprammer-gui
+ as root to allow USB hardware access.
+ If you get permission errors, try to re-run toprammer-gui as root.
+\end_layout
+
+\begin_layout Section
+Commandline tool usage
 \end_layout
 
 \begin_layout Standard
@@ -174,7 +209,7 @@ For example, if you have a DIP28 packaged chip, that needs VCC on pin 7,
 \end_layout
 
 \begin_layout LyX-Code
-toprammer-layout -d top2049 --package DIP28 --vccx 7 --vpp 1 --gnd 8
+toprammer-layout -d top2049 --package DIP28 --vcc 7 --vpp 1 --gnd 8
 \end_layout
 
 \begin_layout Standard
@@ -183,7 +218,7 @@ This will show you a layout of how to insert the chip into the programmer.
  This will hopefully match your request.
  :) Alternatively, it will yield an error message, if it was unable to find
  a layout that fits the contraints.
- Note that the --vccx, --vpp and --gnd pins specified on the commandline
+ Note that the --vcc, --vpp and --gnd pins specified on the commandline
  are with respect to the package (_not_ the ZIF socket).
  The whole purpose of the tool is to map the package and its pin layout
  to the ZIF socket, while obeying the programmer constraints.
