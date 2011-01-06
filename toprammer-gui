@@ -1026,6 +1026,239 @@ class Console(QDockWidget):
 		else:
 			progress.setValue(step)
 
+class HexEditWidget(QWidget):
+	def __init__(self, scrollArea, parent=None):
+		QWidget.__init__(self, parent)
+		self.scrollArea = scrollArea
+
+		font = self.font()
+		font.setFamily("monospace")
+		font.setFixedPitch(True)
+		font.setPointSize(10)
+		self.setFont(font)
+		self.charWidth = self.fontMetrics().width("x")
+		self.charHeight = self.fontMetrics().height()
+
+		self.bytesPerLine = 16
+
+		self.setData("")
+		self.__setCursor(0, False)
+
+		self.setFocusPolicy(Qt.StrongFocus)
+
+	def updateText(self):
+		nrLines = 0
+		text = []
+		asc = []
+		if self.data:
+			for i in range(0, len(self.data)):
+				if i % 16 == 0:
+					if i != 0:
+						text.append("  |%s|\n" % "".join(asc))
+						asc = []
+						nrLines += 1
+					text.append("[%08X]: " % i)
+				text.append(" " + bin2hex(self.data[i]))
+				asc.append(bin2ascii(self.data[i]))
+			if asc:
+				if len(self.data) % 16:
+					nrLeft = 16 - (len(self.data) % 16)
+					text.append("   " * nrLeft)
+				text.append("  |%s|" % "".join(asc))
+				nrLines += 1
+		else:
+			text = [ "<The buffer is empty>", ]
+		self.text = "".join(text)
+		self.nrLines = nrLines
+
+		width = self.fontMetrics().width(self.text.splitlines()[0])
+		height = self.nrLines * self.charHeight
+		self.resize(width + 20, height + 20)
+		self.repaint()
+
+	def getData(self):
+		return self.data
+
+	def setData(self, data):
+		if not data:
+			data = ""
+		self.data = data
+		self.updateText()
+		self.__setCursor(0, False)
+
+	def charInput(self, char):
+		if not self.data:
+			return
+		data = list(self.data)
+		assert(self.cursorByte < len(data))
+		if self.cursorOnAscii:
+			data[self.cursorByte] = char
+			self.__setCursor(self.cursorByte + 1, True)
+		else:
+			dataByte = ord(data[self.cursorByte])
+			char = ord(char.upper())
+			if char >= ord("0") and char <= ord("9"):
+				nibble = char - ord("0")
+			elif char >= ord("A") and char <= ord("F"):
+				nibble = char - ord("A") + 10
+			else:
+				return
+			if self.cursorNibble == 0:
+				dataByte = (dataByte & 0xF0) | nibble
+			else:
+				dataByte = (dataByte & 0x0F) | (nibble << 4)
+			data[self.cursorByte] = chr(dataByte)
+			if self.cursorNibble == 1:
+				self.cursorNibble = 0
+			else:
+				self.__setCursor(self.cursorByte + 1, False)
+		self.data = "".join(data)
+		self.updateText()
+
+	def keyPressEvent(self, e):
+		linesOnScreen = self.scrollArea.viewport().height() // self.charHeight
+
+		if e.matches(QKeySequence.Delete) or\
+		   e.key() == Qt.Key_Backspace:
+			self.__setCursor(self.cursorByte - 1, self.cursorOnAscii)
+			return
+
+		if e.matches(QKeySequence.MoveToNextChar):
+			self.__setCursor(self.cursorByte + 1, self.cursorOnAscii)
+			return
+		if e.matches(QKeySequence.MoveToPreviousChar):
+			self.__setCursor(self.cursorByte - 1, self.cursorOnAscii)
+			return
+		if e.matches(QKeySequence.MoveToStartOfLine):
+			self.__setCursor(self.cursorByte - self.cursorByte % self.bytesPerLine,
+					 self.cursorOnAscii)
+			return
+		if e.matches(QKeySequence.MoveToEndOfLine):
+			self.__setCursor(self.cursorByte - self.cursorByte % self.bytesPerLine
+					 + self.bytesPerLine - 1,
+					 self.cursorOnAscii)
+			return
+		if e.matches(QKeySequence.MoveToNextLine):
+			self.__setCursor(self.cursorByte + self.bytesPerLine, self.cursorOnAscii)
+			return
+		if e.matches(QKeySequence.MoveToPreviousLine):
+			self.__setCursor(self.cursorByte - self.bytesPerLine, self.cursorOnAscii)
+			return
+		if e.matches(QKeySequence.MoveToStartOfDocument):
+			self.__setCursor(0, self.cursorOnAscii)
+			return
+		if e.matches(QKeySequence.MoveToEndOfDocument):
+			self.__setCursor(len(self.data) - 1, self.cursorOnAscii)
+			return
+		if e.matches(QKeySequence.MoveToNextPage):
+			self.__setCursor(self.cursorByte + int(linesOnScreen * 0.8) * self.bytesPerLine,
+					 self.cursorOnAscii)
+			return
+		if e.matches(QKeySequence.MoveToPreviousPage):
+			self.__setCursor(self.cursorByte - int(linesOnScreen * 0.8) * self.bytesPerLine,
+					 self.cursorOnAscii)
+			return
+
+		text = str(e.text())
+		if text:
+			key = ord(text[0])
+			if self.cursorOnAscii:
+				self.charInput(chr(key))
+			else:
+				if (key >= ord("0") and key <= ord("9")) or\
+				   (key >= ord("a") and key <= ord("f")) or\
+				   (key >= ord("A") and key <= ord("F")):
+					self.charInput(chr(key))
+
+	def __setCursor(self, byteNr, asciiArea):
+		byteNr = min(byteNr, len(self.data) - 1)
+		byteNr = max(byteNr, 0)
+		self.cursorOnAscii = asciiArea
+		self.cursorByte = byteNr
+		self.cursorNibble = 1
+		self.repaint()
+
+	def mousePressEvent(self, e):
+		x = e.pos().x()
+		y = e.pos().y()
+		byteAreaX = self.charWidth * 13
+		byteAreaY = 3
+		asciiAreaX = self.charWidth * (13 + 3 * self.bytesPerLine + 3 - 1)
+		asciiAreaY = 3
+		if x >= byteAreaX and\
+		   y >= byteAreaY and\
+		   x <= byteAreaX + self.charWidth * 3 * self.bytesPerLine and\
+		   y <= byteAreaY + self.charHeight * self.nrLines:
+			# Click in byte area.
+			x -= byteAreaX
+			y -= byteAreaY
+			line = y // self.charHeight
+			column = x // (self.charWidth * 3)
+			self.__setCursor(line * self.bytesPerLine + column,
+					 False)
+			return
+		if x >= asciiAreaX and\
+		   y >= asciiAreaY and\
+		   x <= asciiAreaX + self.charWidth * self.bytesPerLine and\
+		   y <= asciiAreaY + self.charHeight * self.nrLines:
+			# Click on ascii area.
+			x -= asciiAreaX
+			y -= asciiAreaY
+			line = y // self.charHeight
+			column = x // self.charWidth
+			self.__setCursor(line * self.bytesPerLine + column,
+					 True)
+			return
+
+	def paintEvent(self, e):
+		p = QPainter(self)
+
+		# Background
+		p.fillRect(0, 0, self.width(), self.height(),
+			   QColor("#FFFFFF"))
+
+		# Cursor
+		if self.data:
+			if self.cursorOnAscii:
+				x = self.charWidth * (13 + 3 * self.bytesPerLine + 3 - 1)
+				x += self.charWidth * (self.cursorByte % self.bytesPerLine)
+				y = self.charHeight * (self.cursorByte // self.bytesPerLine)
+				y += 3
+				p.fillRect(x, y, self.charWidth, self.charHeight,
+					   QColor("#A0A07F"))
+			else:
+				x = self.charWidth * 13
+				x += self.charWidth * 3 * (self.cursorByte % self.bytesPerLine)
+				y = self.charHeight * (self.cursorByte // self.bytesPerLine)
+				y += 3
+				p.fillRect(x, y, self.charWidth * 2, self.charHeight,
+					   QColor("#FFFF00"))
+				if self.cursorNibble == 0:
+					x += self.charWidth
+				p.fillRect(x, y, self.charWidth, self.charHeight,
+					   QColor("#A0A07F"))
+			self.scrollArea.ensureVisible(x, y) #FIXME
+
+		# Text
+		y = self.charHeight
+		for line in self.text.splitlines():
+			p.drawText(0, y, line)
+			y += self.charHeight
+
+class HexEdit(QScrollArea):
+	def __init__(self, parent=None):
+		QScrollArea.__init__(self, parent)
+
+		self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+		self.setWidgetResizable(False)
+		self.setWidget(HexEditWidget(self, self))
+
+	def setData(self, data):
+		self.widget().setData(data)
+
+	def getData(self):
+		return self.widget().getData()
+
 class BufferWidget(QWidget):
 	def __init__(self, mainWindow, name):
 		QWidget.__init__(self, mainWindow)
@@ -1115,43 +1348,14 @@ class ImageBufferWidget(BufferWidget):
 	def __init__(self, mainWindow, name):
 		BufferWidget.__init__(self, mainWindow, name)
 
-		self.browser = QPlainTextEdit(self)
-		self.browser.setReadOnly(True)
-		fmt = self.browser.currentCharFormat()
-		fmt.setFontFamily("monospace")
-		fmt.setFontFixedPitch(True)
-		self.browser.setCurrentCharFormat(fmt)
+		self.browser = HexEdit(self)
 		self.layout().addWidget(self.browser, 0, 0)
 
-		self.image = None
-
 	def loadImage(self, image):
-		self.image = image
-		if not self.image:
-			self.browser.setPlainText("<The %s buffer is empty>" % self.getName())
-			return
-		text = []
-		asc = []
-		for i in range(0, len(image)):
-			if i % 16 == 0:
-				if i != 0:
-					text.append("  |%s|\n" % "".join(asc))
-					asc = []
-				text.append("[%08X]: " % i)
-			if i % 2 == 0:
-				text.append(" ")
-			text.append(bin2hex(image[i]))
-			asc.append(bin2ascii(image[i]))
-		if asc:
-			if len(image) % 16:
-				nrLeft = 16 - (len(image) % 16)
-				text.append("  " * nrLeft)
-				text.append(" " * (nrLeft / 2))
-			text.append("  |%s|" % "".join(asc))
-		self.browser.setPlainText("".join(text))
+		self.browser.setData(image)
 
 	def getRawData(self):
-		return self.image
+		return self.browser.getData()
 
 	def setRawData(self, data):
 		if self.isReadOnly():
