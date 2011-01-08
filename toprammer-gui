@@ -1177,6 +1177,8 @@ class HexEditWidget(QWidget):
 		self.cursorByte = byteNr
 		self.cursorNibble = 1
 		self.repaint()
+		(x, y) = self.__cursorUpperLeftEdge()
+		self.scrollArea.ensureVisible(x, y)
 
 	def mousePressEvent(self, e):
 		x = e.pos().x()
@@ -1210,6 +1212,19 @@ class HexEditWidget(QWidget):
 					 True)
 			return
 
+	def __cursorUpperLeftEdge(self):
+		if self.cursorOnAscii:
+			x = self.charWidth * (13 + 3 * self.bytesPerLine + 3 - 1)
+			x += self.charWidth * (self.cursorByte % self.bytesPerLine)
+			y = self.charHeight * (self.cursorByte // self.bytesPerLine)
+			y += 3
+		else:
+			x = self.charWidth * 13
+			x += self.charWidth * 3 * (self.cursorByte % self.bytesPerLine)
+			y = self.charHeight * (self.cursorByte // self.bytesPerLine)
+			y += 3
+		return (x, y)
+
 	def paintEvent(self, e):
 		p = QPainter(self)
 
@@ -1220,24 +1235,17 @@ class HexEditWidget(QWidget):
 		# Cursor
 		if self.data:
 			if self.cursorOnAscii:
-				x = self.charWidth * (13 + 3 * self.bytesPerLine + 3 - 1)
-				x += self.charWidth * (self.cursorByte % self.bytesPerLine)
-				y = self.charHeight * (self.cursorByte // self.bytesPerLine)
-				y += 3
+				(x, y) = self.__cursorUpperLeftEdge()
 				p.fillRect(x, y, self.charWidth, self.charHeight,
 					   QColor("#A0A07F"))
 			else:
-				x = self.charWidth * 13
-				x += self.charWidth * 3 * (self.cursorByte % self.bytesPerLine)
-				y = self.charHeight * (self.cursorByte // self.bytesPerLine)
-				y += 3
+				(x, y) = self.__cursorUpperLeftEdge()
 				p.fillRect(x, y, self.charWidth * 2, self.charHeight,
 					   QColor("#FFFF00"))
 				if self.cursorNibble == 0:
 					x += self.charWidth
 				p.fillRect(x, y, self.charWidth, self.charHeight,
 					   QColor("#A0A07F"))
-			self.scrollArea.ensureVisible(x, y) #FIXME
 
 		# Text
 		y = self.charHeight
