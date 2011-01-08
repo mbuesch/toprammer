@@ -258,12 +258,12 @@ class Chip_AtTiny13dip8(Chip):
 			self.__setPins(SCI=0, SDO_en=0, RST_en=1, RST=0)
 			self.__setPins(SCI=1, SDO_en=0, RST_en=1, RST=0)
 		self.__setPins(SCI=0, SDO_en=1, SDO=0, RST_en=1, RST=0)
-		self.top.delay(0.001)
+		self.top.hostDelay(0.001)
 		self.__setPins(SDO_en=1, SDO=0, RST_en=0)
 		self.applyVPP(True)
-		self.top.delay(0.001)
+		self.top.hostDelay(0.001)
 		self.__setPins(SDO_en=0)
-		self.top.delay(0.01)
+		self.top.hostDelay(0.01)
 
 		signature = self.__readSignature()
 		if signature != self.signature:
@@ -300,7 +300,7 @@ class Chip_AtTiny13dip8(Chip):
 		# We do not poll the busy flag, because that would result
 		# in a significant slowdown. We delay long enough for the
 		# command to finish execution, instead.
-		self.top.delay(0.001)
+		self.top.hostDelay(0.001)
 
 	def __setSDI(self, sdi):
 		self.top.cmdFPGAWrite(0x13, sdi & 0xFF)
@@ -347,14 +347,14 @@ class Chip_AtTiny13dip8(Chip):
 		for i in range(0, 100):
 			if not self.__busy():
 				return
-			self.top.delay(0.01)
+			self.top.hostDelay(0.01)
 		self.throwError("Timeout in busywait.")
 
 	def __waitHighSDO(self):
 		for i in range(0, 100):
 			if self.__rawSDOState():
 				return
-			self.top.delay(0.01)
+			self.top.hostDelay(0.01)
 		self.throwError("Timeout waiting for SDO.")
 
 ChipDescription(

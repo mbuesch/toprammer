@@ -73,12 +73,12 @@ class Chip_w29ee011dip32(Chip):
 		self.__resetBufferPointers()
 		self.__swDataProtect(False)
 		self.__runCommandSync(self.PROGCMD_WRITEBUF)
-		self.top.delay(0.05)
+		self.top.hostDelay(0.05)
 		self.__resetBufferPointers()
 		for command in commands:
 			self.__appendJEDEC(command[0], command[1])
 		self.__runCommandSync(self.PROGCMD_WRITEBUF)
-		self.top.delay(0.05)
+		self.top.hostDelay(0.05)
 
 		self.__setCEOE(CE=1, OE=1)
 		self.progressMeterFinish()
@@ -170,14 +170,14 @@ class Chip_w29ee011dip32(Chip):
 				self.__writeBufAppend(ord(byte))
 			self.__loadWriteAddr(pageAddress)
 			self.__runCommandSync(self.PROGCMD_WRITEBUF)
-			self.top.delay(0.01)
+			self.top.hostDelay(0.01)
 			# Verify
 			self.__setCEOE(CE=0, OE=0)
 			verifyImage = self.__readRange(pageAddress, len(pageData))
 			self.__setCEOE(CE=0, OE=1)
 			if verifyImage == pageData:
 				break
-			self.top.delay(0.1)
+			self.top.hostDelay(0.1)
 		else:
 			self.throwError("Verify error on page write at address 0x%05X" % pageAddress)
 
@@ -257,7 +257,7 @@ class Chip_w29ee011dip32(Chip):
 		for i in range(0, 100):
 			if not self.__busy():
 				return
-			self.top.delay(0.01)
+			self.top.hostDelay(0.01)
 		self.throwError("Timeout in busywait.")
 
 ChipDescription(

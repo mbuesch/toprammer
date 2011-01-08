@@ -360,11 +360,11 @@ class Chip_ATMega_common(Chip):
 
 	def __waitForRDY(self):
 		"""Wait for the RDY pin to go high."""
-		self.top.delay(0.01)
+		self.top.hostDelay(0.01)
 		for i in range(0, 50):
 			if self.__getRDY():
 				return
-			self.top.delay(0.01)
+			self.top.hostDelay(0.01)
 		self.throwError("Timeout waiting for READY signal from chip.")
 
 	def __getRDY(self):

@@ -212,7 +212,7 @@ class Chip_AT89C2051dip20(Chip):
 		for i in range(0, 26):
 			if not self.__busy():
 				return
-			self.top.delay(0.001)
+			self.top.hostDelay(0.001)
 		self.throwError("Timeout in busywait.")
 
 	def __progWait(self):
@@ -221,7 +221,7 @@ class Chip_AT89C2051dip20(Chip):
 			stat = self.top.cmdReadBufferReg()
 			if (ord(stat[0]) & self.STAT_BUSY) == 0:
 				return ord(stat[0])
-			self.top.delay(0.001)
+			self.top.hostDelay(0.001)
 		self.throwError("Timeout in busywait.")
 
 ChipDescription(

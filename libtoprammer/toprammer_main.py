@@ -244,7 +244,7 @@ class TOP:
 		self.cmdSetVPPVoltage(0)
 		self.cmdSetVPPVoltage(0)
 		self.queueCommand("\x0E\x20\x00\x00")
-		self.cmdFlush()
+		self.cmdDelay(0.01)
 		self.cmdSetVCCXVoltage(0)
 
 		self.cmdLoadGNDLayout(0)
@@ -252,7 +252,7 @@ class TOP:
 		self.cmdLoadVCCXLayout(0)
 
 		self.queueCommand("\x0E\x20\x00\x00")
-		self.cmdFlush()
+		self.cmdDelay(0.01)
 		self.queueCommand("\x0E\x25\x00\x00")
 		stat = self.cmdReadBufferReg32()
 		if stat != 0x0000686C:
@@ -381,12 +381,33 @@ class TOP:
 		self.chip.writeLockbits(image)
 		self.printDebug("Done writing image.")
 
-	def cmdFlush(self, count=1):
-		"""Send 'count' flush requests."""
-		assert(count >= 1)
+	def __cmdDelay_4usec(self):
+		self.queueCommand(chr(0x00))
+
+	def __cmdDelay_10msec(self):
+		self.queueCommand(chr(0x1B))
+
+	def cmdDelay(self, seconds):
+		"""Send a delay request to the device. Note that this causes the
+		programmer to execute the delay. For a host-delay, use hostDelay()"""
+		assert(seconds < 0.5)
+		if seconds > 0.000255:
+			# Need to round up to ten milliseconds
+			millisecs = int(math.ceil(seconds * 1000))
+			millisecs = roundup(millisecs, 10)
+			for i in range(0, millisecs // 10):
+				self.__cmdDelay_10msec()
+		else:
+			# Round up to 4 usec boundary
+			microsecs = int(math.ceil(seconds * 1000000))
+			microsecs = roundup(microsecs, 4)
+			for i in range(0, microsecs // 4):
+				self.__cmdDelay_4usec()
+
+	def hostDelay(self, seconds):
+		"""Flush all commands and delay the host computer for 'seconds'"""
 		self.flushCommands()
-		self.queueCommand(chr(0x1B) * count)
-		self.flushCommands()
+		time.sleep(seconds)
 
 	def cmdReadBufferReg(self):
 		"""Read the buffer register. Returns 64 bytes."""
@@ -461,36 +482,36 @@ class TOP:
 		"""Load the GND configuration into the H/L shiftregisters."""
 		cmd = chr(0x0E) + chr(0x16) + chr(layout) + chr(0)
 		self.queueCommand(cmd)
-		self.delay(0.15)
-		self.cmdFlush()
+		self.cmdDelay(0.01)
+		self.hostDelay(0.15)
 
 	def cmdSetVPPVoltage(self, voltage):
 		"""Set the VPP voltage. voltage is a floating point voltage number."""
 		centivolt = int(voltage * 10)
 		cmd = chr(0x0E) + chr(0x12) + chr(centivolt) + chr(0)
 		self.queueCommand(cmd)
-		self.cmdFlush()
+		self.cmdDelay(0.01)
 
 	def cmdLoadVPPLayout(self, layout):
 		"""Load the VPP configuration into the shift registers."""
 		cmd = chr(0x0E) + chr(0x14) + chr(layout) + chr(0)
 		self.queueCommand(cmd)
-		self.delay(0.15)
-		self.cmdFlush()
+		self.cmdDelay(0.01)
+		self.hostDelay(0.15)
 
 	def cmdSetVCCXVoltage(self, voltage):
 		"""Set the VCCX voltage. voltage is a floating point voltage number."""
 		centivolt = int(voltage * 10)
 		cmd = chr(0x0E) + chr(0x13) + chr(centivolt) + chr(0)
 		self.queueCommand(cmd)
-		self.cmdFlush()
+		self.cmdDelay(0.01)
 
 	def cmdLoadVCCXLayout(self, layout):
 		"""Load the VCCX configuration into the shift registers."""
 		cmd = chr(0x0E) + chr(0x15) + chr(layout) + chr(0)
 		self.queueCommand(cmd)
-		self.delay(0.15)
-		self.cmdFlush()
+		self.cmdDelay(0.01)
+		self.hostDelay(0.15)
 
 	def cmdEnableZif(self, enable=True):
 		"""Enable the ZIF socket."""
@@ -559,8 +580,3 @@ class TOP:
 		if command:
 			self.__doSend(command)
 		self.commandQueue = []
-
-	def delay(self, seconds):
-		"""Flush all commands and delay for 'seconds'"""
-		self.flushCommands()
-		time.sleep(seconds)

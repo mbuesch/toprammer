@@ -4,7 +4,7 @@ TOP2049 USB protocol (incomplete)
 
 === COMMANDS ===
 
-00		>= NOP. No operation.
+00		>= 4 usec delay
 
 01		>= Read a byte from the FPGA at address 0x10 into the status register.
 
@@ -58,7 +58,7 @@ TOP2049 USB protocol (incomplete)
 
 19		>= Unknown
 
-1B		>= Flush (and/or commit) command
+1B		>= 10 msec delay
 
 34		>= Unknown
 

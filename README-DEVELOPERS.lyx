@@ -299,18 +299,21 @@ This is a shortcut to cmdFPGAReadRaw(0x10).
 \end_layout
 
 \begin_layout Subsection
-cmdFlush()
+cmdDelay(seconds)
 \end_layout
 
 \begin_layout Standard
-Is believed to be kind of a flush command.
- However, there also are suspections that it has certain delay semantics,
- too.
- You usually don't have to call this directly.
+Send a delay command to the programmer.
+ The Programmer will perform the delay.
+ A value up to 0.5 seconds is possible.
+ Note that the actual value will be rounded up to the next possible wait
+ interval value.
+ Use this for short (microsecond or low millisecond) delays.
+ Note that this does _not_ flush the command queue.
 \end_layout
 
 \begin_layout Subsection
-delay(seconds)
+hostDelay(seconds)
 \end_layout
 
 \begin_layout Standard
@@ -332,6 +335,8 @@ seconds
 \end_inset
 
  is a floating point number.
+ The delay is performed on the host computer by simply not sending commands
+ to the programmer for the time specified after flushing the command queue.
 \end_layout
 
 \begin_layout Section
@@ -363,8 +368,7 @@ class TOP
 \end_inset
 
 .
- Note that this is not to be confused with cmdFlush(), which does some flushing
- tasks inside of the microcontroller.
+ 
 \end_layout
 
 \begin_layout Itemize

@@ -22,10 +22,15 @@
 
 import sys
 import re
+import math
 
 
 class TOPException(Exception): pass
 
+def roundup(x, y):
+	x = int(x)
+	y = int(y)
+	return ((x + (y - 1)) // y) * y
 
 hexdump_re = re.compile(r"0x[0-9a-fA-F]+:\s+([0-9a-fA-F\s]+)\s*.*")
 

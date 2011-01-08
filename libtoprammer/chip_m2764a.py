@@ -166,7 +166,7 @@ class Chip_M2764A(Chip):
 		for i in range(0, 100):
 			if not self.__busy():
 				return
-			self.top.delay(0.01)
+			self.top.hostDelay(0.01)
 		self.throwError("Timeout in busywait.")
 
 ChipDescription(

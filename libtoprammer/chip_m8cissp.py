@@ -179,9 +179,7 @@ class Chip_M8C_ISSP(Chip):
 		self.top.vpp.setLayoutMask(0)
 		self.top.gnd.setLayoutPins( [] )
 		self.top.cmdSetVCCXVoltage(5)
-		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(0)
-		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(5)
 
 		#XXX
@@ -192,29 +190,23 @@ class Chip_M8C_ISSP(Chip):
 	def shutdownChip(self):
 		self.printDebug("Shutdown chip")
 		self.top.cmdSetVCCXVoltage(5)
-		self.top.cmdFlush()
 		self.top.cmdSetVPPVoltage(5)
-		self.top.cmdFlush()
 		self.top.vccx.setLayoutMask(0)
 		self.top.vpp.setLayoutMask(0)
-		self.top.cmdFlush()
 		self.top.gnd.setLayoutPins( [] )
 
 	def __powerDown(self):
 		"Turn the power to the device off"
 		self.printDebug("Powering device down...")
 		self.__runCommandSync(self.ISSPCMD_PWROFF)
-		self.top.delay(5)
+		self.top.hostDelay(5)
 
 	def __powerOnReset(self):
 		"Perform a complete power-on-reset and initialization"
 		self.printDebug("Initializing supply power...")
 		self.top.gnd.setLayoutPins( (20,) )
-#		self.top.cmdFlush()
 		self.top.vccx.setLayoutPins( (21,) )
-#		self.top.cmdFlush()
 		self.top.cmdSetVCCXVoltage(5)
-#		self.top.cmdFlush()
 
 		self.__powerDown()
 		self.printDebug("Performing a power-on-reset...")
@@ -310,7 +302,7 @@ class Chip_M8C_ISSP(Chip):
 		for i in range(0, 200):
 			if not self.__busy():
 				return
-			self.top.delay(0.01)
+			self.top.hostDelay(0.01)
 		self.throwError("Timeout in busywait. Chip not responding?")
 
 	def __getInputVector(self):
