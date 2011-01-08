@@ -381,6 +381,21 @@ class TOP:
 		self.chip.writeLockbits(image)
 		self.printDebug("Done writing image.")
 
+	def readRAM(self):
+		"""Reads the RAM and returns it."""
+		self.printDebug("Reading RAM from chip...")
+		self.checkChip()
+		image = self.chip.readRAM()
+		self.printDebug("Done reading %d bytes." % len(image))
+		return image
+
+	def writeRAM(self, image):
+		"""Writes the RAM image to the chip."""
+		self.printDebug("Writing %d bytes of RAM to the chip..." % len(image))
+		self.checkChip()
+		self.chip.writeRAM(image)
+		self.printDebug("Done writing the image.")
+
 	def __cmdDelay_4usec(self):
 		self.queueCommand(chr(0x00))
 

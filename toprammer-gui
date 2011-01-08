@@ -1563,8 +1563,10 @@ class ChipSelectDialog(QDialog):
 		groupBox.layout().addWidget(self.eepromRadio, 2, 0)
 		self.galRadio = QRadioButton("PALs / GALs", groupBox)
 		groupBox.layout().addWidget(self.galRadio, 3, 0)
+		self.sramRadio = QRadioButton("Static RAM", groupBox)
+		groupBox.layout().addWidget(self.sramRadio, 4, 0)
 		self.showBroken = QCheckBox("Show broken implementations", groupBox)
-		groupBox.layout().addWidget(self.showBroken, 4, 0)
+		groupBox.layout().addWidget(self.showBroken, 5, 0)
 		self.layout().addWidget(groupBox, 0, 2)
 
 		self.okButton = QPushButton("&Ok", self)
@@ -1584,7 +1586,8 @@ class ChipSelectDialog(QDialog):
 		self.connect(self.showBroken, SIGNAL("stateChanged(int)"),
 			     self.typeToggled)
 		for radio in (self.mcuRadio, self.epromRadio,
-			      self.eepromRadio, self.galRadio):
+			      self.eepromRadio, self.galRadio,
+			      self.sramRadio):
 			self.connect(radio, SIGNAL("toggled(bool)"), self.typeToggled)
 
 		self.__updateList()
@@ -1595,6 +1598,7 @@ class ChipSelectDialog(QDialog):
 			ChipDescription.TYPE_EPROM	: self.epromRadio,
 			ChipDescription.TYPE_EEPROM	: self.eepromRadio,
 			ChipDescription.TYPE_GAL	: self.galRadio,
+			ChipDescription.TYPE_SRAM	: self.sramRadio,
 		}
 		self.chipList.clear()
 		chipsList = getRegisteredChips()[:]

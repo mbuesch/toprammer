@@ -36,6 +36,8 @@ class Chip:
 	SUPPORT_FUSEWRITE	= (1 << 7)
 	SUPPORT_LOCKREAD	= (1 << 8)
 	SUPPORT_LOCKWRITE	= (1 << 9)
+	SUPPORT_RAMREAD		= (1 << 10)
+	SUPPORT_RAMWRITE	= (1 << 11)
 
 	@staticmethod
 	def chipSupportsAttr(chipImplClass, attribute):
@@ -72,6 +74,10 @@ class Chip:
 			flags |= Chip.SUPPORT_LOCKREAD
 		if Chip.chipSupportsAttr(chip, "writeLockbits"):
 			flags |= Chip.SUPPORT_LOCKWRITE
+		if Chip.chipSupportsAttr(chip, "readRAM"):
+			flags |= Chip.SUPPORT_RAMREAD
+		if Chip.chipSupportsAttr(chip, "writeRAM"):
+			flags |= Chip.SUPPORT_RAMWRITE
 		return flags
 
 	def __init__(self, chipPackage=None, chipPinVCCX=None, chipPinsVPP=None, chipPinGND=None):
@@ -225,6 +231,14 @@ class Chip:
 		# Override me in the subclass, if required.
 		raise TOPException("Lockbit writing not supported on " + self.chipID)
 
+	def readRAM(self):
+		# Override me in the subclass, if required.
+		raise TOPException("RAM reading not supported on " + self.chipID)
+
+	def writeRAM(self, image):
+		# Override me in the subclass, if required.
+		raise TOPException("RAM writing not supported on " + self.chipID)
+
 __registeredChips = []
 
 def getRegisteredChips():
@@ -242,6 +256,7 @@ class ChipDescription:
 	TYPE_EPROM	= 1	# EPROM
 	TYPE_EEPROM	= 2	# EEPROM
 	TYPE_GAL	= 3	# PAL/GAL
+	TYPE_SRAM	= 4	# Static RAM
 	TYPE_INTERNAL	= 999	# For internal use only
 
 	def __init__(self, chipImplClass, bitfile, chipID="",
@@ -342,6 +357,8 @@ class ChipDescription:
 				(Chip.SUPPORT_FUSEWRITE,	"Fuse bits writing"),
 				(Chip.SUPPORT_LOCKREAD,		"Lock bits reading"),
 				(Chip.SUPPORT_LOCKWRITE,	"Lock bits writing"),
+				(Chip.SUPPORT_RAMREAD,		"RAM reading"),
+				(Chip.SUPPORT_RAMWRITE,		"RAM writing"),
 			)
 			supportFlags = Chip.getSupportFlags(self.chipImplClass)
 			for (flag, description) in supportedFeatures:

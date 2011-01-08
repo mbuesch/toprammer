@@ -50,6 +50,9 @@ def usage():
 	print " -l|--read-lock FILE     Read the lock bits"
 	print " -L|--write-lock FILE    Write the lock bits"
 	print ""
+	print " -r|--read-ram FILE      Read the RAM"
+	print " -R|--write-ram FILE     Write the RAM"
+	print ""
 	print "Optional:"
 	print " -t|--list               Print a list of supported chips and exit."
 	print "                         Use -V|--verbose to control the list verbosity (1-4)"
@@ -121,11 +124,11 @@ def main(argv):
 	opt_outformat = "bin"
 	try:
 		(opts, args) = getopt.getopt(sys.argv[1:],
-			"hc:d:V:Qs:xp:P:e:E:f:F:o:Ul:L:BtI:O:",
+			"hc:d:V:Qs:xp:P:e:E:f:F:o:Ul:L:r:R:BtI:O:",
 			[ "help", "chip-id=", "device=", "verbose=", "noqueue",
 			  "read-sig=", "erase", "read-prog=", "write-prog=",
 			  "read-eeprom=", "write-eeprom=", "read-fuse=", "write-fuse=",
-			  "read-lock=", "write-lock=",
+			  "read-lock=", "write-lock=", "read-ram=", "write-ram=",
 			  "force=", "force-upload", "broken", "list",
 			  "in-format=", "out-format=", ])
 		for (o, v) in opts:
@@ -186,6 +189,12 @@ def main(argv):
 			if o in ("-L", "--write-lock"):
 				opt_action = "write-lock"
 				opt_file = v
+			if o in ("-r", "--read-ram"):
+				opt_action = "read-ram"
+				opt_file = v
+			if o in ("-R", "--write-ram"):
+				opt_action = "write-ram"
+				opt_file = v
 	except (getopt.GetoptError, ValueError), e:
 		usage()
 		return 1
@@ -232,6 +241,10 @@ def main(argv):
 			fileOut(opt_file, opt_outformat, top.readLockbits())
 		elif opt_action == "write-lock":
 			top.writeLockbits(fileIn(opt_file, opt_informat))
+		elif opt_action == "read-ram":
+			fileOut(opt_file, opt_outformat, top.readRAM())
+		elif opt_action == "write-ram":
+			top.writeRAM(fileIn(opt_file, opt_informat))
 		else:
 			assert(0)
 		top.shutdownChip()

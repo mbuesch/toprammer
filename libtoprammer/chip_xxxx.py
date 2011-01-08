@@ -5,6 +5,7 @@ from chip_atmega8dip28 import *
 from chip_atmega88dip28 import *
 from chip_attiny13dip8 import *
 from chip_attiny26dip20 import *
+from chip_hm62256dip28 import *
 from chip_m2764a import *
 from chip_m8cissp import *
 from chip_unitest import *
