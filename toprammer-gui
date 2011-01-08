@@ -1562,19 +1562,21 @@ class ChipSelectDialog(QDialog):
 
 		groupBox = QGroupBox("Chip type", self)
 		groupBox.setLayout(QGridLayout(groupBox))
+		self.allRadio = QRadioButton("All types", groupBox)
+		groupBox.layout().addWidget(self.allRadio, 0, 0)
 		self.mcuRadio = QRadioButton("Microcontrollers", groupBox)
 		self.mcuRadio.setChecked(Qt.Checked)
-		groupBox.layout().addWidget(self.mcuRadio, 0, 0)
+		groupBox.layout().addWidget(self.mcuRadio, 1, 0)
 		self.epromRadio = QRadioButton("EPROMs", groupBox)
-		groupBox.layout().addWidget(self.epromRadio, 1, 0)
+		groupBox.layout().addWidget(self.epromRadio, 2, 0)
 		self.eepromRadio = QRadioButton("EEPROMs", groupBox)
-		groupBox.layout().addWidget(self.eepromRadio, 2, 0)
+		groupBox.layout().addWidget(self.eepromRadio, 3, 0)
 		self.galRadio = QRadioButton("PALs / GALs", groupBox)
-		groupBox.layout().addWidget(self.galRadio, 3, 0)
+		groupBox.layout().addWidget(self.galRadio, 4, 0)
 		self.sramRadio = QRadioButton("Static RAM", groupBox)
-		groupBox.layout().addWidget(self.sramRadio, 4, 0)
+		groupBox.layout().addWidget(self.sramRadio, 5, 0)
 		self.showBroken = QCheckBox("Show broken implementations", groupBox)
-		groupBox.layout().addWidget(self.showBroken, 5, 0)
+		groupBox.layout().addWidget(self.showBroken, 6, 0)
 		self.layout().addWidget(groupBox, 0, 2)
 
 		self.okButton = QPushButton("&Ok", self)
@@ -1593,7 +1595,7 @@ class ChipSelectDialog(QDialog):
 			     self.accept)
 		self.connect(self.showBroken, SIGNAL("stateChanged(int)"),
 			     self.typeToggled)
-		for radio in (self.mcuRadio, self.epromRadio,
+		for radio in (self.allRadio, self.mcuRadio, self.epromRadio,
 			      self.eepromRadio, self.galRadio,
 			      self.sramRadio):
 			self.connect(radio, SIGNAL("toggled(bool)"), self.typeToggled)
@@ -1618,13 +1620,14 @@ class ChipSelectDialog(QDialog):
 			if chipDescription.chipType == ChipDescription.TYPE_INTERNAL:
 				continue
 			radioButton = typeToRadioButton[chipDescription.chipType]
-			if not radioButton.isChecked():
+			if not radioButton.isChecked() and\
+			   not self.allRadio.isChecked():
 				continue
 			item = QListWidgetItem(chipDescription.description,
 					       self.chipList)
 			item.setData(Qt.UserRole, chipDescription)
 		self.chipList.sortItems()
-		self.selectionChanged()
+		self.chipList.setCurrentRow(0)
 
 	def typeToggled(self, unused):
 		self.__updateList()
