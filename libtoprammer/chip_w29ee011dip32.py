@@ -114,7 +114,7 @@ class Chip_w29ee011dip32(Chip):
 			if (addr & 0xFF0000) != (prevAddr & 0xFF0000):
 				self.__loadReadAddrHi(addr >> 16)
 			prevAddr = addr
-			self.top.cmdFPGAReadByte()
+			self.top.cmdFPGARead(0x10)
 			byteCount += 1
 			if byteCount == 64:
 				image += self.top.cmdReadBufferReg()
@@ -246,7 +246,7 @@ class Chip_w29ee011dip32(Chip):
 		self.top.cmdFPGAWrite(0x1E, data & 0xFF)
 
 	def __getStatusFlags(self):
-		self.top.cmdFPGAReadRaw(0x12)
+		self.top.cmdFPGARead(0x12)
 		stat = self.top.cmdReadBufferReg()
 		return ord(stat[0])
 

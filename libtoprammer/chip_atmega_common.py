@@ -287,23 +287,23 @@ class Chip_ATMega_common(Chip):
 		"""Read a data word from the DUT into the status register."""
 		self.__setBS1(0)
 		self.__setOE(0)
-		self.top.cmdFPGAReadByte()
+		self.top.cmdFPGARead(0x10)
 		self.__setBS1(1)
-		self.top.cmdFPGAReadByte()
+		self.top.cmdFPGARead(0x10)
 		self.__setOE(1)
 
 	def __readLowByteToStatusReg(self):
 		"""Read the low data byte from the DUT into the status register."""
 		self.__setBS1(0)
 		self.__setOE(0)
-		self.top.cmdFPGAReadByte()
+		self.top.cmdFPGARead(0x10)
 		self.__setOE(1)
 
 	def __readHighByteToStatusReg(self):
 		"""Read the high data byte from the DUT into the status register."""
 		self.__setBS1(1)
 		self.__setOE(0)
-		self.top.cmdFPGAReadByte()
+		self.top.cmdFPGARead(0x10)
 		self.__setOE(1)
 
 	def __loadData(self, data):
@@ -373,7 +373,7 @@ class Chip_ATMega_common(Chip):
 
 	def __getStatus(self):
 		"""Read the programmer status register"""
-		self.top.cmdFPGAReadRaw(0x12)
+		self.top.cmdFPGARead(0x12)
 		stat = self.top.cmdReadBufferReg()
 		return ord(stat[0])
 

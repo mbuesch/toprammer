@@ -330,12 +330,12 @@ class Chip_AtTiny13dip8(Chip):
 		self.top.cmdFPGAWrite(0x15, data)
 
 	def __getStatusFlags(self):
-		self.top.cmdFPGAReadRaw(0x12)
+		self.top.cmdFPGARead(0x12)
 		stat = self.top.cmdReadBufferReg()
 		return ord(stat[0])
 
 	def __readSDOBufferHigh(self):
-		self.top.cmdFPGAReadByte()
+		self.top.cmdFPGARead(0x10)
 
 	def __rawSDOState(self):
 		return bool(self.__getStatusFlags() & self.STAT_SDO)

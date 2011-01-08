@@ -62,18 +62,18 @@ def dumpInstr(instr, description):
 
 def parseBulkIn(data):
 	if len(data) == 64:
-		print "Read status register"
+		print "Read buffer register"
 		dumpMem(data)
 
 def parseBulkOut(data):
 	i = 0
 	while i < len(data):
 		if data[i] == 0x00:
-			dumpInstr(data[i:i+1], "NOP")
+			dumpInstr(data[i:i+1], "Delay 4 usec")
 		elif data[i] == 0x01:
 			dumpInstr(data[i:i+1], "Read byte from FPGA")
 		elif data[i] == 0x07:
-			dumpInstr(data[i:i+1], "Read status register request")
+			dumpInstr(data[i:i+1], "Read buffer register request")
 		elif data[i] == 0x0A:
 			dumpInstr(data[i:i+3], "Write 0x%02X to the FPGA at address 0x%02X" % (data[i+2], data[i+1]))
 			i += 2
@@ -113,7 +113,10 @@ def parseBulkOut(data):
 			dumpInstr(data[i:i+4], "Unknown 0x0E25")
 			i += 3
 		elif data[i] == 0x0E and data[i+1] == 0x28:
-			dumpInstr(data[i:i+4], "Unknown 0x0E28")
+			op = "Disable"
+			if data[i+2] == chr(0):
+				op = "Enable"
+			dumpInstr(data[i:i+4], "%s the ZIF socket" % op)
 			i += 3
 		elif data[i] == 0x0E and data[i+1] == 0x1F:
 			dumpInstr(data[i:i+4], "Unknown 0x0E1F")
@@ -121,12 +124,12 @@ def parseBulkOut(data):
 		elif data[i] == 0x0D:
 			dumpInstr(data[i:i+1], "Unknown 0x0D")
 		elif data[i] == 0x10:
-			dumpInstr(data[i:i+2], "Write 0x%02X to the FPGA" % data[i+1])
+			dumpInstr(data[i:i+2], "Write 0x%02X to the FPGA at address 0x10" % data[i+1])
 			i += 1
 		elif data[i] == 0x19:
 			dumpInstr(data[i:i+1], "Unknown 0x19")
 		elif data[i] == 0x1B:
-			dumpInstr(data[i:i+1], "Flush request")
+			dumpInstr(data[i:i+1], "Delay 10 msec")
 		elif data[i] == 0x34:
 			dumpInstr(data[i:i+1], "Unknown 0x34")
 		elif data[i] == 0x38:

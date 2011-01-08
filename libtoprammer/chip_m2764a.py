@@ -100,7 +100,7 @@ class Chip_M2764A(Chip):
 	def __readDataToStatusReg(self, addr):
 		self.__loadAddr(addr)
 		self.__setEG(E=0, G=0)
-		self.top.cmdFPGAReadByte()
+		self.top.cmdFPGARead(0x10)
 
 	def __writeData(self, addr, data):
 		self.__setEG(E=0, G=1)
@@ -155,7 +155,7 @@ class Chip_M2764A(Chip):
 		self.top.cmdFPGAWrite(0x16, data)
 
 	def __getStatusFlags(self):
-		self.top.cmdFPGAReadRaw(0x12)
+		self.top.cmdFPGARead(0x12)
 		stat = self.top.cmdReadBufferReg()
 		return ord(stat[0])
 

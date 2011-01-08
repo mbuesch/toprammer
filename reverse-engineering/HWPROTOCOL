@@ -54,6 +54,8 @@ TOP2049 USB protocol (incomplete)
 
 0E220000...	>= Program the FPGA. 60bytes of data is appended.
 
+0E28xx00	>= Enable signals on the ZIF socket. 0->enable 1->disable
+
 10xx		>= Write a byte (xx) to the FPGA at address 0x10.
 
 19		>= Unknown

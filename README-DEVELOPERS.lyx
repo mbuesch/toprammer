@@ -257,14 +257,17 @@ byte
 \end_inset
 
  as payload data.
+ Note that address 0x10 is fast-tracked and uses one byte less on the USB
+ bus.
+ So it is potentially faster.
 \end_layout
 
 \begin_layout Subsection
-cmdFPGAReadRaw(address)
+cmdFPGARead(address)
 \end_layout
 
 \begin_layout Standard
-Reads a byte from the FPGA and puts it into the microcontroller's status
+Reads a byte from the FPGA and puts it into the microcontroller's buffer
  register.
  
 \begin_inset Quotes eld
@@ -275,27 +278,16 @@ address
 \end_inset
 
  is used for address latching on the FPGA.
- The microcontroller's status register has an automagically incrementing
+ The microcontroller's buffer register has an automagically incrementing
  pointer.
- So issueing several cmdFPGAReadRaw() in a row will result in all the bytes
- being put one after each other into the status register.
- The status register can hold up to 64 bytes.
- Reading the status register (cmdReadBufferReg()) will reset the automagic
+ So issueing several cmdFPGARead() in a row will result in all the bytes
+ being put one after each other into the buffer register.
+ The buffer register can hold up to 64 bytes.
+ Reading the buffer register (cmdReadBufferReg()) will reset the automagic
  pointer to zero.
-\end_layout
-
-\begin_layout Subsection
-cmdFPGAReadByte()
-\end_layout
-
-\begin_layout Standard
-This is a shortcut to cmdFPGAReadRaw(0x10).
- In general it is used for payload data reading.
- Using cmdFPGAReadByte() instead of cmdFPGAReadRaw(0x10) is more efficient
- for payload reading, because on the USB bus the command is only one byte
- wide instead of two.
- So it uses up less space in the transmission queue and can thus speed up
- operation.
+ Note that address 0x10 is fast-tracked and uses one byte less on the USB
+ bus.
+ So it is potentially faster.
 \end_layout
 
 \begin_layout Subsection

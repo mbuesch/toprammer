@@ -275,9 +275,9 @@ class TOP:
 		(requiredID, requiredRevision) = requiredRuntimeID
 		if requiredID and requiredRevision and not self.forceBitfileUpload:
 			# Check if the bitfile is already uploaded.
-			self.cmdFPGAReadRaw(0xFD)
-			self.cmdFPGAReadRaw(0xFE)
-			self.cmdFPGAReadRaw(0xFF)
+			self.cmdFPGARead(0xFD)
+			self.cmdFPGARead(0xFE)
+			self.cmdFPGARead(0xFF)
 			data = self.cmdReadBufferReg()
 			gotID = ord(data[0]) | (ord(data[1]) << 8)
 			if gotID == 0xFEFD or gotID == 0xFFFF:
@@ -464,19 +464,19 @@ class TOP:
 		cmd += "\x00" * (64 - len(cmd)) # padding
 		self.queueCommand(cmd)
 
-	def cmdFPGAReadByte(self):
-		"""Read a byte from the FPGA data line into the status register."""
-		self.queueCommand("\x01")
-
-	def cmdFPGAReadRaw(self, address):
-		"""Read a byte from the FPGA at address into the status register."""
-		cmd = chr(0x0B) + chr(address)
-		self.queueCommand(cmd)
+	def cmdFPGARead(self, address):
+		"""Read a byte from the FPGA at address into the buffer register."""
+		if address == 0x10: # Fast tracked
+			self.queueCommand(chr(0x01))
+			return
+		self.queueCommand(chr(0x0B) + chr(address))
 
 	def cmdFPGAWrite(self, address, byte):
 		"""Write a byte to an FPGA address."""
-		cmd = chr(0x0A) + chr(address) + chr(byte)
-		self.queueCommand(cmd)
+		if address == 0x10: # Fast tracked
+			self.queueCommand(chr(0x10) + chr(byte))
+			return
+		self.queueCommand(chr(0x0A) + chr(address) + chr(byte))
 
 	def cmdLoadGNDLayout(self, layout):
 		"""Load the GND configuration into the H/L shiftregisters."""

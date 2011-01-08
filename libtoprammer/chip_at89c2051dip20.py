@@ -59,13 +59,13 @@ class Chip_AT89C2051dip20(Chip):
 		self.__loadCommand(1) # set P3.2
 		self.__setP3x(P33=0, P34=0, P35=0, IA=0)
 		data = ""
-		self.top.cmdFPGAReadByte()
+		self.top.cmdFPGARead(0x10)
 		self.__setP3x(P33=0, P34=0, P35=0, IA=1)
 		self.__setP3x(P33=0, P34=0, P35=0, IA=0)
-		self.top.cmdFPGAReadByte()
+		self.top.cmdFPGARead(0x10)
 		self.__setP3x(P33=0, P34=0, P35=0, IA=1)
 		self.__setP3x(P33=0, P34=0, P35=0, IA=0)
-		self.top.cmdFPGAReadByte()
+		self.top.cmdFPGARead(0x10)
 		data += self.top.cmdReadBufferReg()
 		self.__setP3x(P33=0, P34=1, P35=0, IA=0)
 		self.__loadCommand(6) # VPP off
@@ -110,7 +110,7 @@ class Chip_AT89C2051dip20(Chip):
 		self.progressMeterInit("Reading Flash", 0x800)
 		for addr in range(0, 0x800):
 			self.progressMeter(addr)
-			self.top.cmdFPGAReadByte()
+			self.top.cmdFPGARead(0x10)
 			self.__setP3x(P33=0, P34=0, P35=1, IA=1)
 			self.__setP3x(P33=0, P34=0, P35=1, IA=0)
 			byteCount += 1
@@ -201,7 +201,7 @@ class Chip_AT89C2051dip20(Chip):
 		self.top.cmdFPGAWrite(0x16, data)
 
 	def __getStatusFlags(self):
-		self.top.cmdFPGAReadRaw(0x12)
+		self.top.cmdFPGARead(0x12)
 		stat = self.top.cmdReadBufferReg()
 		return ord(stat[0])
 
@@ -217,7 +217,7 @@ class Chip_AT89C2051dip20(Chip):
 
 	def __progWait(self):
 		for i in range(0,4):
-			self.top.cmdFPGAReadRaw(0x12)
+			self.top.cmdFPGARead(0x12)
 			stat = self.top.cmdReadBufferReg()
 			if (ord(stat[0]) & self.STAT_BUSY) == 0:
 				return ord(stat[0])
