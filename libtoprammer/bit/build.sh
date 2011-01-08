@@ -75,8 +75,8 @@ function should_build # $1=target
 # Check if the payload of two bitfiles matches
 function bitfile_is_equal # $1=file1, $2=file2
 {
-	bitparser "$1" NOACTION # Test if bitparser works
 	[ -r $1 -a -r $2 ] || return 1
+	bitparser "$1" NOACTION # Test if bitparser works
 	sum1="$(bitparser "$1" GETPAYLOAD | sha1sum - | cut -d' ' -f1)"
 	sum2="$(bitparser "$2" GETPAYLOAD | sha1sum - | cut -d' ' -f1)"
 	[ "$sum1" = "$sum2" ]
