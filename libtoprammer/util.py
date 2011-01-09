@@ -27,6 +27,13 @@ import math
 
 class TOPException(Exception): pass
 
+def nrBitsSet(integer):
+	count = 0
+	while integer:
+		count += (integer & 1)
+		integer >>= 1
+	return count
+
 def roundup(x, y):
 	x = int(x)
 	y = int(y)

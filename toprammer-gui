@@ -818,30 +818,42 @@ class HwThread(QThread):
 			self.__unblockCancellation()
 			retval = (chipSupportFlags, asciiArtLayout)
 		elif task == self.TASK_READALL:
-			self.__globalProgressInit(6)
 			self.top.checkChip()
+			supportFlags = Chip.getSupportFlags(self.top.getChip())
+			self.__globalProgressInit(nrBitsSet(supportFlags & (
+					Chip.SUPPORT_SIGREAD |
+					Chip.SUPPORT_PROGMEMREAD |
+					Chip.SUPPORT_EEPROMREAD |
+					Chip.SUPPORT_FUSEREAD |
+					Chip.SUPPORT_LOCKREAD |
+					Chip.SUPPORT_RAMREAD)))
+			count = 0
 			sigImage = None
 			progmemImage = None
 			eepromImage = None
 			fuseImage = None
 			lockbitsImage = None
-			supportFlags = Chip.getSupportFlags(self.top.getChip())
+			ramImage = None
 			if supportFlags & Chip.SUPPORT_SIGREAD:
 				sigImage = self.top.readSignature()
-			self.__globalProgress(1)
+				count = self.__globalProgress(count + 1)
 			if supportFlags & Chip.SUPPORT_PROGMEMREAD:
 				progmemImage = self.top.readProgmem()
-			self.__globalProgress(2)
+				count = self.__globalProgress(count + 1)
 			if supportFlags & Chip.SUPPORT_EEPROMREAD:
 				eepromImage = self.top.readEEPROM()
-			self.__globalProgress(3)
+				count = self.__globalProgress(count + 1)
 			if supportFlags & Chip.SUPPORT_FUSEREAD:
 				fuseImage = self.top.readFuse()
-			self.__globalProgress(4)
+				count = self.__globalProgress(count + 1)
 			if supportFlags & Chip.SUPPORT_LOCKREAD:
 				lockbitsImage = self.top.readLockbits()
-			self.__globalProgress(5)
-			retval = (sigImage, progmemImage, eepromImage, fuseImage, lockbitsImage)
+				count = self.__globalProgress(count + 1)
+			if supportFlags & Chip.SUPPORT_RAMREAD:
+				ramImage = self.top.readRAM()
+				count = self.__globalProgress(count + 1)
+			retval = (sigImage, progmemImage, eepromImage, fuseImage,
+				  lockbitsImage, ramImage)
 		elif task == self.TASK_GENERICTOPCALL:
 			funcname = str(self.taskParameter[0]).strip()
 			if funcname.endswith(")"): # strip (...) suffix
@@ -866,6 +878,7 @@ class HwThread(QThread):
 		self.appendMessage("progress",
 				   (GuiUserInterface.PROGRESSMETER_USER_GLOBAL,
 				    step))
+		return step
 
 	def __notifyMainWindow(self):
 		QApplication.postEvent(self.mainWindow, QEvent(EVENT_HWTHREAD))
@@ -1477,6 +1490,7 @@ class BufferTabWidget(QTabWidget):
 		self.eepromBuffer = ImageBufferWidget(mainWindow, "(E)EPROM memory")
 		self.fuseBuffer = BitBufferWidget(mainWindow, "fuse bits", "fuseDesc")
 		self.lockBuffer = BitBufferWidget(mainWindow, "lock bits", "lockbitDesc")
+		self.ramBuffer = ImageBufferWidget(mainWindow, "RAM memory")
 
 		self.setTabPosition(self.South)
 		self.__addBufferTab(self.infoBuffer)
@@ -1497,6 +1511,7 @@ class BufferTabWidget(QTabWidget):
 		self.__removeBufferTab(self.eepromBuffer)
 		self.__removeBufferTab(self.fuseBuffer)
 		self.__removeBufferTab(self.lockBuffer)
+		self.__removeBufferTab(self.ramBuffer)
 
 	def removeAll(self):
 		self.__removeAll()
@@ -1504,23 +1519,19 @@ class BufferTabWidget(QTabWidget):
 	def setupBuffers(self, chipSupportFlags):
 		prevSelect = self.getCurrentBuffer()
 		self.__removeAll()
-		if chipSupportFlags & (Chip.SUPPORT_PROGMEMREAD | Chip.SUPPORT_PROGMEMWRITE):
-			self.__addBufferTab(self.progmemBuffer,
-				not bool(chipSupportFlags & Chip.SUPPORT_PROGMEMWRITE))
-		if chipSupportFlags & (Chip.SUPPORT_EEPROMREAD | Chip.SUPPORT_EEPROMWRITE):
-			self.__addBufferTab(self.eepromBuffer,
-				not bool(chipSupportFlags & Chip.SUPPORT_EEPROMWRITE))
-		if chipSupportFlags & (Chip.SUPPORT_FUSEREAD | Chip.SUPPORT_FUSEWRITE):
-			self.__addBufferTab(self.fuseBuffer,
-				not bool(chipSupportFlags & Chip.SUPPORT_FUSEWRITE))
-		if chipSupportFlags & (Chip.SUPPORT_LOCKREAD | Chip.SUPPORT_LOCKWRITE):
-			self.__addBufferTab(self.lockBuffer,
-				not bool(chipSupportFlags & Chip.SUPPORT_LOCKWRITE))
+		for (bufferWidget, readMask, writeMask) in (
+				(self.progmemBuffer, Chip.SUPPORT_PROGMEMREAD, Chip.SUPPORT_PROGMEMWRITE),
+				(self.eepromBuffer, Chip.SUPPORT_EEPROMREAD, Chip.SUPPORT_EEPROMWRITE),
+				(self.fuseBuffer, Chip.SUPPORT_FUSEREAD, Chip.SUPPORT_FUSEWRITE),
+				(self.lockBuffer, Chip.SUPPORT_LOCKREAD, Chip.SUPPORT_LOCKWRITE),
+				(self.ramBuffer, Chip.SUPPORT_RAMREAD, Chip.SUPPORT_RAMWRITE)):
+			if chipSupportFlags & (readMask | writeMask):
+				self.__addBufferTab(bufferWidget, not bool(chipSupportFlags & writeMask))
 		if prevSelect and prevSelect.isAvailable():
 			self.setCurrentIndex(self.indexOf(prevSelect))
 
 	def loadBuffers(self, progmemImage, eepromImage,
-			fuseImage, lockbitsImage):
+			fuseImage, lockbitsImage, ramImage):
 		if progmemImage is not None:
 			self.progmemBuffer.loadImage(progmemImage)
 		if eepromImage is not None:
@@ -1529,12 +1540,16 @@ class BufferTabWidget(QTabWidget):
 			self.fuseBuffer.loadImage(fuseImage)
 		if lockbitsImage is not None:
 			self.lockBuffer.loadImage(lockbitsImage)
+		if ramImage is not None:
+			self.ramBuffer.loadImage(ramImage)
 
-	def verifyBuffers(self, progmemImage, eepromImage, fuseImage):
+	def verifyBuffers(self, progmemImage, eepromImage,
+			  fuseImage, ramImage):
 		fail = False
 		for (image, bufferWidget) in ((progmemImage, self.progmemBuffer),
 					      (eepromImage, self.eepromBuffer),
-					      (fuseImage, self.fuseBuffer)):
+					      (fuseImage, self.fuseBuffer),
+					      (ramImage, self.ramBuffer)):
 			if image is None:
 				continue
 			if bufferWidget.getRawData() != image:
@@ -1661,6 +1676,7 @@ class TopToolBar(QToolBar):
 		self.addAction(getIcon("memory"), "Write progmem", mainWindow.writeChipProgmem)
 		self.addAction(getIcon("memory"), "Write EPROM", mainWindow.writeChipEeprom)
 		self.addAction(getIcon("memory"), "Write fuses", mainWindow.writeChipFuses)
+		self.addAction(getIcon("memory"), "Write RAM", mainWindow.writeRam)
 		self.addAction(getIcon("lock"), "Write lockbits", mainWindow.writeChipLockbits)
 		self.addAction(getIcon("verify"), "Verify", mainWindow.verifyChip)
 
@@ -1816,9 +1832,10 @@ class MainWindow(QMainWindow):
 	OP_WRITEEPROM	= 6
 	OP_WRITEFUSE	= 7
 	OP_WRITELOCK	= 8
-	OP_VERIFY	= 9
-	OP_RAWCOMMAND	= 10
-	OP_SYNCHRONOUS	= 11
+	OP_WRITERAM	= 9
+	OP_VERIFY	= 10
+	OP_RAWCOMMAND	= 11
+	OP_SYNCHRONOUS	= 12
 
 	def __init__(self, parent=None):
 		QMainWindow.__init__(self, parent)
@@ -1852,6 +1869,7 @@ class MainWindow(QMainWindow):
 		menu.addAction("Write (E)EP&ROM", self.writeChipEeprom)
 		menu.addAction("Write &fuses", self.writeChipFuses)
 		menu.addAction("Write &lock bits", self.writeChipLockbits)
+		menu.addAction("Write R&AM", self.writeRam)
 		menu.addAction("&Verify chip", self.verifyChip)
 		self.menuBar().addMenu(menu)
 
@@ -2091,6 +2109,16 @@ class MainWindow(QMainWindow):
 		return self.runOperation(self.OP_WRITELOCK, HwThread.TASK_GENERICTOPCALL,
 					 ("top.writeLockbits(...)", data))
 
+	def writeRam(self):
+		bufferWidget = self.bufferTab.ramBuffer
+		data = bufferWidget.getRawData()
+		if not bufferWidget.isAvailable() or not data:
+			QMessageBox.critical(self, "No RAM memory",
+				"No RAM memory available")
+			return False
+		return self.runOperation(self.OP_WRITERAM, HwThread.TASK_GENERICTOPCALL,
+					 ("top.writeRAM(...)", data))
+
 	def verifyChip(self):
 		return self.runOperation(self.OP_VERIFY, HwThread.TASK_READALL)
 
@@ -2164,10 +2192,12 @@ class MainWindow(QMainWindow):
 			pass # Nothing to do
 		elif self.operation == self.OP_READALL:
 			assert(task == HwThread.TASK_READALL)
-			(sigImage, progmemImage, eepromImage, fuseImage, lockbitsImage) = returnValue
+			(sigImage, progmemImage, eepromImage, fuseImage,
+			 lockbitsImage, ramImage) = returnValue
 			self.bufferTab.setupBuffers(self.chipSupportFlags)
 			self.bufferTab.loadBuffers(progmemImage, eepromImage,
-						   fuseImage, lockbitsImage)
+						   fuseImage, lockbitsImage,
+						   ramImage)
 			self.bufferTab.infoBuffer.setChipSignature(sigImage)
 		elif self.operation == self.OP_ERASE:
 			pass # Nothing to do
@@ -2179,10 +2209,14 @@ class MainWindow(QMainWindow):
 			pass # Nothing to do
 		elif self.operation == self.OP_WRITELOCK:
 			pass # Nothing to do
+		elif self.operation == self.OP_WRITERAM:
+			pass # Nothing to do
 		elif self.operation == self.OP_VERIFY:
 			assert(task == HwThread.TASK_READALL)
-			(sigImage, progmemImage, eepromImage, fuseImage, lockbitsImage) = returnValue
-			self.bufferTab.verifyBuffers(progmemImage, eepromImage, fuseImage)
+			(sigImage, progmemImage, eepromImage, fuseImage,
+			 lockbitsImage, ramImage) = returnValue
+			self.bufferTab.verifyBuffers(progmemImage, eepromImage,
+						     fuseImage, ramImage)
 		elif self.operation == self.OP_RAWCOMMAND:
 			self.console.showMessage("Successfully sent raw command\n", bold=True)
 		else:
