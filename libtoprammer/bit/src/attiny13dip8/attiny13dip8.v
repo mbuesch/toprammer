@@ -85,6 +85,8 @@ module attiny13dip8(data, ale, write, read, osc_in, zif);
 	wire osc;
 	IBUF osc_ibuf(.I(osc_in), .O(osc));
 
+	`define DELAY_1US	delay_count <= 24 - 1
+
 	always @(posedge osc) begin
 		if (delay_count == 0 && prog_busy[0] != prog_busy[1]) begin
 			case (prog_command)
@@ -94,22 +96,22 @@ module attiny13dip8(data, ale, write, read, osc_in, zif);
 					dut_sdi <= sdi_buf[10 - prog_count];
 					dut_sii <= sii_buf[10 - prog_count];
 					prog_state <= 1;
-					delay_count <= 3 - 1;	/* 100ns */
+					`DELAY_1US;
 				end
 				1: begin
 					dut_sci_auto <= 1;	/* CLK hi */
 					prog_state <= 2;
-					delay_count <= 3 - 1;	/* 100ns */
+					`DELAY_1US;
 				end
 				2: begin
 					sdo_buf[10 - prog_count] <= zif[`DUT_SDO];
 					prog_count <= prog_count + 1;
 					prog_state <= 3;
-					delay_count <= 3 - 1;	/* 100ns */
+					`DELAY_1US;
 				end
 				3: begin
 					dut_sci_auto <= 0;	/* CLK lo */
-					delay_count <= 4 - 1;	/* 150ns */
+					`DELAY_1US;
 					if (prog_count == 11) begin
 						prog_state <= 0;
 						prog_count <= 0;
@@ -122,7 +124,9 @@ module attiny13dip8(data, ale, write, read, osc_in, zif);
 			end
 			endcase
 		end else begin
-			delay_count <= delay_count - 1;
+			if (delay_count != 0) begin
+				delay_count <= delay_count - 1;
+			end
 		end
 	end
 
