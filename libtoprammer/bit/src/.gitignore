@@ -24,3 +24,6 @@ __ngo/
 *_summary.xml
 *.xpi
 *.twr
+*.ptwx
+*.xrpt
+xlnx_auto_*
