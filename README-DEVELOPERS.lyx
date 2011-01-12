@@ -551,13 +551,13 @@ FPGA bottom-half implementation
 
 \begin_layout Standard
 For the FPGA part you need to get the Xilinx development suite (ISE) version
- 9.2i.
- It can be downloaded as "WebPACK" for free (as in beer) from the Xilinx
- homepage in the "archive" section.
+ 10.1 service pack 3.
+ The "WebPACK", which is sufficient for our purposes, can be downloaded
+ for free (as in beer) from the Xilinx homepage:
 \end_layout
 
 \begin_layout LyX-Code
-http://www.xilinx.com/support/download/i92linwp.htm
+http://www.xilinx.com/support/download/index.htm
 \end_layout
 
 \begin_layout Standard
