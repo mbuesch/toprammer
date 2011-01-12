@@ -1,0 +1,16 @@
+#!/bin/bash
+
+function test_init
+{
+	request_DUT "hm62256dip28" || return 1
+	return 0
+}
+
+function test_run
+{
+	local args="-c hm62256dip28 -I bin -O bin"
+
+	toprammer $args --write-ram "$testfile_32k"
+	toprammer $args --read-ram "$tmpfile"
+	compare_files "$testfile_32k" "$tmpfile" || die "RAM mismatch"
+}
