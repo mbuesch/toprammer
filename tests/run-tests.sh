@@ -53,14 +53,15 @@ function toprammer
 	local logfile="$tmpdir/toprammer.log"
 
 	echo "        toprammer $args"
+	cd "$basedir/.." || die "Failed to chdir"
 	if [ $verbose -eq 0 ]; then
-		$basedir/../toprammer $args >$logfile 2>&1
+		./toprammer $args >$logfile 2>&1
 		if [ $? -ne 0 ]; then
 			[ -r "$logfile" ] && cat "$logfile"
 			die "toprammer $args  <<<FAILED>>>"
 		fi
 	else
-		$basedir/../toprammer $args -V2
+		./toprammer $args -V2
 		[ $? -eq 0 ] || die "toprammer $args  <<<FAILED>>>"
 	fi
 }
@@ -70,7 +71,8 @@ function toprammer_layout_silent
 	local args="$@"
 	local logfile="$tmpdir/toprammer-layout.log"
 	echo "        toprammer-layout $args"
-	$basedir/../toprammer-layout $args >$logfile 2>&1
+	cd "$basedir/.." || die "Failed to chdir"
+	./toprammer-layout $args >$logfile 2>&1
 	if [ $? -ne 0 ]; then
 		[ -r "$logfile" ] && cat "$logfile"
 		die "toprammer-layout $args  <<<FAILED>>>"
@@ -80,7 +82,8 @@ function toprammer_layout_silent
 function toprammer_layout
 {
 	local args="$@"
-	$basedir/../toprammer-layout $args
+	cd "$basedir/.." || die "Failed to chdir"
+	./toprammer-layout $args
 	[ $? -eq 0 ] || die "toprammer-layout $args  <<<FAILED>>>"
 }
 
