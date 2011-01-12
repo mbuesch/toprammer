@@ -215,14 +215,14 @@ class Chip_ATMega_common(Chip):
 		This function expects a DUT present and pins initialized."""
 		signature = ""
 		calibration = ""
-		for addr in range(0, 4):
+		for addr in range(0, 3):
 			self.__loadCommand(self.CMD_READSIG)
 			self.__loadAddr(addr)
 			self.__readWordToStatusReg()
 			data = self.top.cmdReadBufferReg()
-			if addr <= 2:
-				signature += data[0]
-			calibration += data[1]
+			if addr == 0:
+				calibration += data[1]
+			signature += data[0]
 		return (signature, calibration)
 
 	def __readFuseAndLockBits(self):
