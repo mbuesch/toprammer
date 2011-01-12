@@ -27,6 +27,7 @@
 0x0007		=> m8c_issp
 0x0008		=> unitest
 0x0009		=> w29ee011dip32
-0x000A		=> hm62256
+0x000A		=> hm62256dip28
+0x000B		=> m24c16dip8
 0xFEFD		=> Reserved. Do not use.
 0xFFFF		=> Reserved. Do not use.
