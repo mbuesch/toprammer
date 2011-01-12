@@ -138,34 +138,34 @@ module atmega8dip28(data, ale, write, read, zif);
 	bufif0(zif[8], low, low);
 	bufif0(zif[9], low, low);
 	bufif0(zif[10], low, low);
-	bufif0(zif[11], low, high);
-	bufif0(zif[12], low, low);
-	bufif0(zif[13], low, high);
-	bufif0(zif[14], dut_oe, low);
-	bufif0(zif[15], dut_wr, low);
-	bufif0(zif[16], dut_bs1, low);
-	bufif0(zif[17], low, low);
-	bufif0(zif[18], low, low);
-	bufif0(zif[19], dut_xtal, low);
-	bufif0(zif[20], low, low);
-	bufif0(zif[21], dut_xa0, low);
-	bufif0(zif[22], dut_xa1, low);
-	bufif0(zif[23], dut_pagel, low);
-	bufif0(zif[24], dut_data[0], !dut_oe);
-	bufif0(zif[25], dut_data[1], !dut_oe);
-	bufif0(zif[26], dut_data[2], !dut_oe);
-	bufif0(zif[27], dut_data[3], !dut_oe);
-	bufif0(zif[28], dut_data[4], !dut_oe);
-	bufif0(zif[29], dut_data[5], !dut_oe);
-	bufif0(zif[30], low, low);
-	bufif0(zif[31], low, low);
-	bufif0(zif[32], low, low);
-	bufif0(zif[33], dut_data[6], !dut_oe);
-	bufif0(zif[34], dut_data[7], !dut_oe);
-	bufif0(zif[35], dut_bs2, low);
-	bufif0(zif[36], low, low);
-	bufif0(zif[37], low, low);
-	bufif0(zif[38], low, low);
+	bufif0(zif[11], low, high);		/* PC6, /RESET */
+	bufif0(zif[12], low, low);		/* PD0 */
+	bufif0(zif[13], low, high);		/* PD1, RDY/BSY */
+	bufif0(zif[14], dut_oe, low);		/* PD2, /OE */
+	bufif0(zif[15], dut_wr, low);		/* PD3, /WR */
+	bufif0(zif[16], dut_bs1, low);		/* PD4, BS1 */
+	bufif0(zif[17], low, low);		/* VCC */
+	bufif0(zif[18], low, low);		/* GND */
+	bufif0(zif[19], dut_xtal, low);		/* PB6, XTAL1 */
+	bufif0(zif[20], low, low);		/* PB7, XTAL2 */
+	bufif0(zif[21], dut_xa0, low);		/* PD5, XA0 */
+	bufif0(zif[22], dut_xa1, low);		/* PD6, XA1 */
+	bufif0(zif[23], dut_pagel, low);	/* PD7, PAGEL */
+	bufif0(zif[24], dut_data[0], !dut_oe);	/* PB0, DATA0 */
+	bufif0(zif[25], dut_data[1], !dut_oe);	/* PB1, DATA1 */
+	bufif0(zif[26], dut_data[2], !dut_oe);	/* PB2, DATA2 */
+	bufif0(zif[27], dut_data[3], !dut_oe);	/* PB3, DATA3 */
+	bufif0(zif[28], dut_data[4], !dut_oe);	/* PB4, DATA4 */
+	bufif0(zif[29], dut_data[5], !dut_oe);	/* PB5, DATA5 */
+	bufif0(zif[30], low, low);		/* AVCC */
+	bufif0(zif[31], low, low);		/* AREF */
+	bufif0(zif[32], low, low);		/* GND */
+	bufif0(zif[33], dut_data[6], !dut_oe);	/* PC0, DATA6 */
+	bufif0(zif[34], dut_data[7], !dut_oe);	/* PC1, DATA7 */
+	bufif0(zif[35], dut_bs2, low);		/* PC2, BS2 */
+	bufif0(zif[36], low, low);		/* PC3 */
+	bufif0(zif[37], low, low);		/* PC4 */
+	bufif0(zif[38], low, low);		/* PC5 */
 	bufif0(zif[39], low, low);
 	bufif0(zif[40], low, low);
 	bufif0(zif[41], low, low);
