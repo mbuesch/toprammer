@@ -248,13 +248,17 @@ class Chip_ATMega_common(Chip):
 		self.top.cmdSetVPPVoltage(12)
 		self.top.cmdSetVCCXVoltage(5)
 
+		self.__setVoltageControl(VPP_en=1, VPP=0, VCC_en=1, VCC=0)
 		self.__setXA0(0)
 		self.__setXA1(0)
 		self.__setBS1(0)
 		self.__setPAGEL(0)
 		self.__setWR(0)
+		self.top.hostDelay(0.1)
 
 		self.applyVCCX(True)
+		self.__setVoltageControl(VPP_en=1, VPP=0, VCC_en=1, VCC=1)
+		self.top.hostDelay(0.1)
 
 		self.__setOE(0)
 		self.__setWR(1)
@@ -265,7 +269,9 @@ class Chip_ATMega_common(Chip):
 		self.__setBS2(0)
 		self.__setPAGEL(0)
 		self.__pulseXTAL1(10)
+		self.top.flushCommands()
 
+		self.__setVoltageControl(VPP_en=0, VPP=0, VCC_en=1, VCC=1)
 		self.applyVPP(True)
 
 		self.__setOE(1)
@@ -453,3 +459,15 @@ class Chip_ATMega_common(Chip):
 		if high:
 			value |= 0x80
 		self.top.cmdFPGAWrite(0x12, value)
+
+	def __setVoltageControl(self, VPP_en, VPP, VCC_en, VCC):
+		value = 0
+		if VPP_en:
+			value |= 0x01
+		if VPP:
+			value |= 0x02
+		if VCC_en:
+			value |= 0x04
+		if VCC:
+			value |= 0x08
+		self.top.cmdFPGAWrite(0x11, value)
