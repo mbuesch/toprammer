@@ -5,7 +5,7 @@
  *   Atmel Mega88 DIP28
  *   FPGA bottomhalf implementation
  *
- *   Copyright (c) 2010 Michael Buesch <mb@bu3sch.de>
+ *   Copyright (c) 2010-2011 Michael Buesch <mb@bu3sch.de>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -33,22 +33,42 @@ module atmega8dip28(data, ale, write, read, zif);
 	input read;
 	inout [48:1] zif;
 
-	// Read output-enable
+	reg [7:0] address;
+	reg [7:0] read_data;
 	wire read_oe;
-	// Signals to/from the DUT
+
+	/* Signals to/from the DUT */
 	reg dut_oe, dut_wr, dut_xtal, dut_pagel;
 	reg dut_bs1, dut_bs2;
 	reg dut_xa0, dut_xa1;
 	reg [7:0] dut_data;
-	// Cached address value
-	reg [7:0] address;
-	// Cached read data
-	reg [7:0] read_data;
-	// Constant lo/hi
-	wire low, high;
+	reg dut_vpp_en;
+	reg dut_vpp;
+	reg dut_vcc_en;
+	reg dut_vcc;
 
+	/* Constant lo/hi */
+	wire low, high;
 	assign low = 0;
 	assign high = 1;
+
+	initial begin
+		address <= 0;
+		read_data <= 0;
+		dut_oe <= 0;
+		dut_wr <= 0;
+		dut_xtal <= 0;
+		dut_pagel <= 0;
+		dut_bs1 <= 0;
+		dut_bs2 <= 0;
+		dut_xa0 <= 0;
+		dut_xa1 <= 0;
+		dut_data <= 0;
+		dut_vpp_en <= 0;
+		dut_vpp <= 0;
+		dut_vcc_en <= 0;
+		dut_vcc <= 0;
+	end
 
 	always @(negedge ale) begin
 		address <= data;
@@ -60,8 +80,11 @@ module atmega8dip28(data, ale, write, read, zif);
 			/* Data write */
 			dut_data <= data;
 		end
-		8'h11: begin
-			/* Nothing */
+		8'h11: begin /* VCC/VPP control */
+			dut_vpp_en <= data[0];
+			dut_vpp <= data[1];
+			dut_vcc_en <= data[2];
+			dut_vcc <= data[3];
 		end
 		8'h12: begin
 			/* Control pin access */
@@ -98,12 +121,6 @@ module atmega8dip28(data, ale, write, read, zif);
 			end
 			endcase
 		end
-		8'h1B: begin
-			/* Nothing */
-		end
-		8'h1D: begin
-			/* Nothing */
-		end
 		endcase
 	end
 
@@ -138,13 +155,13 @@ module atmega8dip28(data, ale, write, read, zif);
 	bufif0(zif[8], low, low);
 	bufif0(zif[9], low, low);
 	bufif0(zif[10], low, low);
-	bufif0(zif[11], low, high);		/* PC6, /RESET */
-	bufif0(zif[12], low, low);		/* PD0 */
+	bufif0(zif[11], dut_vpp, !dut_vpp_en);	/* PC6, /RESET */
+	bufif0(zif[12], low, high);		/* PD0 */
 	bufif0(zif[13], low, high);		/* PD1, RDY/BSY */
 	bufif0(zif[14], dut_oe, low);		/* PD2, /OE */
 	bufif0(zif[15], dut_wr, low);		/* PD3, /WR */
 	bufif0(zif[16], dut_bs1, low);		/* PD4, BS1 */
-	bufif0(zif[17], high, low);		/* VCC */
+	bufif0(zif[17], dut_vcc, !dut_vcc_en);	/* VCC */
 	bufif0(zif[18], low, low);		/* GND */
 	bufif0(zif[19], dut_xtal, low);		/* PB6, XTAL1 */
 	bufif0(zif[20], low, high);		/* PB7, XTAL2 */
@@ -157,15 +174,15 @@ module atmega8dip28(data, ale, write, read, zif);
 	bufif0(zif[27], dut_data[3], !dut_oe);	/* PB3, DATA3 */
 	bufif0(zif[28], dut_data[4], !dut_oe);	/* PB4, DATA4 */
 	bufif0(zif[29], dut_data[5], !dut_oe);	/* PB5, DATA5 */
-	bufif0(zif[30], high, low);		/* AVCC */
+	bufif0(zif[30], dut_vcc, !dut_vcc_en);	/* AVCC */
 	bufif0(zif[31], low, high);		/* AREF */
 	bufif0(zif[32], low, low);		/* GND */
 	bufif0(zif[33], dut_data[6], !dut_oe);	/* PC0, DATA6 */
 	bufif0(zif[34], dut_data[7], !dut_oe);	/* PC1, DATA7 */
 	bufif0(zif[35], dut_bs2, low);		/* PC2, BS2 */
-	bufif0(zif[36], low, low);		/* PC3 */
-	bufif0(zif[37], low, low);		/* PC4 */
-	bufif0(zif[38], low, low);		/* PC5 */
+	bufif0(zif[36], low, high);		/* PC3 */
+	bufif0(zif[37], low, high);		/* PC4 */
+	bufif0(zif[38], low, high);		/* PC5 */
 	bufif0(zif[39], low, low);
 	bufif0(zif[40], low, low);
 	bufif0(zif[41], low, low);
