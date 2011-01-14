@@ -4,7 +4,7 @@
  *   Atmel Tiny26 DIP20
  *   FPGA bottomhalf implementation
  *
- *   Copyright (c) 2010 Michael Buesch <mb@bu3sch.de>
+ *   Copyright (c) 2010-2011 Michael Buesch <mb@bu3sch.de>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -32,21 +32,39 @@ module attiny26dip20(data, ale, write, read, zif);
 	input read;
 	inout [48:1] zif;
 
-	// Read output-enable
+	reg [7:0] address;
+	reg [7:0] read_data;
 	wire read_oe;
-	// Signals to/from the DUT
+
+	/* Signals to/from the DUT */
 	reg dut_oe, dut_wr, dut_xtal, dut_pagel_bs1;
 	reg dut_xa0, dut_xa1_bs2;
 	reg [7:0] dut_data;
-	// Cached address value
-	reg [7:0] address;
-	// Cached read data
-	reg [7:0] read_data;
-	// Constant lo/hi
-	wire low, high;
+	reg dut_vpp_en;
+	reg dut_vpp;
+	reg dut_vcc_en;
+	reg dut_vcc;
 
+	/* Constant lo/hi */
+	wire low, high;
 	assign low = 0;
 	assign high = 1;
+
+	initial begin
+		address <= 0;
+		read_data <= 0;
+		dut_oe <= 0;
+		dut_wr <= 0;
+		dut_xtal <= 0;
+		dut_pagel_bs1 <= 0;
+		dut_xa0 <= 0;
+		dut_xa1_bs2 <= 0;
+		dut_data <= 0;
+		dut_vpp_en <= 0;
+		dut_vpp <= 0;
+		dut_vcc_en <= 0;
+		dut_vcc <= 0;
+	end
 
 	always @(negedge ale) begin
 		address <= data;
@@ -58,8 +76,11 @@ module attiny26dip20(data, ale, write, read, zif);
 			/* Data write */
 			dut_data <= data;
 		end
-		8'h11: begin
-			/* Nothing */
+		8'h11: begin /* VCC/VPP control */
+			dut_vpp_en <= data[0];
+			dut_vpp <= data[1];
+			dut_vcc_en <= data[2];
+			dut_vcc <= data[3];
 		end
 		8'h12: begin
 			/* Control pin access */
@@ -89,12 +110,6 @@ module attiny26dip20(data, ale, write, read, zif);
 				/* Unused */
 			end
 			endcase
-		end
-		8'h1B: begin
-			/* Nothing */
-		end
-		8'h1D: begin
-			/* Nothing */
 		end
 		endcase
 	end
@@ -137,32 +152,32 @@ module attiny26dip20(data, ale, write, read, zif);
 	bufif0(zif[9], low, low);
 	bufif0(zif[10], low, low);
 	bufif0(zif[11], low, low);
-	bufif0(zif[12], dut_data[7], !dut_oe);
-	bufif0(zif[13], dut_data[6], !dut_oe);
-	bufif0(zif[14], dut_data[5], !dut_oe);
-	bufif0(zif[15], dut_data[4], !dut_oe);
-	bufif0(zif[16], high, low);
-	bufif0(zif[17], low, low);
-	bufif0(zif[18], dut_data[3], !dut_oe);
-	bufif0(zif[19], dut_data[2], !dut_oe);
-	bufif0(zif[20], dut_data[1], !dut_oe);
-	bufif0(zif[21], dut_data[0], !dut_oe);
+	bufif0(zif[12], dut_data[7], !dut_oe);	/* PA7, DATA7 */
+	bufif0(zif[13], dut_data[6], !dut_oe);	/* PA6, DATA6 */
+	bufif0(zif[14], dut_data[5], !dut_oe);	/* PA5, DATA5 */
+	bufif0(zif[15], dut_data[4], !dut_oe);	/* PA4, DATA4 */
+	bufif0(zif[16], dut_vcc, !dut_vcc_en);	/* AVCC */
+	bufif0(zif[17], low, low);		/* GND */
+	bufif0(zif[18], dut_data[3], !dut_oe);	/* PA3, DATA3 */
+	bufif0(zif[19], dut_data[2], !dut_oe);	/* PA2, DATA2 */
+	bufif0(zif[20], dut_data[1], !dut_oe);	/* PA1, DATA1 */
+	bufif0(zif[21], dut_data[0], !dut_oe);	/* PA0, DATA0 */
 	bufif0(zif[22], low, low);
 	bufif0(zif[23], low, low);
 	bufif0(zif[24], low, low);
 	bufif0(zif[25], low, low);
 	bufif0(zif[26], low, low);
 	bufif0(zif[27], low, low);
-	bufif0(zif[28], dut_wr, low);
-	bufif0(zif[29], dut_xa0, low);
-	bufif0(zif[30], dut_xa1_bs2, low);
-	bufif0(zif[31], dut_pagel_bs1, low);
-	bufif0(zif[32], high, low);
-	bufif0(zif[33], low, low);
-	bufif0(zif[34], dut_xtal, low);
-	bufif0(zif[35], dut_oe, low);
-	bufif0(zif[36], low, high);
-	bufif0(zif[37], low, high);
+	bufif0(zif[28], dut_wr, low);		/* PB0, /WR */
+	bufif0(zif[29], dut_xa0, low);		/* PB1, XA0 */
+	bufif0(zif[30], dut_xa1_bs2, low);	/* PB2, XA1/BS2 */
+	bufif0(zif[31], dut_pagel_bs1, low);	/* PB3, PAGEL/BS1 */
+	bufif0(zif[32], dut_vcc, !dut_vcc_en);	/* VCC */
+	bufif0(zif[33], low, low);		/* GND */
+	bufif0(zif[34], dut_xtal, low);		/* PB4, XTAL1 */
+	bufif0(zif[35], dut_oe, low);		/* PB5, XTAL2, /OE */
+	bufif0(zif[36], low, high);		/* PB6, RDY/BSY */
+	bufif0(zif[37], dut_vpp, !dut_vpp_en);	/* PB7, /RESET */
 	bufif0(zif[38], low, low);
 	bufif0(zif[39], low, low);
 	bufif0(zif[40], low, low);
