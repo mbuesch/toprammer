@@ -93,9 +93,7 @@ class TOP:
 		if self.chip:
 			self.shutdownChip()
 		# Find the implementation of the chip.
-		(descriptor, self.chip) = ChipDescription.find(self.topType, chipID, self.usebroken)
-		if not self.chip:
-			raise TOPException("Did not find an implementation for the chip %s" % chipID)
+		(descriptor, self.chip) = ChipDescription.findOne(self.topType, chipID, self.usebroken)
 		self.chip.setTOP(self)
 		# Find the bitfile for the chip.
 		bitfile = bitfileFind(descriptor.bitfile)

@@ -300,18 +300,34 @@ class ChipDescription:
 
 	@staticmethod
 	def find(programmerType, chipID, allowBroken=False):
-		"Find a chip implementation by ID and return an instance of it."
+		"""Find chip implementations by ID and return a list of descriptors
+		and instances of it."""
+		found = []
 		for chip in getRegisteredChips():
 			if chip.broken and not allowBroken:
 				continue
-			if chip.chipID.lower() == chipID.lower():
+			if chip.chipID.lower().find(chipID.lower()) >= 0:
 				instance = chip.chipImplClass()
 				instance.registeredChip = chip
 				instance.setChipID(chip.chipID)
 				instance.setProgrammerType(programmerType)
 				instance.generateVoltageLayouts()
-				return (chip, instance)
-		return (None, None)
+				found.append( (chip, instance) )
+		return found
+
+	@staticmethod
+	def findOne(programmerType, chipID, allowBroken=False):
+		"""Find a chip implementation and return the descriptor
+		and an instance of it. If chipID is not unique, this raises
+		an exception"""
+		found = ChipDescription.find(programmerType, chipID, allowBroken)
+		if not found:
+			raise TOPException("Did not find chipID \"%s\"" % chipID)
+		if len(found) != 1:
+			choices = map(lambda (desc, inst): desc.chipID, found)
+			raise TOPException("The chipID \"%s\" is not unique. Choices are: %s" %\
+				(chipID, ", ".join(choices)))
+		return found[0]
 
 	@staticmethod
 	def dumpAll(fd, verbose=1, showBroken=True):

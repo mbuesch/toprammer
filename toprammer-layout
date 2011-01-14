@@ -96,8 +96,10 @@ def main(argv):
 			raise ValueError()
 
 		generator = None
-		(unused, chip) = ChipDescription.find(programmer, package, allowBroken=True)
-		if not chip:
+		try:
+			(unused, chip) = ChipDescription.findOne(programmer, package, allowBroken=True)
+		except (TOPException), e:
+			chip = None
 			if vccxPin is None or gndPin is None:
 				print "-v|--vccx and  -g|--gnd  " +\
 					"are mandatory, if a package type is specified.\n"
