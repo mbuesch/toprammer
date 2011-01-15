@@ -236,6 +236,16 @@ Load a ZIF-socket VCC-layout.
 \end_layout
 
 \begin_layout Subsection
+cmdEnableZifPullups(enable)
+\end_layout
+
+\begin_layout Standard
+Enable (True) or disable (False) the pullups for all signals on the ZIF
+ socket.
+ Default is disabled.
+\end_layout
+
+\begin_layout Subsection
 cmdFPGAWrite(address, byte)
 \end_layout
 

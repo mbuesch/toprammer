@@ -255,7 +255,7 @@ class TOP:
 		stat = self.cmdReadBufferReg32()
 		if stat != 0x0000686C:
 			self.printWarning("Init: Unexpected status (b): 0x%08X" % stat)
-		self.cmdEnableZif()
+		self.cmdEnableZifPullups(False)
 		self.flushCommands()
 
 	def shutdownProgrammer(self):
@@ -526,11 +526,11 @@ class TOP:
 		self.cmdDelay(0.01)
 		self.hostDelay(0.15)
 
-	def cmdEnableZif(self, enable=True):
-		"""Enable the ZIF socket."""
-		param = 1
+	def cmdEnableZifPullups(self, enable):
+		"""Enable the ZIF socket signal pullups."""
+		param = 0
 		if enable:
-			param = 0
+			param = 1
 		cmd = chr(0x0E) + chr(0x28) + chr(param) + chr(0)
 		self.queueCommand(cmd)
 
