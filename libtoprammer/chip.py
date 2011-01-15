@@ -267,6 +267,7 @@ class ChipDescription:
 		     chipType=TYPE_MCU,
 		     description="", fuseDesc=(), lockbitDesc=(),
 		     packages=None, comment="",
+		     maintainer="Michael Buesch <mb@bu3sch.de>",
 		     broken=False):
 		"""Chip implementation class description.
 		chipImplClass	=> The implementation class of the chip.
@@ -282,6 +283,7 @@ class ChipDescription:
 		packages	=> List of supported packages.
 				   Each entry is a tuple of two strings: ("PACKAGE", "description")
 		comment		=> Additional comment string.
+		maintainer	=> Maintainer name.
 		broken		=> Boolean flag to mark the implementation as broken.
 		"""
 
@@ -297,6 +299,7 @@ class ChipDescription:
 		self.lockbitDesc = lockbitDesc
 		self.packages = packages
 		self.comment = comment
+		self.maintainer = maintainer
 		self.broken = broken
 
 		getRegisteredChips().append(self)
@@ -352,8 +355,13 @@ class ChipDescription:
 			fd.write(self.description)
 		else:
 			fd.write(self.bitfile)
+		extraFlags = []
+		if not self.maintainer:
+			extraFlags.append("Orphaned")
 		if self.broken:
-			fd.write("  (broken implementation)")
+			extraFlags.append("Broken implementation")
+		if extraFlags:
+			fd.write("  (%s)" % "; ".join(extraFlags))
 		fd.write("\n")
 		if verbose >= 1:
 			fd.write("%25s:  %s\n" % ("ChipID", self.chipID))
@@ -385,3 +393,8 @@ class ChipDescription:
 					fd.write("%25s:  %s\n" % ("Support for", description))
 		if verbose >= 2 and self.comment:
 			fd.write("%25s:  %s\n" % ("Comment", self.comment))
+		if verbose >= 3:
+			maintainer = self.maintainer
+			if not maintainer:
+				maintainer = "NONE"
+			fd.write("%25s:  %s\n" % ("Maintainer", maintainer))

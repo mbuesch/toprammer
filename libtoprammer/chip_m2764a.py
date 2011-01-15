@@ -168,5 +168,6 @@ ChipDescription(
 	runtimeID = (0x0006, 0x01),
 	chipType = ChipDescription.TYPE_EPROM,
 	description = "M2764A EPROM",
+	maintainer = None,
 	packages = ( ("DIP28", ""), ),
 )
