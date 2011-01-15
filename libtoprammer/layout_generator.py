@@ -274,12 +274,16 @@ class LayoutGeneratorDIP(LayoutGenerator):
 		return ret
 
 def createLayoutGenerator(package):
-	p = package.upper()
 	try:
-		if p.startswith("DIP"):
-			nrPins = int(p[3:])
-			return LayoutGeneratorDIP(nrPins)
-		else:
-			raise ValueError()
+		for regex in ("DIP(\d+)", "PDIP(\d+)", "SO(\d+)", "TSSOP(\d+)", ):
+			m = re.match(regex, package, re.IGNORECASE)
+			if m:
+				nrPins = int(m.group(1))
+				return LayoutGeneratorDIP(nrPins)
+		if package.upper() == "PLCC32": # 1:1 adapter
+			return LayoutGeneratorDIP(32)
+		if package.upper() == "PLCC44": # 1:1 adapter
+			return LayoutGeneratorDIP(44)
+		raise ValueError()
 	except (ValueError), e:
 		raise TOPException("Unknown package type " + package)
