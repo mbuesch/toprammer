@@ -135,7 +135,23 @@ Reads the programmer identification and versioning string and returns it.
 \end_layout
 
 \begin_layout Subsection
-cmdReadBufferReg()
+getBufferRegSize()
+\end_layout
+
+\begin_layout Standard
+Returns the size of the 
+\begin_inset Quotes eld
+\end_inset
+
+buffer register
+\begin_inset Quotes erd
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection
+cmdReadBufferReg(nrBytes=all)
 \end_layout
 
 \begin_layout Standard
@@ -149,6 +165,7 @@ buffer register
 
  from the microcontroller.
  That register is used for buffering of data fetched from the FPGA.
+ If nrBytes is not specified, it reads the whole register.
 \end_layout
 
 \begin_layout Subsection

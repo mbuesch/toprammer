@@ -422,10 +422,20 @@ class TOP:
 		self.flushCommands()
 		time.sleep(seconds)
 
-	def cmdReadBufferReg(self):
-		"""Read the buffer register. Returns 64 bytes."""
+	def getBufferRegSize(self):
+		"""Returns the size (in bytes) of the buffer register."""
+		return 64
+
+	def cmdReadBufferReg(self, nrBytes=-1):
+		"""Read the buffer register. Returns nrBytes (default all bytes)."""
+		regSize = self.getBufferRegSize()
+		if nrBytes < 0:
+			nrBytes = regSize
+		assert(nrBytes <= regSize)
+		if not nrBytes:
+			return ""
 		self.queueCommand(chr(0x07))
-		return self.receive(64)
+		return self.receive(regSize)[0:nrBytes]
 
 	def cmdReadBufferReg8(self):
 		"""Read a 8bit value from the buffer register."""

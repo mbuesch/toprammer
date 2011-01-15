@@ -81,11 +81,10 @@ class Chip_m24cXXdip8_common(Chip):
 				self.__runCommand(self.CMD_DATA_READ_STOP)
 			self.__readData()
 			count += 1
-			if count == 64:
-				image += self.top.cmdReadBufferReg()[0:count]
+			if count == self.top.getBufferRegSize():
+				image += self.top.cmdReadBufferReg(count)
 				count = 0
-		if count:
-			image += self.top.cmdReadBufferReg()[0:count]
+		image += self.top.cmdReadBufferReg(count)
 		self.progressMeterFinish()
 
 		return image
@@ -228,6 +227,7 @@ class ChipDescription_m24cXX(ChipDescription):
 			bitfile = "m24c16dip8",
 			chipID = chipID,
 			runtimeID = (0x000B, 0x01),
+			chipType = ChipDescription.TYPE_EEPROM,
 			description = description,
 			packages = (
 				("DIP8", ""),
