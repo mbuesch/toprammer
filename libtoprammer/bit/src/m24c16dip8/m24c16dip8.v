@@ -121,6 +121,7 @@ module i2c_module(clock, scl, sda,
 				case (data_state)
 				0: begin
 					sda_out <= write_byte[7 - bit_index];
+					scl_out <= 0;
 					data_state <= 1;
 				end
 				1: begin
@@ -179,10 +180,6 @@ module i2c_module(clock, scl, sda,
 			endcase
 		end else begin
 			/* Reset */
-			sda_out_en <= 0;
-			sda_out <= 0;
-			scl_out <= 0;
-
 			start_state <= 0;
 			data_state <= 0;
 			ack_state <= 0;
@@ -223,14 +220,18 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 	reg [3:0] command;
 	reg [7:0] data_buffer;
 	reg [7:0] addr_buffer;
-	reg [3:0] prog_state;
 
 	`define IS_BUSY		(cmd_busy[0] != cmd_busy[1])	/* Is running command? */
 	`define SET_FINISHED	cmd_busy[1] <= cmd_busy[0]	/* Set command-finished */
 
 	/* Programmer commands */
-	parameter CMD_READBYTE		= 0;
-	parameter CMD_WRITEBYTE		= 1;
+	parameter CMD_DEVSEL_READ	= 0;
+	parameter CMD_DEVSEL_WRITE	= 1;
+	parameter CMD_SETADDR		= 2;
+	parameter CMD_DATA_READ		= 3;
+	parameter CMD_DATA_READ_STOP	= 4;
+	parameter CMD_DATA_WRITE	= 5;
+	parameter CMD_DATA_WRITE_STOP	= 6;
 
 	/* Chip signals */
 	reg chip_e0;		/* E0 */
@@ -271,9 +272,7 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 	wire osc;
 	IBUF osc_ibuf(.I(osc_in), .O(osc));
 
-	`define DELAY_500NS	delay_count <= 12 - 1
-	`define DELAY_1US	delay_count <= 24 - 1
-	`define DELAY_10US	delay_count <= 240 - 1
+	`define DELAY_1P5US	delay_count <= 36 - 1	/* 1.5 microseconds */
 
 	initial begin
 		address <= 0;
@@ -284,7 +283,6 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 		command <= 0;
 		data_buffer <= 0;
 		addr_buffer <= 0;
-		prog_state <= 0;
 
 		chip_e0 <= 0;
 		chip_e0_en <= 0;
@@ -307,122 +305,94 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 
 	always @(posedge osc) begin
 		if (delay_count == 0 && `IS_BUSY) begin
-			if (i2c_running == 1 || i2c_running == 2) begin
+			if (i2c_running) begin
 				if (i2c_finished && i2c_running == 2) begin
 					i2c_running <= 0;
+					if (i2c_read) begin
+						fetched_data <= i2c_read_byte;
+					end
+					`SET_FINISHED;
 				end else begin
 					i2c_running <= 2;
 					i2c_clock <= ~i2c_clock;
-					`DELAY_10US;
+					`DELAY_1P5US;
 				end
 			end else begin
 				case (command)
-				CMD_READBYTE: begin
-					case (prog_state)
-					0: begin /* Send device select; for addr write */
-						i2c_write_byte[7] <= 1;
-						i2c_write_byte[6] <= 0;
-						i2c_write_byte[5] <= 1;
-						i2c_write_byte[4] <= 0;
-						i2c_write_byte[3] <= chip_e2;
-						i2c_write_byte[2] <= chip_e1;
-						i2c_write_byte[1] <= chip_e0;
-						i2c_write_byte[0] <= 0; /* Write */
-						i2c_clock <= 0;
-						i2c_read <= 0;
-						i2c_do_start <= 1;
-						i2c_expect_ack <= 1;
-						i2c_do_stop <= 0;
-						i2c_running <= 1;
-						prog_state <= 1;
-					end
-					1: begin /* Send address */
-						i2c_write_byte <= addr_buffer;
-						i2c_clock <= 0;
-						i2c_read <= 0;
-						i2c_do_start <= 0;
-						i2c_expect_ack <= 1;
-						i2c_do_stop <= 0;
-						i2c_running <= 1;
-						prog_state <= 2;
-					end
-					2: begin /* Send device select; for data read */
-						i2c_write_byte[7] <= 1;
-						i2c_write_byte[6] <= 0;
-						i2c_write_byte[5] <= 1;
-						i2c_write_byte[4] <= 0;
-						i2c_write_byte[3] <= chip_e2;
-						i2c_write_byte[2] <= chip_e1;
-						i2c_write_byte[1] <= chip_e0;
-						i2c_write_byte[0] <= 1; /* Read */
-						i2c_clock <= 0;
-						i2c_read <= 0;
-						i2c_do_start <= 1;
-						i2c_expect_ack <= 1;
-						i2c_do_stop <= 0;
-						i2c_running <= 1;
-						prog_state <= 3;
-					end
-					3: begin /* Read data */
-						i2c_clock <= 0;
-						i2c_read <= 1;
-						i2c_do_start <= 0;
-						i2c_expect_ack <= 0;
-						i2c_do_stop <= 1;
-						i2c_running <= 1;
-						prog_state <= 4;
-					end
-					4: begin /* Got data */
-						fetched_data <= i2c_read_byte;
-						prog_state <= 0;
-						`SET_FINISHED;
-					end
-					endcase
+				CMD_DEVSEL_READ: begin
+					i2c_write_byte[7] <= 1;
+					i2c_write_byte[6] <= 0;
+					i2c_write_byte[5] <= 1;
+					i2c_write_byte[4] <= 0;
+					i2c_write_byte[3] <= chip_e2;
+					i2c_write_byte[2] <= chip_e1;
+					i2c_write_byte[1] <= chip_e0;
+					i2c_write_byte[0] <= 1; /* Read */
+					i2c_clock <= 0;
+					i2c_read <= 0;
+					i2c_do_start <= 1;
+					i2c_expect_ack <= 1;
+					i2c_do_stop <= 0;
+					i2c_running <= 1;
 				end
-				CMD_WRITEBYTE: begin
-					case (prog_state)
-					0: begin /* Send device select. */
-						i2c_write_byte[7] <= 1;
-						i2c_write_byte[6] <= 0;
-						i2c_write_byte[5] <= 1;
-						i2c_write_byte[4] <= 0;
-						i2c_write_byte[3] <= chip_e2;
-						i2c_write_byte[2] <= chip_e1;
-						i2c_write_byte[1] <= chip_e0;
-						i2c_write_byte[0] <= 0; /* Write */
-						i2c_clock <= 0;
-						i2c_read <= 0;
-						i2c_do_start <= 1;
-						i2c_expect_ack <= 1;
-						i2c_do_stop <= 0;
-						i2c_running <= 1;
-						prog_state <= 1;
-					end
-					1: begin /* Send address */
-						i2c_write_byte <= addr_buffer;
-						i2c_clock <= 0;
-						i2c_read <= 0;
-						i2c_do_start <= 0;
-						i2c_expect_ack <= 1;
-						i2c_do_stop <= 0;
-						i2c_running <= 1;
-						prog_state <= 2;
-					end
-					2: begin /* Send data byte */
-						i2c_write_byte <= data_buffer;
-						i2c_clock <= 0;
-						i2c_read <= 0;
-						i2c_do_start <= 0;
-						i2c_expect_ack <= 1;
-						i2c_do_stop <= 1;
-						i2c_running <= 1;
-						prog_state <= 3;
-					end
-					3: begin
-						prog_state <= 0;
-						`SET_FINISHED;
-					end
-					endcase
+				CMD_DEVSEL_WRITE: begin
+					i2c_write_byte[7] <= 1;
+					i2c_write_byte[6] <= 0;
+					i2c_write_byte[5] <= 1;
+					i2c_write_byte[4] <= 0;
+					i2c_write_byte[3] <= chip_e2;
+					i2c_write_byte[2] <= chip_e1;
+					i2c_write_byte[1] <= chip_e0;
+					i2c_write_byte[0] <= 0; /* Write */
+					i2c_clock <= 0;
+					i2c_read <= 0;
+					i2c_do_start <= 1;
+					i2c_expect_ack <= 1;
+					i2c_do_stop <= 0;
+					i2c_running <= 1;
+				end
+				CMD_SETADDR: begin
+					i2c_write_byte <= addr_buffer;
+					i2c_clock <= 0;
+					i2c_read <= 0;
+					i2c_do_start <= 0;
+					i2c_expect_ack <= 1;
+					i2c_do_stop <= 0;
+					i2c_running <= 1;
+				end
+				CMD_DATA_READ: begin
+					i2c_clock <= 0;
+					i2c_read <= 1;
+					i2c_do_start <= 0;
+					i2c_expect_ack <= 1;
+					i2c_do_stop <= 0;
+					i2c_running <= 1;
+				end
+				CMD_DATA_READ_STOP: begin
+					i2c_clock <= 0;
+					i2c_read <= 1;
+					i2c_do_start <= 0;
+					i2c_expect_ack <= 0;
+					i2c_do_stop <= 1;
+					i2c_running <= 1;
+				end
+				CMD_DATA_WRITE: begin
+					i2c_write_byte <= data_buffer;
+					i2c_clock <= 0;
+					i2c_read <= 0;
+					i2c_do_start <= 0;
+					i2c_expect_ack <= 1;
+					i2c_do_stop <= 0;
+					i2c_running <= 1;
+				end
+				CMD_DATA_WRITE_STOP: begin
+					i2c_write_byte <= data_buffer;
+					i2c_clock <= 0;
+					i2c_read <= 0;
+					i2c_do_start <= 0;
+					i2c_expect_ack <= 1;
+					i2c_do_stop <= 1;
+					i2c_running <= 1;
 				end
 				endcase
 			end
@@ -435,15 +405,15 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 
 	always @(posedge write) begin
 		case (address)
-		8'h10: begin /* Write to data buffer */
-			data_buffer[7:0] <= data[7:0];
+		8'h10: begin /* Run command */
+			command <= data;
+			cmd_busy[0] <= ~cmd_busy[1];
 		end
 		8'h11: begin /* Write to addr buffer */
 			addr_buffer[7:0] <= data[7:0];
 		end
-		8'h12: begin /* Run command */
-			command <= data;
-			cmd_busy[0] <= ~cmd_busy[1];
+		8'h12: begin /* Write to data buffer */
+			data_buffer[7:0] <= data[7:0];
 		end
 		8'h13: begin /* Set control pins */
 			chip_e0 <= data[0];
