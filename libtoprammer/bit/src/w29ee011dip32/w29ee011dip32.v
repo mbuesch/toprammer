@@ -35,48 +35,74 @@ module w29ee011dip32(data, ale, write, read, osc_in, zif);
 
 	/* Interface to the microcontroller */
 	wire read_oe;			/* Read output-enable */
-	reg [7:0] address = 0;		/* Cached address value */
-	reg [7:0] read_data = 0;	/* Cached read data */
+	reg [7:0] address;		/* Cached address value */
+	reg [7:0] read_data;		/* Cached read data */
 
 	wire low, high;		/* Constant lo/hi */
 	assign low = 0;
 	assign high = 1;
 
 	/* Programmer context */
-	reg [1:0] prog_busy = 0;
-	reg [3:0] prog_command = 0;
-	reg [3:0] prog_state = 0;
-	reg [16:0] prog_addr = 0;
+	reg [1:0] prog_busy;
+	reg [3:0] prog_command;
+	reg [3:0] prog_state;
+	reg [16:0] prog_addr;
 	parameter WRITE_BUF_SIZE = 128;
 	reg [7:0] write_buf[0:WRITE_BUF_SIZE-1];
 	//synthesis attribute ram_style write_buf block;
-	reg [7:0] write_buf_count = 0;
-	reg [7:0] write_buf_iter = 0;
+	reg [7:0] write_buf_count;
+	reg [7:0] write_buf_iter;
 	parameter JEDEC_BUF_SIZE = 6;
 	reg [7:0] jedec_addr_lo[0:JEDEC_BUF_SIZE-1];
 	reg [7:0] jedec_addr_med[0:JEDEC_BUF_SIZE-1];
 	reg [0:0] jedec_addr_hi[0:JEDEC_BUF_SIZE-1];
 	reg [7:0] jedec_data[0:JEDEC_BUF_SIZE-1];
-	reg [2:0] jedec_buf_count = 0;
-	reg [2:0] jedec_buf_iter = 0;
-	reg in_jedec = 1;
-	reg [16:0] dut_write_addr = 0;
-	reg [16:0] dut_read_addr = 0;
+	reg [2:0] jedec_buf_count;
+	reg [2:0] jedec_buf_iter;
+	reg in_jedec;
+	reg [16:0] dut_write_addr;
+	reg [16:0] dut_read_addr;
 	wire [16:0] dut_addr;
-	reg [7:0] dut_jedec_data = 0;
-	reg [7:0] dut_write_data = 0;
+	reg [7:0] dut_jedec_data;
+	reg [7:0] dut_write_data;
 	wire [7:0] dut_data;
-	reg dut_ce = 1;
-	reg dut_oe = 1;
-	reg dut_we = 1;
+	reg dut_ce;
+	reg dut_oe;
+	reg dut_we;
 
 	/* Programmer commands */
 	parameter CMD_WRITEBUF		= 1;
 
 	/* The delay counter. Based on the 24MHz input clock. */
-	reg [15:0] delay_count = 0;
+	reg [15:0] delay_count;
 	wire osc;
 	IBUF osc_ibuf(.I(osc_in), .O(osc));
+
+	initial begin
+		address <= 0;
+		read_data <= 0;
+		delay_count <= 0;
+
+		prog_busy <= 0;
+		prog_command <= 0;
+		prog_state <= 0;
+		prog_addr <= 0;
+		write_buf_count <= 0;
+		write_buf_iter <= 0;
+		jedec_buf_count <= 0;
+		jedec_buf_iter <= 0;
+		in_jedec <= 1;
+		dut_write_addr <= 0;
+		dut_read_addr <= 0;
+		dut_jedec_data <= 0;
+		dut_write_data <= 0;
+		dut_ce <= 1;
+		dut_oe <= 1;
+		dut_we <= 1;
+	end
+
+	`define DELAY_1US	delay_count <= (24 * 1) - 1
+	`define DELAY_350US	delay_count <= (24 * 350) - 1
 
 	always @(posedge osc) begin
 		if (delay_count == 0) begin
@@ -93,7 +119,7 @@ module w29ee011dip32(data, ale, write, read, osc_in, zif);
 						dut_we <= 0;
 						jedec_buf_iter <= jedec_buf_iter + 1;
 						prog_state <= 1;
-						delay_count <= 24 - 1; /* 1us */
+						`DELAY_1US;
 					end
 					1: begin
 						dut_we <= 1;
@@ -101,13 +127,13 @@ module w29ee011dip32(data, ale, write, read, osc_in, zif);
 							prog_state <= 2; /* Advance to payload */
 						else
 							prog_state <= 0;
-						delay_count <= 24 - 1; /* 1us */
+						`DELAY_1US;
 					end
 					2: begin
 						if (write_buf_count == 0) begin
 							/* Done. No payload. */
 							prog_state <= 5;
-							delay_count <= 8400 - 1; /* 350us */
+							`DELAY_350US;
 						end else begin
 							prog_state <= 3;
 							in_jedec <= 0;
@@ -119,17 +145,17 @@ module w29ee011dip32(data, ale, write, read, osc_in, zif);
 						dut_we <= 0;
 						write_buf_iter <= write_buf_iter + 1;
 						prog_state <= 4;
-						delay_count <= 24 - 1; /* 1us */
+						`DELAY_1US;
 					end
 					4: begin
 						dut_we <= 1;
 						if (write_buf_iter == write_buf_count) begin
 							prog_state <= 5;
-							delay_count <= 8400 - 1; /* 350us */
+							`DELAY_350US;
 						end else begin
 							dut_write_addr <= dut_write_addr + 1;
 							prog_state <= 3;
-							delay_count <= 24 - 1; /* 1us */
+							`DELAY_1US;
 						end
 					end
 					5: begin
