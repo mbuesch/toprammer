@@ -223,7 +223,8 @@ ChipDescription(
 	Chip_AT89C2051dip20,
 	bitfile = "at89c2051dip20",
 	runtimeID = (0x0005, 0x01),
-	description = "Atmel AT89C2051",
+	chipVendor = "Atmel",
+	description = "AT89C2051",
 	maintainer = None,
 	packages = ( ("DIP20", ""), )
 )

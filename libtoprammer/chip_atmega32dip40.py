@@ -40,7 +40,8 @@ ChipDescription(
 	Chip_ATMega32DIP40,
 	bitfile = "atmega32dip40",
 	runtimeID = (0x0004, 0x01),
-	description = "Atmel AtMega32",
+	chipVendor = "Atmel",
+	description = "AtMega32",
 	packages = ( ("DIP40", ""), ),
 	comment = "Insert upside down into ZIF socket"
 )

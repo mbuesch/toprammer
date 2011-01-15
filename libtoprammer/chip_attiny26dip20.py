@@ -40,7 +40,8 @@ ChipDescription(
 	Chip_ATTiny26DIP20,
 	bitfile = "attiny26dip20",
 	runtimeID = (0x0002, 0x01),
-	description = "Atmel AtTiny26",
+	chipVendor = "Atmel",
+	description = "AtTiny26",
 	packages = ( ("DIP20", ""), ),
 	comment = "Special ZIF position",
 	broken = True

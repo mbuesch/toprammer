@@ -1627,9 +1627,7 @@ class ChipSelectDialog(QDialog):
 			ChipDescription.TYPE_SRAM	: self.sramRadio,
 		}
 		self.chipList.clear()
-		chipsList = getRegisteredChips()[:]
-		chipsList.sort()
-		for chipDescription in chipsList:
+		for chipDescription in getRegisteredChips():
 			if chipDescription.broken and\
 			   self.showBroken.checkState() != Qt.Checked:
 				continue
@@ -1639,8 +1637,11 @@ class ChipSelectDialog(QDialog):
 			if not radioButton.isChecked() and\
 			   not self.allRadio.isChecked():
 				continue
-			item = QListWidgetItem(chipDescription.description,
-					       self.chipList)
+			text = ""
+			if chipDescription.chipVendor:
+				text += ", ".join(chipDescription.chipVendor) + "  "
+			text += chipDescription.description
+			item = QListWidgetItem(text, self.chipList)
 			item.setData(Qt.UserRole, chipDescription)
 		self.chipList.sortItems()
 		self.chipList.setCurrentRow(0)
