@@ -8,16 +8,14 @@ function test_init
 
 function test_run
 {
-	local args="-c at89c2051dip20 -I bin -O bin"
-
 	# Check signature
-	toprammer $args --read-sig "$tmpfile"
+	toprammer --read-sig "$tmpfile"
 	compare_file_to_hex $tmpfile "1E21" || die "signature mismatch"
 
-	toprammer $args --erase
+	toprammer --erase
 
 	# Check progmem
-	toprammer $args --write-prog "$testfile_2k"
-	toprammer $args --read-prog "$tmpfile"
+	toprammer --write-prog "$testfile_2k"
+	toprammer --read-prog "$tmpfile"
 	compare_files "$testfile_2k" "$tmpfile" || die "progmem mismatch"
 }

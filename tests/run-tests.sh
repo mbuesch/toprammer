@@ -52,6 +52,9 @@ function toprammer
 	local args="$@"
 	local logfile="$tmpdir/toprammer.log"
 
+	[ -n "$current_chipid" ] && args="$args --chip-id $current_chipid"
+	args="$args -I bin -O bin"
+
 	echo "        toprammer $args"
 	cd "$basedir/.." || die "Failed to chdir"
 	if [ $verbose -eq 0 ]; then
@@ -108,6 +111,11 @@ function request
 function request_DUT # $1=DUT-name
 {
 	local dut="$1"
+
+	current_chipid="$dut"
+	# Init the programmer
+	toprammer --force-upload
+	# Show layout
 	toprammer_layout -d "$current_device" -p "$dut" --only-insert
 	request "Please insert a $dut into the ZIF socket (x to skip; a to abort)..."
 }
@@ -174,6 +182,7 @@ done
 
 current_test=
 current_device=
+current_chipid=
 cleanup
 mkdir -p "$tmpdir"
 [ $? -eq 0 ] || die "Failed to create $tmpdir"
@@ -249,6 +258,7 @@ function do_run_test # $1=device, $2=testscript
 
 	current_device=
 	current_test=
+	current_chipid=
 }
 
 if [ $nr_scriptpaths -eq 0 ]; then

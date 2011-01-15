@@ -469,13 +469,9 @@ Chip
 \end_layout
 
 \begin_layout Description
-initializeChip() Called once on chip initialization.
- Reimplement this, if required.
-\end_layout
-
-\begin_layout Description
 shutdownChip() Called once on chip shutdown.
- Reimplement this, if required
+ The default implementation turns off all voltages.
+ There's usually no need to override that.
 \end_layout
 
 \begin_layout Description

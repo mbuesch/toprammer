@@ -237,6 +237,7 @@ class UnitestDialog(QDialog):
 					"unitest")
 		if failed:
 			raise TOPException("Failed to load 'unitest' chip: %s" % str(returnValue))
+		self.queryTop("top.getChip().reset()")
 
 		# Query the hardware layer for common parameters
 		self.param_topType = self.queryTop("top.getProgrammerType()")
@@ -516,7 +517,7 @@ class UnitestDialog(QDialog):
 				HwThread.TASK_GENERICTOPCALL, taskParams)
 		self.unblockInputPoll()
 		if failed:
-			raise TOPException("Failed to query TOP %s" % funcname)
+			raise TOPException("Failed to query TOP %s\n%s" % (funcname, str(returnValue)))
 		return returnValue
 
 	def shutdown(self):

@@ -39,14 +39,6 @@ class Chip_m24cXXdip8_common(Chip):
 			      chipPinGND = 4)
 		self.eepromSize = eepromSize	# in bytes
 
-	def shutdownChip(self):
-		self.printDebug("Shutdown chip")
-		self.applyVCCX(False)
-		self.applyVPP(False)
-		self.applyGND(False)
-		self.top.cmdSetVCCXVoltage(5)
-		self.top.cmdSetVPPVoltage(5)
-
 	def __chipTurnOn(self):
 		self.top.cmdSetVCCXVoltage(5)
 		self.top.cmdSetVPPVoltage(5)

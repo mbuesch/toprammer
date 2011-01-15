@@ -173,7 +173,7 @@ class Chip_M8C_ISSP(Chip):
 	def __init__(self):
 		Chip.__init__(self)
 
-	def initializeChip(self):
+	def initializeChip(self): #FIXME put somewhere else
 		self.printDebug("Initializing chip")
 		self.top.vccx.setLayoutMask(0)
 		self.top.vpp.setLayoutMask(0)
@@ -186,14 +186,6 @@ class Chip_M8C_ISSP(Chip):
 		self.__powerOnReset()
 		id = self.__readID()
 		print "ID=0x%04X" % id
-
-	def shutdownChip(self):
-		self.printDebug("Shutdown chip")
-		self.top.cmdSetVCCXVoltage(5)
-		self.top.cmdSetVPPVoltage(5)
-		self.top.vccx.setLayoutMask(0)
-		self.top.vpp.setLayoutMask(0)
-		self.top.gnd.setLayoutPins( [] )
 
 	def __powerDown(self):
 		"Turn the power to the device off"

@@ -105,7 +105,6 @@ class TOP:
 		self.bitfile.parseFile(bitfile)
 		# Initialize the hardware.
 		self.__bitfileUpload(descriptor.runtimeID)
-		self.chip.initializeChip()
 
 	def shutdownChip(self):
 		if self.chip:
@@ -116,7 +115,6 @@ class TOP:
 	def resetChip(self):
 		if self.chip:
 			self.chip.shutdownChip()
-			self.chip.initializeChip()
 			self.flushCommands()
 
 	def getChip(self):

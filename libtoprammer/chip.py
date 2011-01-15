@@ -185,11 +185,14 @@ class Chip:
 		self.top.progressMeter(AbstractUserInterface.PROGRESSMETER_CHIPACCESS,
 				       step)
 
-	def initializeChip(self):
-		pass # Override me in the subclass, if required.
-
 	def shutdownChip(self):
-		pass # Override me in the subclass, if required.
+		# Override me in the subclass, if required.
+		self.printDebug("Default chip shutdown")
+		self.applyVCCX(False)
+		self.applyVPP(False)
+		self.applyGND(False)
+		self.top.cmdSetVCCXVoltage(self.top.vccx.minVoltage())
+		self.top.cmdSetVPPVoltage(self.top.vpp.minVoltage())
 
 	def readSignature(self):
 		# Override me in the subclass, if required.

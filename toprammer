@@ -201,9 +201,6 @@ def main(argv):
 	if opt_action and opt_action != "print-list" and not opt_chipID:
 		print "-c|--chip-id is mandatory!"
 		return 1
-	if not opt_action:
-		print "An action is mandatory!"
-		return 1
 	if not opt_informat in ("auto", "bin", "ihex", "hex"):
 		print "Invalid -I|--in-format"
 		return 1
@@ -246,7 +243,7 @@ def main(argv):
 		elif opt_action == "write-ram":
 			top.writeRAM(fileIn(opt_file, opt_informat))
 		else:
-			assert(0)
+			print "No action specified"
 		top.shutdownChip()
 	except (TOPException, BitfileException, IOError), e:
 		print e

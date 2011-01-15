@@ -36,23 +36,6 @@ class Chip_w29ee011dip32(Chip):
 			      chipPinsVPP = None,
 			      chipPinGND = 16)
 
-	def initializeChip(self):
-		self.printDebug("Initializing chip")
-		self.applyVCCX(False)
-		self.applyVPP(False)
-		self.applyGND(False)
-		self.top.cmdSetVCCXVoltage(5)
-		self.top.cmdSetVPPVoltage(0)
-		self.top.cmdSetVPPVoltage(5)
-
-	def shutdownChip(self):
-		self.printDebug("Shutdown chip")
-		self.top.cmdSetVCCXVoltage(5)
-		self.top.cmdSetVPPVoltage(5)
-		self.applyVCCX(False)
-		self.applyVPP(False)
-		self.applyGND(False)
-
 	def erase(self):
 		self.applyVCCX(True)
 		self.applyVPP(True)

@@ -41,13 +41,6 @@ class Chip_AtTiny13dip8(Chip):
 		self.eepromPageSize = 4
 		self.eepromPages = 16
 
-	def shutdownChip(self):
-		self.printDebug("Shutdown chip")
-		self.top.cmdSetVPPVoltage(5)
-		self.applyVCCX(False)
-		self.applyVPP(False)
-		self.applyGND(False)
-
 	def readSignature(self):
 		self.__enterPM()
 		self.progressMeterInit("Reading signature", 0)

@@ -52,14 +52,6 @@ class Chip_ATMega_common(Chip):
 		self.eepromPageSize = eepromPageSize	# EEPROM page size, in bytes
 		self.eepromPages = eepromPages		# Nr of EEPROM pages
 
-	def shutdownChip(self):
-		self.printDebug("Shutdown chip")
-		self.top.cmdSetVCCXVoltage(5)
-		self.top.cmdSetVPPVoltage(5)
-		self.applyVCCX(False)
-		self.applyVPP(False)
-		self.applyGND(False)
-
 	def readSignature(self):
 		self.__enterPM()
 

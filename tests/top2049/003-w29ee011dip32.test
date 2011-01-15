@@ -8,11 +8,9 @@ function test_init
 
 function test_run
 {
-	local args="-c w29ee011dip32 -I bin -O bin"
+	toprammer --erase
 
-	toprammer $args --erase
-
-	toprammer $args --write-eeprom "$testfile_128k"
-	toprammer $args --read-eeprom "$tmpfile"
+	toprammer --write-eeprom "$testfile_128k"
+	toprammer --read-eeprom "$tmpfile"
 	compare_files "$testfile_128k" "$tmpfile" || die "EEPROM mismatch"
 }

@@ -35,8 +35,7 @@ class Chip_M2764A(Chip):
 			      chipPinsVPP = 1,
 			      chipPinGND = 14)
 
-	def initializeChip(self):
-		self.printDebug("Initializing chip")
+	def __initChip(self):
 		self.applyVCCX(False)
 		self.applyVPP(False)
 		self.applyGND(False)
@@ -44,15 +43,8 @@ class Chip_M2764A(Chip):
 		self.top.cmdSetVPPVoltage(0)
 		self.top.cmdSetVPPVoltage(5)
 
-	def shutdownChip(self):
-		self.printDebug("Shutdown chip")
-		self.top.cmdSetVCCXVoltage(5)
-		self.top.cmdSetVPPVoltage(5)
-		self.applyVCCX(False)
-		self.applyVPP(False)
-		self.applyGND(False)
-
 	def readEEPROM(self):
+		self.__initChip()
 		self.top.cmdSetVCCXVoltage(5)
 		self.top.cmdSetVPPVoltage(5)
 		self.applyVCCX(True)
@@ -81,6 +73,7 @@ class Chip_M2764A(Chip):
 			self.throwError("Invalid EPROM image size %d (expected <=%d)" %\
 				(len(image), 0x2000))
 
+		self.__initChip()
 		self.top.cmdSetVCCXVoltage(5)
 		self.top.cmdSetVPPVoltage(12)
 		self.applyVCCX(True)

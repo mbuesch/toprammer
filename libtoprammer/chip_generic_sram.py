@@ -39,10 +39,11 @@ class Chip_genericSRAM(Chip):
 
 	def shutdownChip(self):
 		self.printDebug("Shutdown chip")
+		# Keep it powered up
 		self.top.cmdSetVCCXVoltage(self.VCCXVoltage)
-		self.applyVCCX(False)
+		self.applyVCCX(True)
 		self.applyVPP(False)
-		self.applyGND(False)
+		self.applyGND(True)
 
 	def erase(self):
 		self.writeRAM(chr(0) * self.__sizeBytes())

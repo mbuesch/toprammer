@@ -8,32 +8,30 @@ function test_init
 
 function test_run
 {
-	local args="-c atmega8dip28 -I bin -O bin"
-
 	# Check signature
-	toprammer $args --read-sig "$tmpfile"
+	toprammer --read-sig "$tmpfile"
 	compare_file_to_hex "$tmpfile" "1E9307" || die "signature mismatch"
 
-	toprammer $args --erase
+	toprammer --erase
 
 	# Check progmem
-	toprammer $args --write-prog "$testfile_8k"
-	toprammer $args --read-prog "$tmpfile"
+	toprammer --write-prog "$testfile_8k"
+	toprammer --read-prog "$tmpfile"
 	compare_files "$testfile_8k" "$tmpfile" || die "progmem mismatch"
 
 	# Check EEPROM
-	toprammer $args --write-eeprom "$testfile_512"
-	toprammer $args --read-eeprom "$tmpfile"
+	toprammer --write-eeprom "$testfile_512"
+	toprammer --read-eeprom "$tmpfile"
 	compare_files "$testfile_512" "$tmpfile" || die "EEPROM mismatch"
 
 	# Check fuses
 	testfuses="E1D9"
-	echo "0x0000: $testfuses" | toprammer $args -I hex --write-fuse -
-	toprammer $args --read-fuse "$tmpfile"
+	echo "0x0000: $testfuses" | toprammer -I hex --write-fuse -
+	toprammer --read-fuse "$tmpfile"
 	compare_file_to_hex "$tmpfile" "$testfuses" || die "fuses mismatch"
 
 	# Check lockbits
-	toprammer $args --read-lock "$tmpfile"
+	toprammer --read-lock "$tmpfile"
 	compare_file_to_hex "$tmpfile" "FF" || die "lockbits mismatch"
-	toprammer $args --write-lock "$tmpfile"
+	toprammer --write-lock "$tmpfile"
 }

@@ -35,23 +35,15 @@ class Chip_AT89C2051dip20(Chip):
 			      chipPinsVPP = 1,
 			      chipPinGND = 10)
 
-	def initializeChip(self):
-		self.printDebug("Initializing chip")
+	def __initChip(self):
 		self.applyVCCX(False)
 		self.applyVPP(False)
 		self.applyGND(True)
 		self.top.cmdSetVCCXVoltage(5)
 		self.top.cmdSetVPPVoltage(5)
 
-	def shutdownChip(self):
-		self.printDebug("Shutdown chip")
-		self.top.cmdSetVCCXVoltage(5)
-		self.top.cmdSetVPPVoltage(0)
-		self.applyVCCX(False)
-		self.applyVPP(False)
-		self.applyGND(False)
-
 	def readSignature(self):
+		self.__initChip()
 		self.applyGND(True)
 		self.applyVCCX(True)
 		self.top.cmdSetVPPVoltage(5)
@@ -76,6 +68,7 @@ class Chip_AT89C2051dip20(Chip):
 		return signature
 
 	def erase(self):
+		self.__initChip()
 		self.applyGND(True)
 		self.applyVCCX(True)
 		self.__loadCommand(1) # set P3.2
@@ -98,6 +91,7 @@ class Chip_AT89C2051dip20(Chip):
 			self.top.printInfo("at89c2051dip20: Erase failed!")
 
 	def readProgmem(self):
+		self.__initChip()
 		self.applyGND(True)
 		self.applyVCCX(True)
 		self.__loadCommand(1) # set P3.2
@@ -130,6 +124,7 @@ class Chip_AT89C2051dip20(Chip):
 		if len(image) > 0x800:
 			self.throwError("Invalid EPROM image size %d (expected <=%d)" %\
 				(len(image), 0x800))
+		self.__initChip()
 		self.applyGND(True)
 		self.applyVCCX(True)
 		self.__loadCommand(1) # set P3.2

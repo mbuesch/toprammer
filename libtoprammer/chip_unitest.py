@@ -27,15 +27,11 @@ class Chip_Unitest(Chip):
 	def __init__(self):
 		Chip.__init__(self)
 
-	def initializeChip(self):
-		self.printDebug("Initializing chip")
-		self.__reset()
-
 	def shutdownChip(self):
 		self.printDebug("Shutdown chip")
-		self.__reset()
+		self.reset()
 
-	def __reset(self):
+	def reset(self):
 		self.top.vccx.setLayoutPins( [] )
 		self.vccxMask = 0
 		self.top.vpp.setLayoutPins( [] )
@@ -110,12 +106,12 @@ class Chip_Unitest(Chip):
 		self.__updateOut()
 
 	def getInputs(self):
-		self.top.cmdFPGAReadRaw(0x30)
-		self.top.cmdFPGAReadRaw(0x31)
-		self.top.cmdFPGAReadRaw(0x32)
-		self.top.cmdFPGAReadRaw(0x33)
-		self.top.cmdFPGAReadRaw(0x34)
-		self.top.cmdFPGAReadRaw(0x35)
+		self.top.cmdFPGARead(0x30)
+		self.top.cmdFPGARead(0x31)
+		self.top.cmdFPGARead(0x32)
+		self.top.cmdFPGARead(0x33)
+		self.top.cmdFPGARead(0x34)
+		self.top.cmdFPGARead(0x35)
 		inputs = self.top.cmdReadBufferReg48()
 		return inputs
 
