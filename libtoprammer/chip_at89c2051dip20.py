@@ -114,10 +114,10 @@ class Chip_AT89C2051dip20(Chip):
 			self.__setP3x(P33=0, P34=0, P35=1, IA=1)
 			self.__setP3x(P33=0, P34=0, P35=1, IA=0)
 			byteCount += 1
-			if byteCount == 64:
-				image += self.top.cmdReadBufferReg()
+			if byteCount == self.top.getBufferRegSize():
+				image += self.top.cmdReadBufferReg(byteCount)
 				byteCount = 0
-		assert(byteCount == 0)
+		image += self.top.cmdReadBufferReg(byteCount)
 		self.applyVPP(False)
 		self.__setP3x(P33=0, P34=1, P35=0, IA=0)
 		self.__loadCommand(5) # VPP off

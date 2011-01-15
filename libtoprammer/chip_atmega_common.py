@@ -51,7 +51,6 @@ class Chip_ATMega_common(Chip):
 		self.flashPages = flashPages		# Nr of flash pages
 		self.eepromPageSize = eepromPageSize	# EEPROM page size, in bytes
 		self.eepromPages = eepromPages		# Nr of EEPROM pages
-		assert(eepromPageSize <= 64)
 
 	def shutdownChip(self):
 		self.printDebug("Shutdown chip")
@@ -126,6 +125,7 @@ class Chip_ATMega_common(Chip):
 	def readEEPROM(self):
 		self.__enterPM()
 
+		assert(self.eepromPageSize <= self.top.getBufferRegSize())
 		self.progressMeterInit("Reading EEPROM", self.eepromPages)
 		image = ""
 		for page in range(0, self.eepromPages):

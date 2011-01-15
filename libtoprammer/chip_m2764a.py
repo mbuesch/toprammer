@@ -67,10 +67,10 @@ class Chip_M2764A(Chip):
 			self.progressMeter(addr)
 			self.__readDataToStatusReg(addr)
 			byteCount += 1
-			if byteCount == 64:
-				image += self.top.cmdReadBufferReg()
+			if byteCount == self.top.getBufferRegSize():
+				image += self.top.cmdReadBufferReg(byteCount)
 				byteCount = 0
-		assert(byteCount == 0)
+		image += self.top.cmdReadBufferReg(byteCount)
 		self.__setEG(E=1, G=1)
 		self.progressMeterFinish()
 

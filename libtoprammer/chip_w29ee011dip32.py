@@ -116,11 +116,10 @@ class Chip_w29ee011dip32(Chip):
 			prevAddr = addr
 			self.top.cmdFPGARead(0x10)
 			byteCount += 1
-			if byteCount == 64:
-				image += self.top.cmdReadBufferReg()
+			if byteCount == self.top.getBufferRegSize():
+				image += self.top.cmdReadBufferReg(byteCount)
 				byteCount = 0
-		if byteCount:
-			image += self.top.cmdReadBufferReg()[0:byteCount]
+		image += self.top.cmdReadBufferReg(byteCount)
 		return image
 
 	def writeEEPROM(self, image):

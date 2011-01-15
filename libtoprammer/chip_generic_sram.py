@@ -47,12 +47,6 @@ class Chip_genericSRAM(Chip):
 	def erase(self):
 		self.writeRAM(chr(0) * self.__sizeBytes())
 
-	def __readBuffer(self, size):
-		if not size:
-			return ""
-		data = self.top.cmdReadBufferReg()
-		return data[0:size]
-
 	def readRAM(self):
 		image = []
 
@@ -65,10 +59,10 @@ class Chip_genericSRAM(Chip):
 			self.__setAddress(addr)
 			self.__readData()
 			nrBytes += 1
-			if nrBytes == 64:
-				image.append(self.__readBuffer(nrBytes))
+			if nrBytes == self.top.getBufferRegSize():
+				image.append(self.top.cmdReadBufferReg(nrBytes))
 				nrBytes = 0
-		image.append(self.__readBuffer(nrBytes))
+		image.append(self.top.cmdReadBufferReg(nrBytes))
 		self.__setControlPins(CE=1, OE=1, WE=1)
 		self.progressMeterFinish()
 

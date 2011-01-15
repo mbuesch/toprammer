@@ -89,10 +89,10 @@ class Chip_AtTiny13dip8(Chip):
 			self.__sendInstr(SDI=0x00, SII=0x7C)
 			self.__readSDOBufferHigh()
 			bufferedBytes += 1
-			if bufferedBytes == 64 or word == nrWords - 1:
-				image += self.top.cmdReadBufferReg()[0:bufferedBytes]
+			if bufferedBytes == self.top.getBufferRegSize():
+				image += self.top.cmdReadBufferReg(bufferedBytes)
 				bufferedBytes = 0
-		assert(bufferedBytes == 0)
+		image += self.top.cmdReadBufferReg(bufferedBytes)
 		self.progressMeterFinish()
 		return image
 
@@ -144,10 +144,10 @@ class Chip_AtTiny13dip8(Chip):
 			self.__sendInstr(SDI=0x00, SII=0x6C)
 			self.__readSDOBufferHigh()
 			bufferedBytes += 1
-			if bufferedBytes == 64 or i == nrBytes - 1:
-				image += self.top.cmdReadBufferReg()[0:bufferedBytes]
+			if bufferedBytes == self.top.getBufferRegSize():
+				image += self.top.cmdReadBufferReg(bufferedBytes)
 				bufferedBytes = 0
-		assert(bufferedBytes == 0)
+		image += self.top.cmdReadBufferReg(bufferedBytes)
 		self.progressMeterFinish()
 		return image
 
