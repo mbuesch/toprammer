@@ -1022,6 +1022,10 @@ class HexEditWidget(QWidget):
 		QWidget.__init__(self, parent)
 		self.scrollArea = scrollArea
 
+		self.bgColor = QColor("#FFFFFF")
+		self.cursor0Color = QColor("#A0A07F")
+		self.cursor1Color = QColor("#FFFF00")
+
 		font = self.font()
 		font.setFamily("monospace")
 		font.setFixedPitch(True)
@@ -1059,10 +1063,11 @@ class HexEditWidget(QWidget):
 				nrLines += 1
 		else:
 			text = [ "<The buffer is empty>", ]
-		self.text = "".join(text)
+		text = "".join(text)
+		self.textLines = text.splitlines()
 		self.nrLines = nrLines
 
-		width = self.fontMetrics().width(self.text.splitlines()[0])
+		width = self.fontMetrics().width(self.textLines[0])
 		height = self.nrLines * self.charHeight
 		self.resize(width + 20, height + 20)
 		self.repaint()
@@ -1220,27 +1225,25 @@ class HexEditWidget(QWidget):
 		p = QPainter(self)
 
 		# Background
-		p.fillRect(0, 0, self.width(), self.height(),
-			   QColor("#FFFFFF"))
+		p.fillRect(0, 0, self.width(), self.height(), self.bgColor)
 
 		# Cursor
 		if self.data:
+			(x, y) = self.__cursorUpperLeftEdge()
 			if self.cursorOnAscii:
-				(x, y) = self.__cursorUpperLeftEdge()
 				p.fillRect(x, y, self.charWidth, self.charHeight,
-					   QColor("#A0A07F"))
+					   self.cursor0Color)
 			else:
-				(x, y) = self.__cursorUpperLeftEdge()
 				p.fillRect(x, y, self.charWidth * 2, self.charHeight,
-					   QColor("#FFFF00"))
+					   self.cursor1Color)
 				if self.cursorNibble == 0:
 					x += self.charWidth
 				p.fillRect(x, y, self.charWidth, self.charHeight,
-					   QColor("#A0A07F"))
+					   self.cursor0Color)
 
 		# Text
 		y = self.charHeight
-		for line in self.text.splitlines():
+		for line in self.textLines:
 			p.drawText(0, y, line)
 			y += self.charHeight
 
