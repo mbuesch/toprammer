@@ -912,6 +912,7 @@ class Console(QDockWidget):
 	def __init__(self, mainWindow):
 		QDockWidget.__init__(self, mainWindow)
 
+		self.addPrefix = True
 		self.statusUpdateBlocked = 0
 
 		self.setFeatures(self.DockWidgetMovable | self.DockWidgetFloatable)
@@ -1001,10 +1002,14 @@ class Console(QDockWidget):
 		message = str(message)
 		if not message:
 			return
+		if self.addPrefix:
+			time = str(QTime.currentTime().toString("hh:mm:ss"))
+			message = "[%s]:  %s" % (time, message)
 		newline = False
 		if message.endswith("\n"):
 			newline = True
 			message = message[:-1]
+		self.addPrefix = newline
 		message = htmlEscape(message)
 		if bold:
 			message = "<B>" + message + "</B>"
