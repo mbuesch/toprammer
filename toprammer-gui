@@ -1637,7 +1637,8 @@ class ChipSelectDialog(QDialog):
 			if self.showBroken.checkState() != Qt.Checked:
 				descriptors = filter(lambda d: not d.broken,
 						     descriptors)
-			descriptors = filter(lambda d: d.chipType == selType or selType == -1,
+			descriptors = filter(lambda d: (d.chipType == selType or selType == -1) and\
+						       (d.chipType != ChipDescription.TYPE_INTERNAL),
 					     descriptors)
 			if not descriptors:
 				continue
@@ -1663,6 +1664,8 @@ class ChipSelectDialog(QDialog):
 			   self.showBroken.checkState() != Qt.Checked:
 				continue
 			if descriptor.chipType != selType and selType != -1:
+				continue
+			if descriptor.chipType == ChipDescription.TYPE_INTERNAL:
 				continue
 			if selVendor not in descriptor.chipVendors:
 				continue
