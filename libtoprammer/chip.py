@@ -38,6 +38,7 @@ class Chip:
 	SUPPORT_LOCKWRITE	= (1 << 9)
 	SUPPORT_RAMREAD		= (1 << 10)
 	SUPPORT_RAMWRITE	= (1 << 11)
+	SUPPORT_TEST		= (1 << 12)
 
 	@staticmethod
 	def chipSupportsAttr(chipImplClass, attribute):
@@ -54,30 +55,22 @@ class Chip:
 	def getSupportFlags(chip):
 		"Get the SUPPORT_... flags for this chip"
 		flags = 0
-		if Chip.chipSupportsAttr(chip, "erase"):
-			flags |= Chip.SUPPORT_ERASE
-		if Chip.chipSupportsAttr(chip, "readSignature"):
-			flags |= Chip.SUPPORT_SIGREAD
-		if Chip.chipSupportsAttr(chip, "readProgmem"):
-			flags |= Chip.SUPPORT_PROGMEMREAD
-		if Chip.chipSupportsAttr(chip, "writeProgmem"):
-			flags |= Chip.SUPPORT_PROGMEMWRITE
-		if Chip.chipSupportsAttr(chip, "readEEPROM"):
-			flags |= Chip.SUPPORT_EEPROMREAD
-		if Chip.chipSupportsAttr(chip, "writeEEPROM"):
-			flags |= Chip.SUPPORT_EEPROMWRITE
-		if Chip.chipSupportsAttr(chip, "readFuse"):
-			flags |= Chip.SUPPORT_FUSEREAD
-		if Chip.chipSupportsAttr(chip, "writeFuse"):
-			flags |= Chip.SUPPORT_FUSEWRITE
-		if Chip.chipSupportsAttr(chip, "readLockbits"):
-			flags |= Chip.SUPPORT_LOCKREAD
-		if Chip.chipSupportsAttr(chip, "writeLockbits"):
-			flags |= Chip.SUPPORT_LOCKWRITE
-		if Chip.chipSupportsAttr(chip, "readRAM"):
-			flags |= Chip.SUPPORT_RAMREAD
-		if Chip.chipSupportsAttr(chip, "writeRAM"):
-			flags |= Chip.SUPPORT_RAMWRITE
+		for (methodName, flag) in (
+				("erase",		Chip.SUPPORT_ERASE),
+				("readSignature",	Chip.SUPPORT_SIGREAD),
+				("readProgmem",		Chip.SUPPORT_PROGMEMREAD),
+				("writeProgmem",	Chip.SUPPORT_PROGMEMWRITE),
+				("readEEPROM",		Chip.SUPPORT_EEPROMREAD),
+				("writeEEPROM",		Chip.SUPPORT_EEPROMWRITE),
+				("readFuse",		Chip.SUPPORT_FUSEREAD),
+				("writeFuse",		Chip.SUPPORT_FUSEWRITE),
+				("readLockbits",	Chip.SUPPORT_LOCKREAD),
+				("writeLockbits",	Chip.SUPPORT_LOCKWRITE),
+				("readRAM",		Chip.SUPPORT_RAMREAD),
+				("writeRAM",		Chip.SUPPORT_RAMWRITE),
+				("test",		Chip.SUPPORT_TEST)):
+			if Chip.chipSupportsAttr(chip, methodName):
+				flags |= flag
 		return flags
 
 	def __init__(self, chipPackage=None, chipPinVCCX=None, chipPinsVPP=None, chipPinGND=None):
@@ -404,6 +397,7 @@ class ChipDescription:
 				(Chip.SUPPORT_LOCKWRITE,	"Lock bits writing"),
 				(Chip.SUPPORT_RAMREAD,		"RAM reading"),
 				(Chip.SUPPORT_RAMWRITE,		"RAM writing"),
+				(Chip.SUPPORT_TEST,		"Unit-testing"),
 			)
 			supportFlags = Chip.getSupportFlags(self.chipImplClass)
 			for (flag, description) in supportedFeatures:
