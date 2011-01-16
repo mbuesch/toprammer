@@ -976,17 +976,17 @@ class Console(QDockWidget):
 		message = str(message)
 		if not message:
 			return
-		if self.addPrefix:
-			time = str(QTime.currentTime().toString("hh:mm:ss"))
-			message = "[%s]:  %s" % (time, message)
 		newline = False
 		if message.endswith("\n"):
 			newline = True
 			message = message[:-1]
-		self.addPrefix = newline
 		message = htmlEscape(message)
 		if bold:
 			message = "<B>" + message + "</B>"
+		if self.addPrefix:
+			time = str(QTime.currentTime().toString("hh:mm:ss"))
+			message = "<I>[%s]</I>&nbsp;&nbsp;%s" % (time, message)
+		self.addPrefix = newline
 		if newline:
 			message += "<BR />"
 		lastmsg = None
