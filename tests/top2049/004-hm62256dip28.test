@@ -8,7 +8,5 @@ function test_init
 
 function test_run
 {
-	toprammer --write-ram "$testfile_32k"
-	toprammer --read-ram "$tmpfile"
-	compare_files "$testfile_32k" "$tmpfile" || die "RAM mismatch"
+	toprammer --test
 }

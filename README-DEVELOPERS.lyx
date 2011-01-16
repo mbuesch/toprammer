@@ -485,6 +485,12 @@ erase() Erase the DUT.
 \end_layout
 
 \begin_layout Description
+test() Run an optional unit-test on the chip.
+ The convenience wrapper genericTest(self, readFunc, writeFunc, size) may
+ be used to implement this method.
+\end_layout
+
+\begin_layout Description
 readProgmem() Read the program memory and return it.
  Reimplement this, if your DUT has program memory and supports reading it.
 \end_layout

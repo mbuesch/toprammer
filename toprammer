@@ -37,6 +37,7 @@ def usage():
 	print "Actions:"
 	print " -s|--read-sig FILE      Read the signature bytes"
 	print " -x|--erase              Erase the chip"
+	print " -T|--test               Run chip unit-test"
 	print ""
 	print " -p|--read-prog FILE     Read the program memory"
 	print " -P|--write-prog FILE    Write the program memory"
@@ -124,9 +125,9 @@ def main(argv):
 	opt_outformat = "bin"
 	try:
 		(opts, args) = getopt.getopt(sys.argv[1:],
-			"hc:d:V:Qs:xp:P:e:E:f:F:o:Ul:L:r:R:BtI:O:",
+			"hc:d:V:Qs:xTp:P:e:E:f:F:o:Ul:L:r:R:BtI:O:",
 			[ "help", "chip-id=", "device=", "verbose=", "noqueue",
-			  "read-sig=", "erase", "read-prog=", "write-prog=",
+			  "read-sig=", "erase", "test", "read-prog=", "write-prog=",
 			  "read-eeprom=", "write-eeprom=", "read-fuse=", "write-fuse=",
 			  "read-lock=", "write-lock=", "read-ram=", "write-ram=",
 			  "force=", "force-upload", "broken", "list",
@@ -165,6 +166,8 @@ def main(argv):
 				opt_file = v
 			if o in ("-x", "--erase"):
 				opt_action = "erase"
+			if o in ("-T", "--test"):
+				opt_action = "test"
 			if o in ("-P", "--write-prog"):
 				opt_action = "write-prog"
 				opt_file = v
@@ -222,6 +225,8 @@ def main(argv):
 			fileOut(opt_file, opt_outformat, top.readSignature())
 		elif opt_action == "erase":
 			top.eraseChip()
+		elif opt_action == "test":
+			top.testChip()
 		elif opt_action == "read-prog":
 			fileOut(opt_file, opt_outformat, top.readProgmem())
 		elif opt_action == "write-prog":

@@ -3,7 +3,7 @@
 #
 #    Utility functions
 #
-#    Copyright (c) 2009-2010 Michael Buesch <mb@bu3sch.de>
+#    Copyright (c) 2009-2011 Michael Buesch <mb@bu3sch.de>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -23,9 +23,16 @@
 import sys
 import re
 import math
+import random
 
 
 class TOPException(Exception): pass
+
+def genRandomBlob(size):
+	blob = []
+	for i in range(0, size):
+		blob.append(chr(random.randint(0, 0xFF)))
+	return "".join(blob)
 
 def nrBitsSet(integer):
 	count = 0

@@ -185,6 +185,13 @@ class Chip:
 		self.top.progressMeter(AbstractUserInterface.PROGRESSMETER_CHIPACCESS,
 				       step)
 
+	def genericTest(self, readFunc, writeFunc, size):
+		"Generic test. Call from test() in the chip implementation, if desired."
+		image = genRandomBlob(size)
+		writeFunc(image)
+		if readFunc() != image:
+			self.throwError("Unit-test failed. The chip may be physically broken.")
+
 	def shutdownChip(self):
 		# Override me in the subclass, if required.
 		self.printDebug("Default chip shutdown")
@@ -201,6 +208,10 @@ class Chip:
 	def erase(self):
 		# Override me in the subclass, if required.
 		raise TOPException("Chip erasing not supported on " + self.chipID)
+
+	def test(self):
+		# Override me in the subclass, if required.
+		raise TOPException("Chip testing not supported on " + self.chipID)
 
 	def readProgmem(self):
 		# Override me in the subclass, if required.

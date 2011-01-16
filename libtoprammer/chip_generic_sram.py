@@ -37,16 +37,12 @@ class Chip_genericSRAM(Chip):
 		self.nrDataBits = nrDataBits
 		assert(nrDataBits == 8)
 
-	def shutdownChip(self):
-		self.printDebug("Shutdown chip")
-		# Keep it powered up
-		self.top.cmdSetVCCXVoltage(self.VCCXVoltage)
-		self.applyVCCX(True)
-		self.applyVPP(False)
-		self.applyGND(True)
-
 	def erase(self):
 		self.writeRAM(chr(0) * self.__sizeBytes())
+
+	def test(self):
+		self.genericTest(self.readRAM, self.writeRAM,
+				 self.__sizeBytes())
 
 	def readRAM(self):
 		image = []

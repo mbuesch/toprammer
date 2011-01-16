@@ -317,6 +317,12 @@ class TOP:
 		self.checkChip()
 		self.chip.erase()
 
+	def testChip(self):
+		"""Run a unit-test on the chip."""
+		self.printDebug("Running chip unit-test...")
+		self.checkChip()
+		self.chip.test()
+
 	def readProgmem(self):
 		"""Reads the program memory image and returns it."""
 		self.printDebug("Reading program memory from chip...")
