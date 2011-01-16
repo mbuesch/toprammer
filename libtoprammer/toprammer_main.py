@@ -1,7 +1,7 @@
 """
 #    TOP2049 Open Source programming suite
 #
-#    Copyright (c) 2009-2010 Michael Buesch <mb@bu3sch.de>
+#    Copyright (c) 2009-2011 Michael Buesch <mb@bu3sch.de>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 """
 
 VERSION_MAJOR	= 0
-VERSION_MINOR	= 7
+VERSION_MINOR	= 8
 VERSION = "%d.%d" % (VERSION_MAJOR, VERSION_MINOR)
 
 from bitfile import *
