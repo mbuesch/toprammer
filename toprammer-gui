@@ -1594,6 +1594,7 @@ class BufferTabWidget(QTabWidget):
 		else:
 			self.mainWindow.console.showMessage("Chip verify succeed\n", bold=True)
 			self.mainWindow.console.setStatus(Console.STAT_OK)
+		return not fail
 
 	def getCurrentBuffer(self):
 		return self.currentWidget()
@@ -2316,25 +2317,30 @@ class MainWindow(QMainWindow):
 		       self.operation == self.OP_NONE)
 		return (failed, returnValue)
 
+	def setOperationFinished(self, failed):
+		self.console.setTaskRunning(running=False, success=not failed)
+		self.operation = self.OP_NONE
+		if self.autorun.isRunning():
+			if failed:
+				QTimer.singleShot(0, self.autorun.abortRunWithMessage)
+			else:
+				QTimer.singleShot(0, self.autorun.runNextAction)
+
 	def hardwareTaskFinished(self, task, failed, returnValue):
 		self.taskRunning = False
 		self.guiUpdateEnable()
 		if self.operation == self.OP_SYNCHRONOUS:
 			self.operation = self.OP_NONE
-			self.console.setTaskRunning(False)
+			self.console.setTaskRunning(running=False, success=True)
 			self.taskRetval = (task, failed, returnValue)
 			return
 		if failed:
 			self.console.showMessage("[op %d task %d failed] %s\n" %\
 					(self.operation, task, str(returnValue)),
 					bold=True)
-			self.console.setTaskRunning(False, False)
-			self.operation = self.OP_NONE
-			if self.autorun.isRunning():
-				QTimer.singleShot(0, self.autorun.abortRunWithMessage)
+			self.setOperationFinished(failed=True)
 			return
 		# Task succeed
-		self.console.setTaskRunning(False)
 		if self.operation == self.OP_INITCHIP:
 			assert(task == HwThread.TASK_INITCHIP)
 			(self.chipSupportFlags, asciiArtLayout) = returnValue
@@ -2375,15 +2381,14 @@ class MainWindow(QMainWindow):
 			assert(task == HwThread.TASK_READALL)
 			(sigImage, progmemImage, eepromImage, fuseImage,
 			 lockbitsImage, ramImage) = returnValue
-			self.bufferTab.verifyBuffers(progmemImage, eepromImage,
-						     fuseImage, ramImage)
+			failed = not self.bufferTab.verifyBuffers(
+						progmemImage, eepromImage,
+						fuseImage, ramImage)
 		elif self.operation == self.OP_RAWCOMMAND:
 			self.console.showMessage("Successfully sent raw command\n", bold=True)
 		else:
 			print "ERROR: No handler for op %d task %d" % (self.operation, task)
-		self.operation = self.OP_NONE
-		if self.autorun.isRunning():
-			QTimer.singleShot(0, self.autorun.runNextAction)
+		self.setOperationFinished(failed)
 
 def main():
 	app = QApplication(sys.argv)
