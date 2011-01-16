@@ -53,7 +53,7 @@ function toprammer
 	local logfile="$tmpdir/toprammer.log"
 
 	[ -n "$current_chipid" ] && args="$args --chip-id $current_chipid"
-	args="$args -I bin -O bin"
+	args="$args -B -I bin -O bin"
 
 	echo "        toprammer $args"
 	cd "$basedir/.." || die "Failed to chdir"
