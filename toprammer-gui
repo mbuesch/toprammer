@@ -1327,39 +1327,90 @@ class InfoBufferWidget(BufferWidget):
 		font.setFixedPitch(True)
 		font.setFamily("monospace")
 		self.zifLayout.setFont(font)
-		self.layout().addWidget(self.zifLayout, 0, 0, 3, 1)
+		self.layout().addWidget(self.zifLayout, 0, 0, 5, 1)
 
 		l = QLabel("Chip name:", self)
+		l.setAlignment(Qt.AlignTop | Qt.AlignLeft)
 		self.layout().addWidget(l, 0, 1)
 		self.chipName = QLabel(self)
+		self.chipName.setAlignment(Qt.AlignTop | Qt.AlignLeft)
 		font = self.chipName.font()
 		font.setBold(True)
 		self.chipName.setFont(font)
 		self.layout().addWidget(self.chipName, 0, 2)
 
-		l = QLabel("Chip signature bytes:", self)
+		l = QLabel("Comment:", self)
+		l.setAlignment(Qt.AlignTop | Qt.AlignLeft)
 		self.layout().addWidget(l, 1, 1)
+		self.comment = QLabel(self)
+		self.comment.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+		font = self.comment.font()
+		font.setBold(True)
+		self.comment.setFont(font)
+		self.layout().addWidget(self.comment, 1, 2)
+
+		l = QLabel("Packages:", self)
+		l.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+		self.layout().addWidget(l, 2, 1)
+		self.packages = QLabel(self)
+		self.packages.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+		font = self.packages.font()
+		font.setBold(True)
+		self.packages.setFont(font)
+		self.layout().addWidget(self.packages, 2, 2)
+
+		l = QLabel("Chip signature bytes:", self)
+		l.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+		self.layout().addWidget(l, 3, 1)
 		self.chipSig = QLabel(self)
+		self.chipSig.setAlignment(Qt.AlignTop | Qt.AlignLeft)
 		font = self.chipSig.font()
 		font.setBold(True)
 		self.chipSig.setFont(font)
-		self.layout().addWidget(self.chipSig, 1, 2)
+		self.layout().addWidget(self.chipSig, 3, 2)
 
 		self.layout().setColumnStretch(3, 99)
-		self.layout().setRowStretch(2, 99)
+		self.layout().setRowStretch(4, 99)
 
 		self.clear()
 
 	def clear(self):
-		self.setChipName("<No chip selected>")
-		self.setChipSignature("")
+		self.chipName.setText("<No chip selected>")
+		self.setComment(None)
+		self.setChipSignature(None)
 		self.setChipLayout(None)
-
-	def setChipName(self, name):
-		self.chipName.setText(name)
+		self.setPackages(None)
 
 	def setChipSignature(self, bindata):
-		self.chipSig.setText(bin2hex(bindata))
+		if bindata:
+			self.chipSig.setText(bin2hex(bindata))
+		else:
+			self.chipSig.setText("None")
+
+	def setComment(self, comment):
+		if comment:
+			self.comment.setText(comment)
+		else:
+			self.comment.setText("None")
+
+	def setPackages(self, packages):
+		def p2str(param):
+			(packageName, description) = param
+			text = packageName
+			if description:
+				text += " (%s)" % description
+			return text
+
+		if packages:
+			pckgs = map(p2str, packages)
+			self.packages.setText("\n".join(pckgs))
+		else:
+			self.packages.setText("Unknown")
+
+	def setupDescription(self, chipDescription):
+		self.chipName.setText(chipDescription.description)
+		self.setComment(chipDescription.comment)
+		self.setPackages(chipDescription.packages)
 
 	def setChipLayout(self, asciiArtLayout):
 		if asciiArtLayout:
@@ -2260,7 +2311,7 @@ class MainWindow(QMainWindow):
 			(self.chipSupportFlags, asciiArtLayout) = returnValue
 			self.bufferTab.setupBuffers(self.chipSupportFlags)
 			self.bufferTab.infoBuffer.clear()
-			self.bufferTab.infoBuffer.setChipName(self.currentChipDescription.description)
+			self.bufferTab.infoBuffer.setupDescription(self.currentChipDescription)
 			self.bufferTab.infoBuffer.setChipLayout(asciiArtLayout)
 			self.autorun.setup(self.chipSupportFlags)
 		elif self.operation == self.OP_SHUTDOWN:
