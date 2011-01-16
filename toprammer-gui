@@ -884,7 +884,7 @@ class Console(QDockWidget):
 	STAT_PROGRESS	= 2
 
 	def __init__(self, mainWindow):
-		QDockWidget.__init__(self, mainWindow)
+		QDockWidget.__init__(self, "Console", mainWindow)
 
 		self.addPrefix = True
 		self.statusUpdateBlocked = 0
@@ -1768,22 +1768,38 @@ class StatusBar(QStatusBar):
 class TopToolBar(QToolBar):
 	def __init__(self, mainWindow):
 		QToolBar.__init__(self, "Toolbar", mainWindow)
+		self.mainWindow = mainWindow
+		self.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+		self.setup(0)
 
-		self.addAction(getIcon("open"), "Load buffer", mainWindow.loadBuffer)
-		self.addAction(getIcon("save"), "Save buffer", mainWindow.saveBuffer)
+	def setup(self, chipSupportFlags):
+		mainWindow = self.mainWindow
+		self.clear()
+		a = self.addAction(getIcon("open"), "Load buffer", mainWindow.loadBuffer)
+		a.setEnabled(chipSupportFlags != 0)
+		a = self.addAction(getIcon("save"), "Save buffer", mainWindow.saveBuffer)
+		a.setEnabled(chipSupportFlags != 0)
 		self.addAction(getIcon("chip"), "Select chip", mainWindow.selectChip)
 		self.addSeparator()
-		self.addAction(getIcon("up"), "Read chip", mainWindow.readChip)
+		a = self.addAction(getIcon("up"), "Read chip", mainWindow.readChip)
+		a.setEnabled(chipSupportFlags != 0)
 		self.addSeparator()
-		self.addAction(getIcon("erase"), "Erase", mainWindow.eraseChip)
-		self.addAction(getIcon("memory"), "Write progmem", mainWindow.writeChipProgmem)
-		self.addAction(getIcon("memory"), "Write EPROM", mainWindow.writeChipEeprom)
-		self.addAction(getIcon("memory"), "Write fuses", mainWindow.writeChipFuses)
-		self.addAction(getIcon("memory"), "Write RAM", mainWindow.writeRam)
-		self.addAction(getIcon("lock"), "Write lockbits", mainWindow.writeChipLockbits)
-		self.addAction(getIcon("verify"), "Verify", mainWindow.verifyChip)
-
-		self.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+		if chipSupportFlags & Chip.SUPPORT_ERASE:
+			self.addAction(getIcon("erase"), "Erase", mainWindow.eraseChip)
+		if chipSupportFlags & Chip.SUPPORT_PROGMEMWRITE:
+			self.addAction(getIcon("memory"), "Write progmem", mainWindow.writeChipProgmem)
+		if chipSupportFlags & Chip.SUPPORT_EEPROMWRITE:
+			self.addAction(getIcon("memory"), "Write EPROM", mainWindow.writeChipEeprom)
+		if chipSupportFlags & Chip.SUPPORT_FUSEWRITE:
+			self.addAction(getIcon("memory"), "Write fuses", mainWindow.writeChipFuses)
+		if chipSupportFlags & Chip.SUPPORT_RAMWRITE:
+			self.addAction(getIcon("memory"), "Write RAM", mainWindow.writeRam)
+		if chipSupportFlags & Chip.SUPPORT_LOCKWRITE:
+			self.addAction(getIcon("lock"), "Write lockbits", mainWindow.writeChipLockbits)
+		if chipSupportFlags & Chip.SUPPORT_TEST:
+			self.addAction(getIcon("test"), "Run unit-test", mainWindow.runTest)
+		a = self.addAction(getIcon("verify"), "Verify", mainWindow.verifyChip)
+		a.setEnabled(chipSupportFlags != 0)
 
 class AutorunWidget(QDockWidget):
 	def __init__(self, mainWindow):
@@ -1812,6 +1828,9 @@ class AutorunWidget(QDockWidget):
 		self.widget().setLayout(QGridLayout(self.widget()))
 		row = 0
 
+		(self.testCheckBox, row) = self.__addCheckBox(row,
+				chipSupportFlags & Chip.SUPPORT_TEST,
+				"Run unit-test", True)
 		(self.eraseCheckBox, row) = self.__addCheckBox(row,
 				chipSupportFlags & Chip.SUPPORT_ERASE,
 				"Erase", True)
@@ -1846,10 +1865,14 @@ class AutorunWidget(QDockWidget):
 	def isRunning(self):
 		return self.running
 
+	def abortRunWithMessage(self):
+		self.abortRun(withMessage=True)
+
 	def abortRun(self, withMessage=False):
 		if withMessage:
 			QMessageBox.critical(self, "Aborting autorun",
-				"One action failed. Aborting autorun.")
+				"One action failed. Aborting autorun.\n"
+				"See console messages for details.")
 		self.running = False
 		self.currentAction = -1;
 		self.mainWindow.guiUpdateEnable()
@@ -1871,6 +1894,13 @@ class AutorunWidget(QDockWidget):
 	def runNextAction(self):
 		assert(self.currentAction >= 0)
 		action = 0
+		if self.testCheckBox:
+			if self.currentAction == action:
+				if self.__runAction(self.mainWindow.runTest,
+						    self.testCheckBox,
+						    "Run unit-test"):
+					return
+			action += 1
 		if self.eraseCheckBox:
 			if self.currentAction == action:
 				if self.__runAction(self.mainWindow.eraseChip,
@@ -1936,9 +1966,10 @@ class MainWindow(QMainWindow):
 	OP_WRITEFUSE	= 7
 	OP_WRITELOCK	= 8
 	OP_WRITERAM	= 9
-	OP_VERIFY	= 10
-	OP_RAWCOMMAND	= 11
-	OP_SYNCHRONOUS	= 12
+	OP_TEST		= 10
+	OP_VERIFY	= 11
+	OP_RAWCOMMAND	= 12
+	OP_SYNCHRONOUS	= 13
 
 	def __init__(self, parent=None):
 		QMainWindow.__init__(self, parent)
@@ -1963,18 +1994,9 @@ class MainWindow(QMainWindow):
 		menu.addAction("&Exit", self.close)
 		self.menuBar().addMenu(menu)
 
-		menu = QMenu("&Run", self)
-		menu.addAction("&Select chip", self.selectChip)
-		menu.addSeparator()
-		menu.addAction("&Read chip", self.readChip)
-		menu.addAction("&Erase", self.eraseChip)
-		menu.addAction("Write &program memory", self.writeChipProgmem)
-		menu.addAction("Write (E)EP&ROM", self.writeChipEeprom)
-		menu.addAction("Write &fuses", self.writeChipFuses)
-		menu.addAction("Write &lock bits", self.writeChipLockbits)
-		menu.addAction("Write R&AM", self.writeRam)
-		menu.addAction("&Verify chip", self.verifyChip)
-		self.menuBar().addMenu(menu)
+		self.runMenu = QMenu("&Run", self)
+		self.setupRunMenu(0)
+		self.menuBar().addMenu(self.runMenu)
 
 		menu = QMenu("&Programmer", self)
 		menu.addAction("&Universal chip tester...", self.startUnitest)
@@ -1999,6 +2021,32 @@ class MainWindow(QMainWindow):
 		self.taskRunning = False
 		self.taskRetval = None
 		self.operation = self.OP_NONE
+
+	def setupRunMenu(self, chipSupportFlags):
+		menu = self.runMenu
+		menu.clear()
+
+		menu.addAction("&Select chip", self.selectChip)
+		menu.addSeparator()
+
+		a = menu.addAction("&Read chip", self.readChip)
+		a.setEnabled(chipSupportFlags != 0)
+		a = menu.addAction("&Erase", self.eraseChip)
+		a.setEnabled(bool(chipSupportFlags & Chip.SUPPORT_ERASE))
+		a = menu.addAction("Write &program memory", self.writeChipProgmem)
+		a.setEnabled(bool(chipSupportFlags & Chip.SUPPORT_PROGMEMWRITE))
+		a = menu.addAction("Write (E)EP&ROM", self.writeChipEeprom)
+		a.setEnabled(bool(chipSupportFlags & Chip.SUPPORT_EEPROMWRITE))
+		a = menu.addAction("Write &fuses", self.writeChipFuses)
+		a.setEnabled(bool(chipSupportFlags & Chip.SUPPORT_FUSEWRITE))
+		a = menu.addAction("Write &lock bits", self.writeChipLockbits)
+		a.setEnabled(bool(chipSupportFlags & Chip.SUPPORT_LOCKWRITE))
+		a = menu.addAction("Write R&AM", self.writeRam)
+		a.setEnabled(bool(chipSupportFlags & Chip.SUPPORT_RAMWRITE))
+		a = menu.addAction("Run &Unit-test", self.runTest)
+		a.setEnabled(bool(chipSupportFlags & Chip.SUPPORT_TEST))
+		a = menu.addAction("&Verify chip", self.verifyChip)
+		a.setEnabled(chipSupportFlags != 0)
 
 	def blockInputEvents(self):
 		self.inputEventsBlocked += 1
@@ -2222,6 +2270,10 @@ class MainWindow(QMainWindow):
 		return self.runOperation(self.OP_WRITERAM, HwThread.TASK_GENERICTOPCALL,
 					 ("top.writeRAM(...)", data))
 
+	def runTest(self):
+		return self.runOperation(self.OP_TEST, HwThread.TASK_GENERICTOPCALL,
+					 ("top.testChip()", ))
+
 	def verifyChip(self):
 		return self.runOperation(self.OP_VERIFY, HwThread.TASK_READALL)
 
@@ -2279,7 +2331,7 @@ class MainWindow(QMainWindow):
 			self.console.setTaskRunning(False, False)
 			self.operation = self.OP_NONE
 			if self.autorun.isRunning():
-				self.autorun.abortRun(withMessage=True)
+				QTimer.singleShot(0, self.autorun.abortRunWithMessage)
 			return
 		# Task succeed
 		self.console.setTaskRunning(False)
@@ -2291,6 +2343,8 @@ class MainWindow(QMainWindow):
 			self.bufferTab.infoBuffer.setupDescription(self.currentChipDescription)
 			self.bufferTab.infoBuffer.setChipLayout(asciiArtLayout)
 			self.autorun.setup(self.chipSupportFlags)
+			self.topToolBar.setup(self.chipSupportFlags)
+			self.setupRunMenu(self.chipSupportFlags)
 		elif self.operation == self.OP_SHUTDOWN:
 			pass # Nothing to do
 		elif self.operation == self.OP_READALL:
@@ -2314,6 +2368,9 @@ class MainWindow(QMainWindow):
 			pass # Nothing to do
 		elif self.operation == self.OP_WRITERAM:
 			pass # Nothing to do
+		elif self.operation == self.OP_TEST:
+			self.console.showMessage("Unit-test success. The chip seems to be OK.\n",
+						 bold=True)
 		elif self.operation == self.OP_VERIFY:
 			assert(task == HwThread.TASK_READALL)
 			(sigImage, progmemImage, eepromImage, fuseImage,
