@@ -249,5 +249,6 @@ ChipDescription(
 	chipType = ChipDescription.TYPE_EEPROM,
 	chipVendor = "Winbond",
 	description = "W29EE011 EEPROM",
-	packages = ( ("DIP32", ""), ("PLCC32", "Use 1:1 PLCC32->DIP32 adapter"), )
+	packages = ( ("DIP32", ""), ("PLCC32", "Use 1:1 PLCC32->DIP32 adapter"), ),
+	broken = True,
 )
