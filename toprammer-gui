@@ -56,32 +56,6 @@ def getIconPath(name):
 def getIcon(name):
 	return QIcon(getIconPath(name))
 
-def hex2bin(hexdata):
-	assert(len(hexdata) % 2 == 0)
-	bindata = []
-	for i in range(0, len(hexdata), 2):
-		bindata.append(chr(int(hexdata[i:i+2], 16)))
-	return "".join(bindata)
-
-def bin2hex(bindata):
-	if not bindata:
-		return ""
-	hexdata = []
-	for c in bindata:
-		hexdata.append("%02X" % ord(c))
-	return "".join(hexdata)
-
-def bin2ascii(bindata):
-	if not bindata:
-		return ""
-	asciidata = []
-	for c in bindata:
-		if ord(c) >= 32 and ord(c) <= 126:
-			asciidata.append(c)
-		else:
-			asciidata.append(".")
-	return "".join(asciidata)
-
 class ZifWidget(QGroupBox):
 	def __init__(self, unitest, nrZifPins):
 		QGroupBox.__init__(self, "ZIF socket", unitest)
@@ -1075,7 +1049,7 @@ class HexEditWidget(QWidget):
 						asc = []
 						nrLines += 1
 					text.append("[%08X]: " % i)
-				text.append(" " + bin2hex(self.data[i]))
+				text.append(" " + chr2hex(self.data[i]))
 				asc.append(bin2ascii(self.data[i]))
 			if asc:
 				if len(self.data) % 16:

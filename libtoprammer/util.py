@@ -28,6 +28,32 @@ import random
 
 class TOPException(Exception): pass
 
+
+def hex2bin(hexdata):
+	assert(len(hexdata) % 2 == 0)
+	bindata = []
+	for i in range(0, len(hexdata), 2):
+		bindata.append(chr(int(hexdata[i:i+2], 16)))
+	return "".join(bindata)
+
+def chr2hex(c):
+	return "%02X" % ord(c)
+
+def bin2hex(bindata):
+	if not bindata:
+		return ""
+	return "".join(map(chr2hex, bindata))
+
+def chr2ascii(c):
+	if ord(c) >= 32 and ord(c) <= 126:
+		return c
+	return "."
+
+def bin2ascii(bindata):
+	if not bindata:
+		return ""
+	return "".join(map(chr2ascii, bindata))
+
 def genRandomBlob(size):
 	blob = []
 	for i in range(0, size):
@@ -69,25 +95,20 @@ def parseHexdump(dump):
 		raise TOPException("Invalid hexdump format (Integer error)")
 
 def generateHexdump(mem):
-	def toAscii(char):
-		if char >= 32 and char <= 126:
-			return chr(char)
-		return "."
-
 	ret = ""
-	ascii = ""
+	asc = ""
 	for i in range(0, len(mem)):
 		if i % 16 == 0 and i != 0:
-			ret += "  " + ascii + "\n"
-			ascii = ""
+			ret += "  " + asc + "\n"
+			asc = ""
 		if i % 16 == 0:
 			ret += "0x%04X:  " % i
 		c = ord(mem[i])
 		ret += "%02X" % c
 		if (i % 2 != 0):
 			ret += " "
-		ascii += toAscii(c)
-	ret += "  " + ascii + "\n\n"
+		asc += chr2ascii(chr(c))
+	ret += "  " + asc + "\n\n"
 	return ret
 
 def dumpMem(mem):
