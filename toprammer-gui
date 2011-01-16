@@ -1571,23 +1571,19 @@ class BufferTabWidget(QTabWidget):
 		return self.currentWidget()
 
 class ChipSelectDialog(QDialog):
+	ALL_VENDORS	= "--- All vendors ---"
+
 	def __init__(self, parent):
 		QDialog.__init__(self, parent)
 		self.setWindowTitle("Select chip")
 		self.setLayout(QGridLayout(self))
 
-		self.vendorList = QListWidget(self)
-		self.layout().addWidget(self.vendorList, 0, 0, 1, 2)
-
-		self.chipList = QListWidget(self)
-		self.layout().addWidget(self.chipList, 0, 2, 1, 2)
-
 		groupBox = QGroupBox("Chip type", self)
 		groupBox.setLayout(QGridLayout(groupBox))
 		self.allRadio = QRadioButton("All types", groupBox)
+		self.allRadio.setChecked(Qt.Checked)
 		groupBox.layout().addWidget(self.allRadio, 0, 0)
 		self.mcuRadio = QRadioButton("Microcontrollers", groupBox)
-		self.mcuRadio.setChecked(Qt.Checked)
 		groupBox.layout().addWidget(self.mcuRadio, 1, 0)
 		self.epromRadio = QRadioButton("EPROMs", groupBox)
 		groupBox.layout().addWidget(self.epromRadio, 2, 0)
@@ -1599,13 +1595,23 @@ class ChipSelectDialog(QDialog):
 		groupBox.layout().addWidget(self.sramRadio, 5, 0)
 		self.showBroken = QCheckBox("Show broken implementations", groupBox)
 		groupBox.layout().addWidget(self.showBroken, 6, 0)
-		self.layout().addWidget(groupBox, 0, 4)
+		self.layout().addWidget(groupBox, 0, 0, 2, 2)
+
+		l = QLabel("Vendor:", self)
+		self.layout().addWidget(l, 0, 2, 1, 2)
+		self.vendorList = QListWidget(self)
+		self.layout().addWidget(self.vendorList, 1, 2, 1, 2)
+
+		l = QLabel("Chip:", self)
+		self.layout().addWidget(l, 0, 4, 1, 2)
+		self.chipList = QListWidget(self)
+		self.layout().addWidget(self.chipList, 1, 4, 1, 2)
 
 		self.okButton = QPushButton("&Ok", self)
-		self.layout().addWidget(self.okButton, 1, 0, 1, 3)
+		self.layout().addWidget(self.okButton, 2, 0, 1, 3)
 
 		self.cancelButton = QPushButton("&Cancel", self)
-		self.layout().addWidget(self.cancelButton, 1, 3, 1, 3)
+		self.layout().addWidget(self.cancelButton, 2, 3, 1, 3)
 
 		self.connect(self.okButton, SIGNAL("released()"),
 			     self.accept)
@@ -1632,6 +1638,7 @@ class ChipSelectDialog(QDialog):
 		selType = self.__getSelectedChipType()
 		vendors = getRegisteredVendors()
 		self.vendorList.clear()
+		QListWidgetItem(self.ALL_VENDORS, self.vendorList)
 		for vendorName in vendors.keys():
 			descriptors = vendors[vendorName]
 			if self.showBroken.checkState() != Qt.Checked:
@@ -1654,6 +1661,12 @@ class ChipSelectDialog(QDialog):
 		else:
 			self.vendorList.setCurrentRow(0)
 
+	def __descriptorText(self, descriptor):
+		text = descriptor.description
+		if not descriptor.maintainer:
+			text += "  (Orphaned)"
+		return text
+
 	def __updateChipList(self):
 		previousChip = self.getSelectedChip()
 		selType = self.__getSelectedChipType()
@@ -1667,14 +1680,14 @@ class ChipSelectDialog(QDialog):
 				continue
 			if descriptor.chipType == ChipDescription.TYPE_INTERNAL:
 				continue
-			if selVendor not in descriptor.chipVendors:
+			if selVendor != self.ALL_VENDORS and selVendor not in descriptor.chipVendors:
 				continue
-			text = descriptor.description
-			item = QListWidgetItem(text, self.chipList)
+			item = QListWidgetItem(self.__descriptorText(descriptor),
+					       self.chipList)
 			item.setData(Qt.UserRole, descriptor)
 		self.chipList.sortItems()
 		if previousChip:
-			items = self.chipList.findItems(previousChip.description,
+			items = self.chipList.findItems(self.__descriptorText(previousChip),
 							Qt.MatchExactly)
 			if len(items) == 1:
 				self.chipList.setCurrentItem(items[0])
