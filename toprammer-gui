@@ -649,19 +649,17 @@ class GuiUserInterface(AbstractUserInterface):
 	def progressMeter(self, meterId, step):
 		self.hwThread.appendMessage("progress", (meterId, step))
 
-	def __consoleMessage(self, message, newline=True):
-		if newline:
-			message += "\n"
-		self.hwThread.appendMessage("console", message)
+	def __consoleMessage(self, message):
+		self.hwThread.appendMessage("console", message + "\n")
 
-	def warningMessage(self, message, newline=True):
-		self.__consoleMessage(message, newline)
+	def warningMessage(self, message):
+		self.__consoleMessage("WARNING: " + message)
 
-	def infoMessage(self, message, newline=True):
-		self.__consoleMessage(message, newline)
+	def infoMessage(self, message):
+		self.__consoleMessage(message)
 
-	def debugMessage(self, message, newline=True):
-		self.__consoleMessage(message, newline)
+	def debugMessage(self, message):
+		self.__consoleMessage(message)
 
 class HwThread(QThread):
 	TASK_SHUTDOWN		= 0

@@ -140,20 +140,20 @@ class TOP:
 		if self.verbose >= 1:
 			self.userInterface.progressMeter(meterId, step)
 
-	def printWarning(self, message, newline=True):
+	def printWarning(self, message):
 		if self.verbose >= 0:
 			self.flushCommands()
-			self.userInterface.warningMessage(message, newline)
+			self.userInterface.warningMessage(message)
 
-	def printInfo(self, message, newline=True):
+	def printInfo(self, message):
 		if self.verbose >= 1:
 			self.flushCommands()
-			self.userInterface.infoMessage(message, newline)
+			self.userInterface.infoMessage(message)
 
-	def printDebug(self, message, newline=True):
+	def printDebug(self, message):
 		if self.verbose >= 2:
 			self.flushCommands()
-			self.userInterface.debugMessage(message, newline)
+			self.userInterface.debugMessage(message)
 
 	@staticmethod
 	def __isTOP(usbdev):

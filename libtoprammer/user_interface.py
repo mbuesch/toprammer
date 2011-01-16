@@ -39,13 +39,13 @@ class AbstractUserInterface:
 	def progressMeter(self, meterId, step):
 		pass # Do nothing by default
 
-	def warningMessage(self, message, newline=True):
+	def warningMessage(self, message):
 		pass # Do nothing by default
 
-	def infoMessage(self, message, newline=True):
+	def infoMessage(self, message):
 		pass # Do nothing by default
 
-	def debugMessage(self, message, newline=True):
+	def debugMessage(self, message):
 		pass # Do nothing by default
 
 class ConsoleUserInterface(AbstractUserInterface):
@@ -92,11 +92,11 @@ class ConsoleUserInterface(AbstractUserInterface):
 			sys.stdout.write(message)
 			sys.stdout.flush()
 
-	def warningMessage(self, message, newline=True):
-		self.__genericConsoleMessage(message, newline)
+	def warningMessage(self, message):
+		self.__genericConsoleMessage(message)
 
-	def infoMessage(self, message, newline=True):
-		self.__genericConsoleMessage(message, newline)
+	def infoMessage(self, message):
+		self.__genericConsoleMessage(message)
 
-	def debugMessage(self, message, newline=True):
-		self.__genericConsoleMessage(message, newline)
+	def debugMessage(self, message):
+		self.__genericConsoleMessage(message)

@@ -80,7 +80,6 @@ class Chip:
 		chipPinVPP is the required VPP pin on the package.
 		chipPinGND is the required GND pin on the package."""
 
-		self.printPrefix = True
 		self.__chipPackage = chipPackage
 		self.__chipPinVCCX = chipPinVCCX
 		self.__chipPinsVPP = chipPinsVPP
@@ -96,23 +95,14 @@ class Chip:
 		"Set the TOP programmer type. See class TOP.TYPE_..."
 		self.programmerType = programmerType
 
-	def printWarning(self, message, newline=True):
-		if self.printPrefix:
-			message = self.chipID + ": " + message
-		self.top.printWarning(message, newline)
-		self.printPrefix = newline
+	def printWarning(self, message):
+		self.top.printWarning(self.chipID + ": " + message)
 
-	def printInfo(self, message, newline=True):
-		if self.printPrefix:
-			message = self.chipID + ": " + message
-		self.top.printInfo(message, newline)
-		self.printPrefix = newline
+	def printInfo(self, message):
+		self.top.printInfo(self.chipID + ": " + message)
 
-	def printDebug(self, message, newline=True):
-		if self.printPrefix:
-			message = self.chipID + ": " + message
-		self.top.printDebug(message, newline)
-		self.printPrefix = newline
+	def printDebug(self, message):
+		self.top.printDebug(self.chipID + ": " + message)
 
 	def throwError(self, message):
 		raise TOPException(self.chipID + ": " + message)
