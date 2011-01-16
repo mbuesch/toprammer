@@ -340,7 +340,7 @@ ChipDescription(
 	Chip_M8C_ISSP,
 	bitfile = "m8c-issp",
 	runtimeID = (0x0007, 0x01),
-	chipVendor = "Cypress",
+	chipVendors = "Cypress",
 	description = "M8C In System Serial Programmer",
 	packages = ( ("M8C ISSP header", "Special adapter"), ),
 	comment = "Special adapter required",

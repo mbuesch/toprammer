@@ -1576,8 +1576,11 @@ class ChipSelectDialog(QDialog):
 		self.setWindowTitle("Select chip")
 		self.setLayout(QGridLayout(self))
 
+		self.vendorList = QListWidget(self)
+		self.layout().addWidget(self.vendorList, 0, 0, 1, 2)
+
 		self.chipList = QListWidget(self)
-		self.layout().addWidget(self.chipList, 0, 0, 1, 2)
+		self.layout().addWidget(self.chipList, 0, 2, 1, 2)
 
 		groupBox = QGroupBox("Chip type", self)
 		groupBox.setLayout(QGridLayout(groupBox))
@@ -1596,20 +1599,22 @@ class ChipSelectDialog(QDialog):
 		groupBox.layout().addWidget(self.sramRadio, 5, 0)
 		self.showBroken = QCheckBox("Show broken implementations", groupBox)
 		groupBox.layout().addWidget(self.showBroken, 6, 0)
-		self.layout().addWidget(groupBox, 0, 2)
+		self.layout().addWidget(groupBox, 0, 4)
 
 		self.okButton = QPushButton("&Ok", self)
-		self.layout().addWidget(self.okButton, 1, 0)
+		self.layout().addWidget(self.okButton, 1, 0, 1, 3)
 
 		self.cancelButton = QPushButton("&Cancel", self)
-		self.layout().addWidget(self.cancelButton, 1, 1)
+		self.layout().addWidget(self.cancelButton, 1, 3, 1, 3)
 
 		self.connect(self.okButton, SIGNAL("released()"),
 			     self.accept)
 		self.connect(self.cancelButton, SIGNAL("released()"),
 			     self.reject)
+		self.connect(self.vendorList, SIGNAL("itemSelectionChanged()"),
+			     self.vendorSelectionChanged)
 		self.connect(self.chipList, SIGNAL("itemSelectionChanged()"),
-			     self.selectionChanged)
+			     self.chipSelectionChanged)
 		self.connect(self.chipList, SIGNAL("itemDoubleClicked(QListWidgetItem)"),
 			     self.accept)
 		self.connect(self.showBroken, SIGNAL("stateChanged(int)"),
@@ -1619,42 +1624,91 @@ class ChipSelectDialog(QDialog):
 			      self.sramRadio):
 			self.connect(radio, SIGNAL("toggled(bool)"), self.typeToggled)
 
-		self.__updateList()
+		self.__updateVendorList()
+		self.__updateChipList()
 
-	def __updateList(self):
-		typeToRadioButton = {
-			ChipDescription.TYPE_MCU	: self.mcuRadio,
-			ChipDescription.TYPE_EPROM	: self.epromRadio,
-			ChipDescription.TYPE_EEPROM	: self.eepromRadio,
-			ChipDescription.TYPE_GAL	: self.galRadio,
-			ChipDescription.TYPE_SRAM	: self.sramRadio,
-		}
+	def __updateVendorList(self):
+		previousVendor = self.__getSelectedVendor()
+		selType = self.__getSelectedChipType()
+		vendors = getRegisteredVendors()
+		self.vendorList.clear()
+		for vendorName in vendors.keys():
+			descriptors = vendors[vendorName]
+			if self.showBroken.checkState() != Qt.Checked:
+				descriptors = filter(lambda d: not d.broken,
+						     descriptors)
+			descriptors = filter(lambda d: d.chipType == selType or selType == -1,
+					     descriptors)
+			if not descriptors:
+				continue
+			item = QListWidgetItem(vendorName, self.vendorList)
+			item.setData(Qt.UserRole, descriptors)
+		self.vendorList.sortItems()
+		if previousVendor:
+			items = self.vendorList.findItems(previousVendor, Qt.MatchExactly)
+			if len(items) == 1:
+				self.vendorList.setCurrentItem(items[0])
+			else:
+				self.vendorList.setCurrentRow(0)
+		else:
+			self.vendorList.setCurrentRow(0)
+
+	def __updateChipList(self):
+		previousChip = self.getSelectedChip()
+		selType = self.__getSelectedChipType()
+		selVendor = self.__getSelectedVendor()
 		self.chipList.clear()
-		for chipDescription in getRegisteredChips():
-			if chipDescription.broken and\
+		for descriptor in getRegisteredChips():
+			if descriptor.broken and\
 			   self.showBroken.checkState() != Qt.Checked:
 				continue
-			if chipDescription.chipType == ChipDescription.TYPE_INTERNAL:
+			if descriptor.chipType != selType and selType != -1:
 				continue
-			radioButton = typeToRadioButton[chipDescription.chipType]
-			if not radioButton.isChecked() and\
-			   not self.allRadio.isChecked():
+			if selVendor not in descriptor.chipVendors:
 				continue
-			text = ""
-			if chipDescription.chipVendor:
-				text += ", ".join(chipDescription.chipVendor) + "  "
-			text += chipDescription.description
+			text = descriptor.description
 			item = QListWidgetItem(text, self.chipList)
-			item.setData(Qt.UserRole, chipDescription)
+			item.setData(Qt.UserRole, descriptor)
 		self.chipList.sortItems()
-		self.chipList.setCurrentRow(0)
+		if previousChip:
+			items = self.chipList.findItems(previousChip.description,
+							Qt.MatchExactly)
+			if len(items) == 1:
+				self.chipList.setCurrentItem(items[0])
+			else:
+				self.chipList.setCurrentRow(0)
+		else:
+			self.chipList.setCurrentRow(0)
 
 	def typeToggled(self, unused):
-		self.__updateList()
+		self.__updateVendorList()
+		self.__updateChipList()
 
-	def selectionChanged(self):
+	def vendorSelectionChanged(self):
+		self.__updateChipList()
+
+	def chipSelectionChanged(self):
 		item = self.chipList.currentItem()
 		self.okButton.setEnabled(bool(item))
+
+	def __getSelectedVendor(self):
+		item = self.vendorList.currentItem()
+		if not item:
+			return None
+		return str(item.text())
+
+	def __getSelectedChipType(self):
+		# Returns ChipDescription.TYPE_... or -1 if all are selected
+		for (typeId, radioButton) in (
+				(ChipDescription.TYPE_MCU,	self.mcuRadio),
+				(ChipDescription.TYPE_EPROM,	self.epromRadio),
+				(ChipDescription.TYPE_EEPROM,	self.eepromRadio),
+				(ChipDescription.TYPE_GAL,	self.galRadio),
+				(ChipDescription.TYPE_SRAM,	self.sramRadio)):
+			if radioButton.isChecked():
+				return typeId
+		assert(self.allRadio.isChecked())
+		return -1
 
 	def getSelectedChip(self):
 		item = self.chipList.currentItem()

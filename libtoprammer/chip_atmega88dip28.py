@@ -41,7 +41,7 @@ ChipDescription(
 	bitfile = "atmega8dip28",
 	chipID = "atmega88dip28",
 	runtimeID = (0x0003, 0x01),
-	chipVendor = "Atmel",
+	chipVendors = "Atmel",
 	description = "AtMega88",
 	packages = ( ("DIP28", ""), ),
 )

@@ -354,7 +354,7 @@ ChipDescription(
 	Chip_AtTiny13dip8,
 	bitfile = "attiny13dip8",
 	runtimeID = (0x0001, 0x01),
-	chipVendor = "Atmel",
+	chipVendors = "Atmel",
 	description = "AtTiny13",
 	packages = ( ("DIP8", ""), ),
 )

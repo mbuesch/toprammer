@@ -39,7 +39,7 @@ ChipDescription(
 	bitfile = "hm62256dip28",
 	runtimeID = (0x000A, 0x01),
 	chipType = ChipDescription.TYPE_SRAM,
-	chipVendor = "S@Tech",
+	chipVendors = "S@Tech",
 	description = "HM62256 SRAM",
 	packages = ( ("DIP28", ""), )
 )

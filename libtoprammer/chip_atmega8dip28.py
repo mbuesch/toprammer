@@ -71,7 +71,7 @@ ChipDescription(
 	Chip_ATMega8DIP28,
 	bitfile = "atmega8dip28",
 	runtimeID = (0x0003, 0x01),
-	chipVendor = "Atmel",
+	chipVendors = "Atmel",
 	description = "AtMega8",
 	fuseDesc = fuseDesc,
 	lockbitDesc = lockbitDesc,

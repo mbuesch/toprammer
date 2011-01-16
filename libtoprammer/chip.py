@@ -242,6 +242,14 @@ def getRegisteredChips():
 	"Get a list of registered ChipDescriptions"
 	return __registeredChips
 
+def getRegisteredVendors():
+	"Returns a dict of 'vendor : [descriptor, ...]' "
+	vendors = { }
+	for descriptor in getRegisteredChips():
+		for vendor in descriptor.chipVendors:
+			vendors.setdefault(vendor, []).append(descriptor)
+	return vendors
+
 class BitDescription:
 	def __init__(self, bitNr, description):
 		self.bitNr = bitNr
@@ -259,7 +267,7 @@ class ChipDescription:
 	def __init__(self, chipImplClass, bitfile, chipID="",
 		     runtimeID=(0,0),
 		     chipType=TYPE_MCU,
-		     chipVendor=None,
+		     chipVendors="Other",
 		     description="", fuseDesc=(), lockbitDesc=(),
 		     packages=None, comment="",
 		     maintainer="Michael Buesch <mb@bu3sch.de>",
@@ -272,7 +280,7 @@ class ChipDescription:
 				   identifies a loaded FPGA configuration. The first number in the
 				   tuple is an ID number and the second number is a revision number.
 		chipType	=> Chip type. Defaults to MCU.
-		chipVendor	=> The chip vendor name(s).
+		chipVendors	=> The chip vendor name(s).
 		description	=> Human readable chip description string.
 		fuseDesc	=> Tuple of fuse bits descriptions (BitDescription(), ...)
 		lockbitDesc	=> Tuple of lock bits descriptions (BitDescription(), ...)
@@ -285,14 +293,14 @@ class ChipDescription:
 
 		if not chipID:
 			chipID = bitfile
-		if type(chipVendor) == type(str()):
-			chipVendor = (chipVendor, )
+		if type(chipVendors) == type(str()):
+			chipVendors = (chipVendors, )
 		self.chipImplClass = chipImplClass
 		self.bitfile = bitfile
 		self.chipID = chipID
 		self.runtimeID = runtimeID
 		self.chipType = chipType
-		self.chipVendor = chipVendor
+		self.chipVendors = chipVendors
 		self.description = description
 		self.fuseDesc = fuseDesc
 		self.lockbitDesc = lockbitDesc
@@ -350,8 +358,8 @@ class ChipDescription:
 
 	def dump(self, fd, verbose=1):
 		"Dump information about a registered chip to file fd."
-		if self.chipVendor:
-			fd.write(", ".join(self.chipVendor) + "  ")
+		if self.chipVendors:
+			fd.write(", ".join(self.chipVendors) + "  ")
 		if self.description:
 			fd.write(self.description)
 		else:

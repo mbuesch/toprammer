@@ -220,7 +220,7 @@ class ChipDescription_m24cXX(ChipDescription):
 			chipID = chipID,
 			runtimeID = (0x000B, 0x01),
 			chipType = ChipDescription.TYPE_EEPROM,
-			chipVendor = "ST",
+			chipVendors = "ST",
 			description = description,
 			packages = (
 				("DIP8", ""),
