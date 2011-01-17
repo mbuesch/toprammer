@@ -322,6 +322,7 @@ class TOP:
 		self.printDebug("Running chip unit-test...")
 		self.checkChip()
 		self.chip.test()
+		self.printInfo("Chip unit-test terminated successfully.")
 
 	def readProgmem(self):
 		"""Reads the program memory image and returns it."""
