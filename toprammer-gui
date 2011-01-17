@@ -1622,8 +1622,10 @@ class ChipSelectDialog(QDialog):
 		groupBox.layout().addWidget(self.galRadio, 4, 0)
 		self.sramRadio = QRadioButton("Static RAM", groupBox)
 		groupBox.layout().addWidget(self.sramRadio, 5, 0)
+		self.logicRadio = QRadioButton("Logic chips", groupBox)
+		groupBox.layout().addWidget(self.logicRadio, 6, 0)
 		self.showBroken = QCheckBox("Show broken implementations", groupBox)
-		groupBox.layout().addWidget(self.showBroken, 6, 0)
+		groupBox.layout().addWidget(self.showBroken, 7, 0)
 		self.layout().addWidget(groupBox, 0, 0, 2, 2)
 
 		l = QLabel("Vendor:", self)
@@ -1656,7 +1658,7 @@ class ChipSelectDialog(QDialog):
 			     self.typeToggled)
 		for radio in (self.allRadio, self.mcuRadio, self.epromRadio,
 			      self.eepromRadio, self.galRadio,
-			      self.sramRadio):
+			      self.sramRadio, self.logicRadio):
 			self.connect(radio, SIGNAL("toggled(bool)"), self.typeToggled)
 
 		self.__updateVendorList()
@@ -1749,7 +1751,8 @@ class ChipSelectDialog(QDialog):
 				(ChipDescription.TYPE_EPROM,	self.epromRadio),
 				(ChipDescription.TYPE_EEPROM,	self.eepromRadio),
 				(ChipDescription.TYPE_GAL,	self.galRadio),
-				(ChipDescription.TYPE_SRAM,	self.sramRadio)):
+				(ChipDescription.TYPE_SRAM,	self.sramRadio),
+				(ChipDescription.TYPE_LOGIC,	self.logicRadio)):
 			if radioButton.isChecked():
 				return typeId
 		assert(self.allRadio.isChecked())

@@ -145,6 +145,6 @@ ChipDescription(
 	bitfile = "unitest",
 	runtimeID = (0x0008, 0x01),
 	chipType = ChipDescription.TYPE_LOGIC,
-	description = "74HC4094 shift-register",
+	description = "74HC(T)4094 shift-register",
 	chipVendors = ("Philips", "Other"),
 )
