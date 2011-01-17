@@ -580,8 +580,6 @@ class TOP:
 			self.__doSend(command)
 		else:
 			self.commandQueue.append(command)
-			if len(self.commandQueue) >= 128:
-				self.flushCommands()
 
 	def runCommandSync(self, command):
 		"""Run a command synchronously.
