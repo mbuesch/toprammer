@@ -270,7 +270,7 @@ class LayoutGeneratorDIP(LayoutGenerator):
 				else:
 					ret += "%2d |-- o######o --| %2d\n" %\
 						(zp, self.zifPins + 1 - zp)
-		ret += "   o==============o\n"
+		ret += "   o==============o"
 		return ret
 
 def createLayoutGenerator(package):

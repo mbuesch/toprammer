@@ -1024,7 +1024,7 @@ class HexEditWidget(QWidget):
 
 		self.bgColor = QColor("#FFFFFF")
 		self.cursor0Color = QColor("#A0A07F")
-		self.cursor1Color = QColor("#FFFF00")
+		self.cursor1Color = QColor("#D0D0AF")
 
 		font = self.font()
 		font.setFamily("monospace")
@@ -1228,7 +1228,7 @@ class HexEditWidget(QWidget):
 		p.fillRect(0, 0, self.width(), self.height(), self.bgColor)
 
 		# Cursor
-		if self.data:
+		if self.data and self.hasFocus():
 			(x, y) = self.__cursorUpperLeftEdge()
 			if self.cursorOnAscii:
 				p.fillRect(x, y, self.charWidth, self.charHeight,
@@ -1784,7 +1784,19 @@ class TopToolBar(QToolBar):
 		self.addSeparator()
 		a = self.addAction(getIcon("up"), "Read chip", mainWindow.readChip)
 		a.setEnabled(chipSupportFlags != 0)
-		self.addSeparator()
+		a = self.addAction(getIcon("verify"), "Verify", mainWindow.verifyChip)
+		a.setEnabled(chipSupportFlags != 0)
+
+class RightToolBar(QToolBar):
+	def __init__(self, mainWindow):
+		QToolBar.__init__(self, "Toolbar", mainWindow)
+		self.mainWindow = mainWindow
+		self.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+		self.setup(0)
+
+	def setup(self, chipSupportFlags):
+		mainWindow = self.mainWindow
+		self.clear()
 		if chipSupportFlags & Chip.SUPPORT_ERASE:
 			self.addAction(getIcon("erase"), "Erase", mainWindow.eraseChip)
 		if chipSupportFlags & Chip.SUPPORT_PROGMEMWRITE:
@@ -1799,8 +1811,6 @@ class TopToolBar(QToolBar):
 			self.addAction(getIcon("lock"), "Write lockbits", mainWindow.writeChipLockbits)
 		if chipSupportFlags & Chip.SUPPORT_TEST:
 			self.addAction(getIcon("test"), "Run unit-test", mainWindow.runTest)
-		a = self.addAction(getIcon("verify"), "Verify", mainWindow.verifyChip)
-		a.setEnabled(chipSupportFlags != 0)
 
 class AutorunWidget(QDockWidget):
 	def __init__(self, mainWindow):
@@ -1984,7 +1994,9 @@ class MainWindow(QMainWindow):
 
 		self.setStatusBar(StatusBar(self))
 		self.topToolBar = TopToolBar(self)
+		self.rightToolBar = RightToolBar(self)
 		self.addToolBar(Qt.TopToolBarArea, self.topToolBar)
+		self.addToolBar(Qt.RightToolBarArea, self.rightToolBar)
 
 		self.setMenuBar(QMenuBar(self))
 
@@ -2350,6 +2362,7 @@ class MainWindow(QMainWindow):
 			self.bufferTab.infoBuffer.setChipLayout(asciiArtLayout)
 			self.autorun.setup(self.chipSupportFlags)
 			self.topToolBar.setup(self.chipSupportFlags)
+			self.rightToolBar.setup(self.chipSupportFlags)
 			self.setupRunMenu(self.chipSupportFlags)
 		elif self.operation == self.OP_SHUTDOWN:
 			pass # Nothing to do
@@ -2394,8 +2407,8 @@ def main():
 	app = QApplication(sys.argv)
 	mainwnd = MainWindow()
 	mainwnd.show()
-	mainwnd.resize(int(mainwnd.width() * 1.0),
-		       int(mainwnd.height() * 1.4))
+	mainwnd.resize(int(mainwnd.width() * 1.6),
+		       int(mainwnd.height() * 1.2))
 	return app.exec_()
 
 if __name__ == "__main__":
