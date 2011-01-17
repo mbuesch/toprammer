@@ -267,20 +267,24 @@ class TOP:
 	def getProgrammerVersion(self):
 		return self.topVersion
 
+	def __readBitfileID(self):
+		self.cmdFPGARead(0xFD)
+		self.cmdFPGARead(0xFE)
+		self.cmdFPGARead(0xFF)
+		data = self.cmdReadBufferReg()
+		gotID = ord(data[0]) | (ord(data[1]) << 8)
+		if gotID == 0xFEFD or gotID == 0xFFFF:
+			gotID = 0
+		gotRev = ord(data[2])
+		if gotRev == 0xFF:
+			gotRev = 0
+		return (gotID, gotRev)
+
 	def __bitfileUpload(self, requiredRuntimeID):
 		(requiredID, requiredRevision) = requiredRuntimeID
 		if requiredID and requiredRevision and not self.forceBitfileUpload:
 			# Check if the bitfile is already uploaded.
-			self.cmdFPGARead(0xFD)
-			self.cmdFPGARead(0xFE)
-			self.cmdFPGARead(0xFF)
-			data = self.cmdReadBufferReg()
-			gotID = ord(data[0]) | (ord(data[1]) << 8)
-			if gotID == 0xFEFD or gotID == 0xFFFF:
-				gotID = 0
-			gotRev = ord(data[2])
-			if gotRev == 0xFF:
-				gotRev = 0
+			(gotID, gotRev) = self.__readBitfileID()
 			if gotID == requiredID and gotRev == requiredRevision:
 				self.printDebug("Bitfile %s ID 0x%04X Rev 0x%02X is already uploaded." %\
 						(self.bitfile.getFilename(), gotID, gotRev))
@@ -302,6 +306,15 @@ class TOP:
 		for i in range(0, len(data), 60):
 			self.cmdFPGAUploadConfig(data[i : i + 60])
 		self.flushCommands()
+
+		if requiredID and requiredRevision:
+			# Check the uploaded ID
+			(gotID, gotRev) = self.__readBitfileID()
+			if gotID != requiredID or gotRev != requiredRevision:
+				raise TOPException("bit-upload: The bitfile upload succeed, "
+					"but the read ID or revision is invalid. "
+					"(Got 0x%04X/0x%02X, but expected 0x%04X/0x%02X)" %\
+					(gotID, gotRev, requiredID, requiredRevision))
 
 	def readSignature(self):
 		"""Reads the chip signature and returns it."""
