@@ -201,7 +201,7 @@ def main(argv):
 	except (getopt.GetoptError, ValueError), e:
 		usage()
 		return 1
-	if opt_action and opt_action != "print-list" and not opt_chipID:
+	if opt_action != "print-list" and not opt_chipID:
 		print "-c|--chip-id is mandatory!"
 		return 1
 	if not opt_informat in ("auto", "bin", "ihex", "hex"):
