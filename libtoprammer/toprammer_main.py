@@ -594,9 +594,8 @@ class TOP:
 		self.flushCommands()
 		try:
 			ep = self.bulkIn.address
-			data = ""
-			for c in self.usbh.bulkRead(ep, size):
-				data += chr(c)
+			data = "".join(map(lambda b: chr(b),
+					   self.usbh.bulkRead(ep, size)))
 			if len(data) != size:
 				raise TOPException("USB bulk read error: Could not read the " +\
 					"requested number of bytes (req %d, got %d)" % (size, len(data)))
