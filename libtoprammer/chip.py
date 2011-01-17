@@ -262,6 +262,7 @@ class ChipDescription:
 	TYPE_EEPROM	= 2	# EEPROM
 	TYPE_GAL	= 3	# PAL/GAL
 	TYPE_SRAM	= 4	# Static RAM
+	TYPE_LOGIC	= 5	# Logics chip
 	TYPE_INTERNAL	= 999	# For internal use only
 
 	def __init__(self, chipImplClass, bitfile, chipID="",

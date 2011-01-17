@@ -24,8 +24,12 @@ from chip import *
 
 
 class Chip_Unitest(Chip):
-	def __init__(self):
-		Chip.__init__(self)
+	def __init__(self, chipPackage=None, chipPinVCCX=None, chipPinsVPP=None, chipPinGND=None,
+			   VCCXVoltage=None, VPPVoltage=None):
+		Chip.__init__(self, chipPackage=chipPackage, chipPinVCCX=chipPinVCCX,
+			      chipPinsVPP=chipPinsVPP, chipPinGND=chipPinGND)
+		self.autogenVCCXVoltage = VCCXVoltage
+		self.autogenVPPVoltage = VPPVoltage
 
 	def shutdownChip(self):
 		self.printDebug("Shutdown chip")
@@ -38,18 +42,17 @@ class Chip_Unitest(Chip):
 		self.vppMask = 0
 		self.top.gnd.setLayoutPins( [] )
 		self.gndMask = 0
-		self.top.cmdSetVCCXVoltage(5)
-		self.top.cmdSetVPPVoltage(0)
-		self.top.cmdSetVPPVoltage(5)
+		self.top.cmdSetVCCXVoltage(self.top.vccx.minVoltage())
+		self.top.cmdSetVPPVoltage(self.top.vpp.minVoltage())
 		self.oscMask = 0
 		self.setOutputEnableMask(0)
 		self.setOutputs(0)
 		self.setOscMask(0)
+		self.top.flushCommands()
 
 	def setVCCX(self, voltage, layout):
 		self.vccxMask = self.top.vccx.ID2mask(layout)
 		self.__updateOutEn()
-		self.top.cmdSetVCCXVoltage(0)
 		self.top.cmdSetVCCXVoltage(voltage)
 		self.top.vccx.setLayoutID(layout)
 		self.top.flushCommands()
@@ -59,9 +62,8 @@ class Chip_Unitest(Chip):
 		for layout in layouts:
 			self.vppMask |= self.top.vpp.ID2mask(layout)
 		self.__updateOutEn()
-		self.top.cmdSetVPPVoltage(0)
 		self.top.cmdSetVPPVoltage(voltage)
-		self.top.vpp.setLayoutMask(0)
+		self.top.vpp.setLayoutMask(0) # Reset
 		for layout in layouts:
 			self.top.vpp.setLayoutID(layout)
 		self.top.flushCommands()
@@ -69,8 +71,31 @@ class Chip_Unitest(Chip):
 	def setGND(self, layout):
 		self.gndMask = self.top.gnd.ID2mask(layout)
 		self.__updateOutEn()
-		self.top.gnd.setLayoutID(0)
+		self.top.gnd.setLayoutID(layout)
 		self.top.flushCommands()
+
+	# Overloaded layout generator interface.
+	def applyVCCX(self, turnOn):
+		layoutID = 0
+		if turnOn:
+			(layoutID, layoutMask) = self.generator.getVCCXLayout()
+		self.setVCCX(self.autogenVCCXVoltage, layoutID)
+
+	# Overloaded layout generator interface.
+	def applyVPP(self, turnOn, packagePinsToTurnOn=[]):
+		assert(not packagePinsToTurnOn) # Not supported, yet.
+		layouts = []
+		if turnOn:
+			layouts = map(lambda (layoutID, layoutMask): layoutID,
+				      self.generator.getVPPLayouts())
+		self.setVPP(self.autogenVPPVoltage, layouts)
+
+	# Overloaded layout generator interface.
+	def applyGND(self, turnOn):
+		layoutID = 0
+		if turnOn:
+			(layoutID, layoutMask) = self.generator.getGNDLayout()
+		self.setGND(layoutID)
 
 	def __updateOutEn(self):
 		mask = self.desiredOutEnMask

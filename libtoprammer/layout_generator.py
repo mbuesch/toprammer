@@ -62,6 +62,11 @@ class LayoutGenerator:
 		self.gndPin = gndPin
 		self.verifyPins()
 
+	def getZifPinForPackagePin(self, packagePin):
+		"Get the ZIF pin number corresponding to the package pin number"
+		return self.mapPin2zif(packagePin, self.result_offset,
+				       self.result_upsideDown)
+
 	def verifyPins(self):
 		pass
 
@@ -154,15 +159,28 @@ class LayoutGenerator:
 				return
 		raise TOPException("Did not find a possible valid layout for the setup")
 
+	def getGNDLayout(self):
+		"Get the calculated GND layout ID and mask. Returns a tuple (ID, mask)."
+		return self.result_GND
+
 	def applyGNDLayout(self, top):
 		"Send the GND layout to hardware"
-		(id, mask) = self.result_GND
-		top.gnd.setLayoutID(id)
+		(layoutID, layoutMask) = self.getGNDLayout()
+		top.gnd.setLayoutID(layoutID)
+
+	def getVCCXLayout(self):
+		"Get the calculated VCCX layout ID and mask. Returns a tuple (ID, mask)."
+		return self.result_VCCX
 
 	def applyVCCXLayout(self, top):
 		"Send the VCCX layout to hardware"
-		(id, mask) = self.result_VCCX
-		top.vccx.setLayoutID(id)
+		(layoutID, layoutMask) = self.getVCCXLayout()
+		top.vccx.setLayoutID(layoutID)
+
+	def getVPPLayouts(self):
+		"""Get the calculated VPP layout IDs and masks.
+		Returns a list of tuples ((ID, mask), (ID, mask), ...)"""
+		return self.result_VPP
 
 	def applyVPPLayout(self, top, packagePins=[]):
 		"""Send the VPP layout to hardware.
@@ -175,15 +193,16 @@ class LayoutGenerator:
 							    self.result_upsideDown))
 			packagePinsMask = self.__pinList2Bitmask(pins)
 		top.vpp.setLayoutMask(0) # Reset
-		if self.result_VPP:
-			for (id, mask) in self.result_VPP:
+		layouts = self.getVPPLayouts()
+		if layouts:
+			for (layoutID, mask) in layouts:
 				if packagePins:
 					if mask & packagePinsMask == 0:
 						continue
 					if mask & packagePinsMask != mask:
 						raise TOPException(
 							"Unable to apply partial VPP layout")
-				top.vpp.setLayoutID(id)
+				top.vpp.setLayoutID(layoutID)
 
 	def __findSingleLayout(self, layoutDefs, zifBitmask):
 		# Returns an (id, mask) tuple
@@ -233,6 +252,7 @@ class LayoutGeneratorDIP(LayoutGenerator):
 		return self.zifPins // 2 - self.nrPins // 2
 
 	def mapPin2zif(self, dipPin, offset, upsideDown):
+		assert(dipPin >= 1 and dipPin <= self.nrPins)
 		if upsideDown:
 			if dipPin > self.nrPins // 2:
 				# Right side of DIP
