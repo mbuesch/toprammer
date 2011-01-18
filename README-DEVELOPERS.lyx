@@ -135,6 +135,15 @@ Reads the programmer identification and versioning string and returns it.
 \end_layout
 
 \begin_layout Subsection
+getOscillatorHz()
+\end_layout
+
+\begin_layout Standard
+Returns the frequency (in Hz) of the oscillator connected to the FPGA clk
+ pin.
+\end_layout
+
+\begin_layout Subsection
 getBufferRegSize()
 \end_layout
 

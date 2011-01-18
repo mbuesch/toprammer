@@ -141,7 +141,7 @@ class Chip_Unitest(Chip):
 		return inputs
 
 	def getOscFreq(self):
-		return 24000000 # Hz
+		return self.top.getOscillatorHz()
 
 	def setOscDivider(self, div):
 		self.top.cmdFPGAWrite(0x12, div & 0xFF)

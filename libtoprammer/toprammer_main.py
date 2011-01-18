@@ -271,7 +271,7 @@ class TOP:
 		self.cmdFPGARead(0xFD)
 		self.cmdFPGARead(0xFE)
 		self.cmdFPGARead(0xFF)
-		data = self.cmdReadBufferReg()
+		data = self.cmdReadBufferReg(3)
 		gotID = ord(data[0]) | (ord(data[1]) << 8)
 		if gotID == 0xFEFD or gotID == 0xFFFF:
 			gotID = 0
@@ -321,6 +321,7 @@ class TOP:
 		self.printDebug("Reading signature from chip...")
 		self.checkChip()
 		sig = self.chip.readSignature()
+		self.flushCommands()
 		self.printDebug("Done reading %d bytes." % len(sig))
 		return sig
 
@@ -329,12 +330,14 @@ class TOP:
 		self.printDebug("Erasing chip...")
 		self.checkChip()
 		self.chip.erase()
+		self.flushCommands()
 
 	def testChip(self):
 		"""Run a unit-test on the chip."""
 		self.printDebug("Running chip unit-test...")
 		self.checkChip()
 		self.chip.test()
+		self.flushCommands()
 		self.printInfo("Chip unit-test terminated successfully.")
 
 	def readProgmem(self):
@@ -342,6 +345,7 @@ class TOP:
 		self.printDebug("Reading program memory from chip...")
 		self.checkChip()
 		image = self.chip.readProgmem()
+		self.flushCommands()
 		self.printDebug("Done reading %d bytes." % len(image))
 		return image
 
@@ -350,6 +354,7 @@ class TOP:
 		self.printDebug("Writing %d bytes of program memory to chip..." % len(image))
 		self.checkChip()
 		self.chip.writeProgmem(image)
+		self.flushCommands()
 		self.printDebug("Done writing image.")
 
 	def readEEPROM(self):
@@ -357,6 +362,7 @@ class TOP:
 		self.printDebug("Reading EEPROM from chip...")
 		self.checkChip()
 		image = self.chip.readEEPROM()
+		self.flushCommands()
 		self.printDebug("Done reading %d bytes." % len(image))
 		return image
 
@@ -365,6 +371,7 @@ class TOP:
 		self.printDebug("Writing %d bytes of EEPROM to chip..." % len(image))
 		self.checkChip()
 		self.chip.writeEEPROM(image)
+		self.flushCommands()
 		self.printDebug("Done writing image.")
 
 	def readFuse(self):
@@ -372,6 +379,7 @@ class TOP:
 		self.printDebug("Reading fuses from chip...")
 		self.checkChip()
 		image = self.chip.readFuse()
+		self.flushCommands()
 		self.printDebug("Done reading %d bytes." % len(image))
 		return image
 
@@ -380,6 +388,7 @@ class TOP:
 		self.printDebug("Writing %d bytes of fuses to chip..." % len(image))
 		self.checkChip()
 		self.chip.writeFuse(image)
+		self.flushCommands()
 		self.printDebug("Done writing image.")
 
 	def readLockbits(self):
@@ -387,6 +396,7 @@ class TOP:
 		self.printDebug("Reading lock-bits from chip...")
 		self.checkChip()
 		image = self.chip.readLockbits()
+		self.flushCommands()
 		self.printDebug("Done reading %d bytes." % len(image))
 		return image
 
@@ -395,6 +405,7 @@ class TOP:
 		self.printDebug("Writing %d bytes of lock-bits to chip..." % len(image))
 		self.checkChip()
 		self.chip.writeLockbits(image)
+		self.flushCommands()
 		self.printDebug("Done writing image.")
 
 	def readRAM(self):
@@ -402,6 +413,7 @@ class TOP:
 		self.printDebug("Reading RAM from chip...")
 		self.checkChip()
 		image = self.chip.readRAM()
+		self.flushCommands()
 		self.printDebug("Done reading %d bytes." % len(image))
 		return image
 
@@ -410,6 +422,7 @@ class TOP:
 		self.printDebug("Writing %d bytes of RAM to the chip..." % len(image))
 		self.checkChip()
 		self.chip.writeRAM(image)
+		self.flushCommands()
 		self.printDebug("Done writing the image.")
 
 	def __cmdDelay_4usec(self):
@@ -440,6 +453,11 @@ class TOP:
 		self.flushCommands()
 		time.sleep(seconds)
 
+	def getOscillatorHz(self):
+		"""Returns the FPGA oscillator frequency, in Hz.
+		The oscillator is connected to the FPGA clk pin."""
+		return 24000000
+
 	def getBufferRegSize(self):
 		"""Returns the size (in bytes) of the buffer register."""
 		return 64
@@ -457,32 +475,32 @@ class TOP:
 
 	def cmdReadBufferReg8(self):
 		"""Read a 8bit value from the buffer register."""
-		stat = self.cmdReadBufferReg()
+		stat = self.cmdReadBufferReg(1)
 		stat = ord(stat[0])
 		return stat
 
 	def cmdReadBufferReg16(self):
 		"""Read a 16bit value from the buffer register."""
-		stat = self.cmdReadBufferReg()
+		stat = self.cmdReadBufferReg(2)
 		stat = ord(stat[0]) | (ord(stat[1]) << 8)
 		return stat
 
 	def cmdReadBufferReg24(self):
 		"""Read a 24bit value from the buffer register."""
-		stat = self.cmdReadBufferReg()
+		stat = self.cmdReadBufferReg(3)
 		stat = ord(stat[0]) | (ord(stat[1]) << 8) | (ord(stat[2]) << 16)
 		return stat
 
 	def cmdReadBufferReg32(self):
 		"""Read a 32bit value from the buffer register."""
-		stat = self.cmdReadBufferReg()
+		stat = self.cmdReadBufferReg(4)
 		stat = ord(stat[0]) | (ord(stat[1]) << 8) | \
 		       (ord(stat[2]) << 16) | (ord(stat[3]) << 24)
 		return stat
 
 	def cmdReadBufferReg48(self):
 		"""Read a 48bit value from the buffer register."""
-		stat = self.cmdReadBufferReg()
+		stat = self.cmdReadBufferReg(6)
 		stat = ord(stat[0]) | (ord(stat[1]) << 8) | \
 		       (ord(stat[2]) << 16) | (ord(stat[3]) << 24) | \
 		       (ord(stat[4]) << 32) | (ord(stat[5]) << 40)
@@ -491,8 +509,8 @@ class TOP:
 	def cmdRequestVersion(self):
 		"""Returns the device ID and versioning string."""
 		self.queueCommand("\x0E\x11\x00\x00")
-		data = self.cmdReadBufferReg()
-		return data[0:16].strip()
+		data = self.cmdReadBufferReg(16)
+		return data.strip()
 
 	def cmdFPGAInitiateConfig(self):
 		"""Initiate a configuration sequence on the FPGA."""
