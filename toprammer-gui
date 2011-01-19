@@ -1036,36 +1036,42 @@ class HexEditWidget(QWidget):
 
 		self.bytesPerLine = 16
 
-		self.setData("")
+		self.previousData = b""
+		self.setData(b"")
 		self.__setCursor(0, False)
 
 		self.setFocusPolicy(Qt.StrongFocus)
 
 	def updateText(self):
-		nrLines = 0
-		text = []
-		asc = []
+		lines = []
 		if self.data:
-			for i in range(0, len(self.data)):
-				if i % 16 == 0:
-					if i != 0:
-						text.append("  |%s|\n" % "".join(asc))
-						asc = []
-						nrLines += 1
-					text.append("[%08X]: " % i)
-				text.append(" " + chr2hex(self.data[i]))
-				asc.append(bin2ascii(self.data[i]))
-			if asc:
-				if len(self.data) % 16:
-					nrLeft = 16 - (len(self.data) % 16)
-					text.append("   " * nrLeft)
-				text.append("  |%s|" % "".join(asc))
-				nrLines += 1
+			for i in range(0, len(self.data), self.bytesPerLine):
+				end = min(i + self.bytesPerLine, len(self.data))
+				data = self.data[i : end]
+				try:
+					prevData = self.previousData[i : end]
+				except IndexError:
+					prevData = None
+				if prevData == data:
+					lines.append(self.textLines[i // self.bytesPerLine])
+				else:
+					text = [ "[%08X]: " % i ]
+					for byte in data:
+						text.append(" " + byte2hex(byte))
+					if len(data) % self.bytesPerLine:
+						# padding
+						nrLeft = self.bytesPerLine - (len(data) % self.bytesPerLine)
+						text.append("   " * nrLeft)
+					text.append("  |")
+					for byte in data:
+						text.append(bytes2ascii(byte))
+					text.append("|")
+					lines.append("".join(text))
 		else:
-			text = [ "<The buffer is empty>", ]
-		text = "".join(text)
-		self.textLines = text.splitlines()
-		self.nrLines = nrLines
+			lines = [ "<The buffer is empty>", ]
+		self.textLines = lines
+		self.nrLines = len(lines)
+		self.previousData = self.data
 
 		width = self.fontMetrics().width(self.textLines[0])
 		height = self.nrLines * self.charHeight
@@ -1091,7 +1097,7 @@ class HexEditWidget(QWidget):
 			data[self.cursorByte] = char
 			self.__setCursor(self.cursorByte + 1, True)
 		else:
-			dataByte = ord(data[self.cursorByte])
+			dataByte = byte2int(data[self.cursorByte])
 			char = ord(char.upper())
 			if char >= ord("0") and char <= ord("9"):
 				nibble = char - ord("0")
@@ -1360,7 +1366,7 @@ class InfoBufferWidget(BufferWidget):
 
 	def setChipSignature(self, bindata):
 		if bindata:
-			self.chipSig.setText(bin2hex(bindata))
+			self.chipSig.setText(bytes2hex(bindata))
 		else:
 			self.chipSig.setText("None")
 
@@ -1471,7 +1477,7 @@ class BitBufferWidget(BufferWidget):
 			if desc:
 				desc = " (%s)" % desc
 			checkbox = QCheckBox("bit %d%s" % (i, desc), self.bitsArea)
-			if ord(image[i // 8]) & (1 << (i % 8)):
+			if byte2int(image[i // 8]) & (1 << (i % 8)):
 				checkbox.setCheckState(Qt.Checked)
 			self.bitsArea.layout().addWidget(checkbox, 1 + i, 0, 1, 2)
 			self.connect(checkbox, SIGNAL("stateChanged(int)"),
@@ -1480,7 +1486,7 @@ class BitBufferWidget(BufferWidget):
 		self.__updateHexView()
 
 	def __updateHexView(self):
-		self.hexView.setText(bin2hex(self.image))
+		self.hexView.setText(bytes2hex(self.image))
 		self.bitsAreaScroll.setWidget(self.bitsArea)
 
 	def __bitStateChanged(self, unused):

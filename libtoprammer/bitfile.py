@@ -1,7 +1,7 @@
 """
 #    *.BIT file parser
 #
-#    Copyright (c) 2009 Michael Buesch <mb@bu3sch.de>
+#    Copyright (c) 2009-2011 Michael Buesch <mb@bu3sch.de>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -26,6 +26,9 @@ except ImportError:
 	print "'pkg_resources' is part of the Python 'setuptools' package."
 	print "On Debian Linux run:  apt-get install python-pkg-resources"
 	sys.exit(1)
+
+from util import *
+
 
 class BitfileException(Exception): pass
 
@@ -89,22 +92,22 @@ class Bitfile:
 			raise BitfileException("No payload found")
 
 	def __parseNextField(self, data, i):
-		fieldId = ord(data[i + 0])
+		fieldId = byte2int(data[i + 0])
 		if (fieldId == self.FIELD_SRCFILE):
 			data = self.__parse16bitField(data, i + 1)
-			self.srcfile = data.strip().strip("\x00")
+			self.srcfile = data.decode("ASCII").strip().strip("\x00")
 			return len(data) + 3
 		if (fieldId == self.FIELD_FPGA):
 			data = self.__parse16bitField(data, i + 1)
-			self.fpga = data.strip().strip("\x00")
+			self.fpga = data.decode("ASCII").strip().strip("\x00")
 			return len(data) + 3
 		if (fieldId == self.FIELD_DATE):
 			data = self.__parse16bitField(data, i + 1)
-			self.date = data.strip().strip("\x00")
+			self.date = data.decode("ASCII").strip().strip("\x00")
 			return len(data) + 3
 		if (fieldId == self.FIELD_TIME):
 			data = self.__parse16bitField(data, i + 1)
-			self.time = data.strip().strip("\x00")
+			self.time = data.decode("ASCII").strip().strip("\x00")
 			return len(data) + 3
 		if (fieldId == self.FIELD_PAYLOAD):
 			self.payload = self.__parse32bitField(data, i + 1)
@@ -112,12 +115,12 @@ class Bitfile:
 		raise BitfileException("Found unknown data field 0x%02X" % fieldId)
 
 	def __parse16bitField(self, data, i):
-		fieldLen = (ord(data[i + 0]) << 8) | ord(data[i + 1])
+		fieldLen = (byte2int(data[i + 0]) << 8) | byte2int(data[i + 1])
 		return data[i + 2 : i + 2 + fieldLen]
 
 	def __parse32bitField(self, data, i):
-		fieldLen = (ord(data[i + 0]) << 24) | (ord(data[i + 1]) << 16) |\
-			   (ord(data[i + 2]) << 8) | ord(data[i + 3])
+		fieldLen = (byte2int(data[i + 0]) << 24) | (byte2int(data[i + 1]) << 16) |\
+			   (byte2int(data[i + 2]) << 8) | byte2int(data[i + 3])
 		return data[i + 4 : i + 4 + fieldLen]
 
 def __probeFile(fullpath):

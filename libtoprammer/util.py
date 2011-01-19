@@ -29,36 +29,48 @@ import random
 class TOPException(Exception): pass
 
 
+if sys.version_info[0] == 2: # Python 2.x
+	def byte2int(byte):
+		return ord(byte)
+
+	def int2byte(integer):
+		return chr(integer)
+else: # Python 3.x
+	def byte2int(byte):
+		return int(byte[0])
+
+	def int2byte(integer):
+		return bytes( (integer, ) )
+
 def hex2bin(hexdata):
 	assert(len(hexdata) % 2 == 0)
-	bindata = []
-	for i in range(0, len(hexdata), 2):
-		bindata.append(chr(int(hexdata[i:i+2], 16)))
-	return "".join(bindata)
+	bindata = map(lambda i: int2byte(int(hexdata[i:i+2], 16)),
+		      range(0, len(hexdata), 2))
+	return b"".join(bindata)
 
-def chr2hex(c):
-	return "%02X" % ord(c)
+def byte2hex(byte):
+	return "%02X" % byte2int(byte)
 
-def bin2hex(bindata):
+def bytes2hex(bindata):
 	if not bindata:
 		return ""
-	return "".join(map(chr2hex, bindata))
+	return "".join(map(byte2hex, bindata))
 
-def chr2ascii(c):
-	if ord(c) >= 32 and ord(c) <= 126:
-		return c
+def byte2ascii(c):
+	ci = byte2int(c)
+	if ci >= 32 and ci <= 126:
+		return c.decode("ASCII")
 	return "."
 
-def bin2ascii(bindata):
+def bytes2ascii(bindata):
 	if not bindata:
 		return ""
-	return "".join(map(chr2ascii, bindata))
+	return "".join(map(byte2ascii, bindata))
 
 def genRandomBlob(size):
-	blob = []
-	for i in range(0, size):
-		blob.append(chr(random.randint(0, 0xFF)))
-	return "".join(blob)
+	blob = map(lambda x: int2byte(random.randint(0, 0xFF)),
+		   range(0, size))
+	return b"".join(blob)
 
 def nrBitsSet(integer):
 	count = 0
@@ -89,8 +101,8 @@ def parseHexdump(dump):
 				raise TOPException("Invalid hexdump format (odd bytestring len)")
 			for i in range(0, len(bytes), 2):
 				byte = int(bytes[i:i+2], 16)
-				bin.append(chr(byte))
-		return "".join(bin)
+				bin.append(int2byte(byte))
+		return b"".join(bin)
 	except (ValueError), e:
 		raise TOPException("Invalid hexdump format (Integer error)")
 
@@ -103,11 +115,11 @@ def generateHexdump(mem):
 			asc = ""
 		if i % 16 == 0:
 			ret += "0x%04X:  " % i
-		c = ord(mem[i])
+		c = byte2int(mem[i])
 		ret += "%02X" % c
 		if (i % 2 != 0):
 			ret += " "
-		asc += chr2ascii(chr(c))
+		asc += byte2ascii(mem[i])
 	ret += "  " + asc + "\n\n"
 	return ret
 
@@ -168,9 +180,9 @@ class IO_ihex:
 					continue
 				if type == self.TYPE_DATA:
 					if len(bin) < addr + count: # Reallocate
-						bin += ['\xFF'] * (addr + count - len(bin))
+						bin += [b'\xFF'] * (addr + count - len(bin))
 					for i in range(9, 9 + count * 2, 2):
-						byte = chr(int(line[i:i+2], 16))
+						byte = int2byte(int(line[i:i+2], 16))
 						if bin[(i - 9) / 2 + addr] != '\xFF' and \
 						   not doublewriteWarned:
 							doublewriteWarned = True
@@ -180,7 +192,7 @@ class IO_ihex:
 				raise TOPException("Invalid IHEX format (unsup type %d)" % type)
 		except ValueError:
 			raise TOPException("Invalid IHEX format (digit format)")
-		return "".join(bin)
+		return b"".join(bin)
 
 	def fromBinary(self, binData):
 		ihex = []
@@ -201,7 +213,7 @@ class IO_ihex:
 			ihex.append(":%02X%04X%02X" % (size, addr, self.TYPE_DATA))
 			checksum += size + ((addr >> 8) & 0xFF) + (addr & 0xFF) + self.TYPE_DATA
 			for j in range(0, size):
-				data = ord(binData[i + j])
+				data = byte2int(binData[i + j])
 				checksum = (checksum + data) & 0xFF
 				ihex.append("%02X" % data)
 			checksum = ((checksum ^ 0xFF) + 1) & 0xFF

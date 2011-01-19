@@ -103,8 +103,8 @@ class Chip_AtTiny13dip8(Chip):
 			low = word & 0xFF
 			high = (word >> 8) & 0xFF
 			self.__sendInstr(SDI=low, SII=0x0C)
-			self.__sendInstr(SDI=ord(image[word * 2 + 0]), SII=0x2C)
-			self.__sendInstr(SDI=ord(image[word * 2 + 1]), SII=0x3C)
+			self.__sendInstr(SDI=byte2int(image[word * 2 + 0]), SII=0x2C)
+			self.__sendInstr(SDI=byte2int(image[word * 2 + 1]), SII=0x3C)
 			self.__sendInstr(SDI=0x00, SII=0x7D)
 			self.__sendInstr(SDI=0x00, SII=0x7C)
 			if ((word + 1) % self.flashPageSize == 0) or word == len(image) // 2 - 1:
@@ -155,7 +155,7 @@ class Chip_AtTiny13dip8(Chip):
 		for i in range(0, len(image)):
 			self.progressMeter(i)
 			self.__sendInstr(SDI=i, SII=0x0C)
-			self.__sendInstr(SDI=ord(image[i]), SII=0x2C)
+			self.__sendInstr(SDI=byte2int(image[i]), SII=0x2C)
 			self.__sendInstr(SDI=0x00, SII=0x6D)
 			self.__sendInstr(SDI=0x00, SII=0x6C)
 			if ((i + 1) % self.eepromPageSize == 0) or i == len(image) - 1:
@@ -166,22 +166,21 @@ class Chip_AtTiny13dip8(Chip):
 		self.progressMeterFinish()
 
 	def readFuse(self):
-		fuses = ""
+		fuses = []
 		self.__enterPM()
 		self.progressMeterInit("Reading fuses", 0)
 		self.__sendInstr(SDI=0x04, SII=0x4C)
 		self.__sendInstr(SDI=0x00, SII=0x68)
 		self.__sendInstr(SDI=0x00, SII=0x6C)
 		self.__readSDOBufferHigh()
-		fuses += self.top.cmdReadBufferReg()[0]
+		fuses.append(self.top.cmdReadBufferReg(1))
 		self.__sendInstr(SDI=0x04, SII=0x4C)
 		self.__sendInstr(SDI=0x00, SII=0x7A)
 		self.__sendInstr(SDI=0x00, SII=0x7E)
 		self.__readSDOBufferHigh()
-		data = ord(self.top.cmdReadBufferReg()[0])
-		fuses += chr(data | 0xE0)
+		fuses.append(int2byte(self.top.cmdReadBufferReg8() | 0xE0))
 		self.progressMeterFinish()
-		return fuses
+		return b"".join(fuses)
 
 	def writeFuse(self, image):
 		if len(image) != 2:
@@ -190,12 +189,12 @@ class Chip_AtTiny13dip8(Chip):
 		self.__enterPM()
 		self.progressMeterInit("Writing fuses", 0)
 		self.__sendInstr(SDI=0x40, SII=0x4C)
-		self.__sendInstr(SDI=ord(image[0]), SII=0x2C)
+		self.__sendInstr(SDI=byte2int(image[0]), SII=0x2C)
 		self.__sendInstr(SDI=0x00, SII=0x64)
 		self.__sendInstr(SDI=0x00, SII=0x6C)
 		self.__waitHighSDO()
 		self.__sendInstr(SDI=0x40, SII=0x4C)
-		self.__sendInstr(SDI=(ord(image[1]) & 0x1F), SII=0x2C)
+		self.__sendInstr(SDI=(byte2int(image[1]) & 0x1F), SII=0x2C)
 		self.__sendInstr(SDI=0x00, SII=0x74)
 		self.__sendInstr(SDI=0x00, SII=0x7C)
 		self.__waitHighSDO()
@@ -208,8 +207,7 @@ class Chip_AtTiny13dip8(Chip):
 		self.__sendInstr(SDI=0x00, SII=0x78)
 		self.__sendInstr(SDI=0x00, SII=0x7C)
 		self.__readSDOBufferHigh()
-		data = ord(self.top.cmdReadBufferReg()[0])
-		lockbits = chr(data | 0xFC)
+		lockbits = int2byte(self.top.cmdReadBufferReg8() | 0xFC)
 		self.progressMeterFinish()
 		return lockbits
 
@@ -220,7 +218,7 @@ class Chip_AtTiny13dip8(Chip):
 		self.__enterPM()
 		self.progressMeterInit("Writing lockbits", 0)
 		self.__sendInstr(SDI=0x20, SII=0x4C)
-		self.__sendInstr(SDI=(ord(image[0]) & 3), SII=0x2C)
+		self.__sendInstr(SDI=(byte2int(image[0]) & 3), SII=0x2C)
 		self.__sendInstr(SDI=0x00, SII=0x64)
 		self.__sendInstr(SDI=0x00, SII=0x6C)
 		self.__waitHighSDO()
@@ -262,10 +260,10 @@ class Chip_AtTiny13dip8(Chip):
 		if signature != self.signature:
 			msg = "Unexpected device signature. " +\
 			      "Want %02X%02X%02X, but got %02X%02X%02X" % \
-				(ord(self.signature[0]), ord(self.signature[1]),
-				 ord(self.signature[2]),
-				 ord(signature[0]), ord(signature[1]),
-				 ord(signature[2]))
+				(byte2int(self.signature[0]), byte2int(self.signature[1]),
+				 byte2int(self.signature[2]),
+				 byte2int(signature[0]), byte2int(signature[1]),
+				 byte2int(signature[2]))
 			if self.top.getForceLevel() >= 1:
 				self.printWarning(msg)
 			else:
@@ -325,7 +323,7 @@ class Chip_AtTiny13dip8(Chip):
 	def __getStatusFlags(self):
 		self.top.cmdFPGARead(0x12)
 		stat = self.top.cmdReadBufferReg()
-		return ord(stat[0])
+		return byte2int(stat[0])
 
 	def __readSDOBufferHigh(self):
 		self.top.cmdFPGARead(0x10)

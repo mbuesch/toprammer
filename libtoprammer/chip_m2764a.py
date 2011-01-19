@@ -84,7 +84,7 @@ class Chip_M2764A(Chip):
 		self.__setEG(E=1, G=1)
 		for addr in range(0, len(image)):
 			self.progressMeter(addr)
-			data = ord(image[addr])
+			data = byte2int(image[addr])
 			if data != 0xFF:
 				self.__writeData(addr, data)
 		self.__setEG(E=1, G=1)
@@ -104,7 +104,7 @@ class Chip_M2764A(Chip):
 		for i in range(0, 25):
 			self.__readDataToStatusReg(addr)
 			stat = self.top.cmdReadBufferReg()
-			r = ord(stat[0])
+			r = byte2int(stat[0])
 			if r == data:
 				break
 			self.__setEG(E=0, G=1)
@@ -150,7 +150,7 @@ class Chip_M2764A(Chip):
 	def __getStatusFlags(self):
 		self.top.cmdFPGARead(0x12)
 		stat = self.top.cmdReadBufferReg()
-		return ord(stat[0])
+		return byte2int(stat[0])
 
 	def __busy(self):
 		return bool(self.__getStatusFlags() & self.STAT_BUSY)

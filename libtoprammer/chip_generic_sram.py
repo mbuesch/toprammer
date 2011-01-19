@@ -38,7 +38,7 @@ class Chip_genericSRAM(Chip):
 		assert(nrDataBits == 8)
 
 	def erase(self):
-		self.writeRAM(chr(0) * self.__sizeBytes())
+		self.writeRAM(int2byte(0) * self.__sizeBytes())
 
 	def test(self):
 		self.genericTest(self.readRAM, self.writeRAM,
@@ -63,7 +63,7 @@ class Chip_genericSRAM(Chip):
 		self.__setControlPins(CE=1, OE=1, WE=1)
 		self.progressMeterFinish()
 
-		return "".join(image)
+		return b"".join(image)
 
 	def writeRAM(self, image):
 		if len(image) > self.__sizeBytes():
@@ -104,7 +104,7 @@ class Chip_genericSRAM(Chip):
 		self.top.cmdFPGAWrite(0x11, value)
 
 	def __writeData(self, data):
-		data = ord(data)
+		data = byte2int(data)
 		self.top.cmdFPGAWrite(0x10, data)
 
 	def __readData(self):

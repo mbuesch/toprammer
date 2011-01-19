@@ -91,7 +91,7 @@ class Chip_m24cXXdip8_common(Chip):
 		prevAddr = None
 		for addr in range(0, len(image)):
 			self.progressMeter(addr)
-			self.__setData(ord(image[addr]))
+			self.__setData(byte2int(image[addr]))
 			if prevAddr is None or (prevAddr & 0xFFF0) != (addr & 0xFFF0):
 				self.__setAddress(addr, writeMode=True)
 				self.__runCommand(self.CMD_DEVSEL_WRITE, busyWait=True)

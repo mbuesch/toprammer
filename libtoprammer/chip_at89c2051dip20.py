@@ -64,7 +64,7 @@ class Chip_AT89C2051dip20(Chip):
 		signature = ""
 		signature += data[0]
 		signature += data[1]
-		self.top.printInfo("Signature: %X, %X"  % (ord(signature[0]), ord(signature[1])))
+		self.top.printInfo("Signature: %X, %X"  % (byte2int(signature[0]), byte2int(signature[1])))
 		return signature
 
 	def erase(self):
@@ -136,7 +136,7 @@ class Chip_AT89C2051dip20(Chip):
 		self.progressMeterInit("Writing Flash", len(image))
 		for addr in range(0, len(image)):
 			self.progressMeter(addr)
-			data = ord(image[addr])
+			data = byte2int(image[addr])
 			if data != 0xFF:
 				self.__loadData(data)
 				self.__loadCommand(3)
@@ -161,7 +161,7 @@ class Chip_AT89C2051dip20(Chip):
 		ok = 0
 		image = self.readProgmem()
 		for addr in range(0, 0x800):
-			if ord(image[addr]) != 0xFF:
+			if byte2int(image[addr]) != 0xFF:
 				ok = 1
 		return ok
 
@@ -169,7 +169,7 @@ class Chip_AT89C2051dip20(Chip):
 		data = self.readProgmem()
 		ok = 0
 		for addr in range(0, 0x800):
-			if ord(image[addr]) != ord(data[addr]):
+			if byte2int(image[addr]) != byte2int(data[addr]):
 				ok = 1
 		return ok
 
@@ -198,7 +198,7 @@ class Chip_AT89C2051dip20(Chip):
 	def __getStatusFlags(self):
 		self.top.cmdFPGARead(0x12)
 		stat = self.top.cmdReadBufferReg()
-		return ord(stat[0])
+		return byte2int(stat[0])
 
 	def __busy(self):
 		return bool(self.__getStatusFlags() & self.STAT_BUSY)
@@ -214,8 +214,8 @@ class Chip_AT89C2051dip20(Chip):
 		for i in range(0,4):
 			self.top.cmdFPGARead(0x12)
 			stat = self.top.cmdReadBufferReg()
-			if (ord(stat[0]) & self.STAT_BUSY) == 0:
-				return ord(stat[0])
+			if (byte2int(stat[0]) & self.STAT_BUSY) == 0:
+				return byte2int(stat[0])
 			self.top.hostDelay(0.001)
 		self.throwError("Timeout in busywait.")
 

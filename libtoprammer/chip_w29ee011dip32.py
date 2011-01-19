@@ -149,7 +149,7 @@ class Chip_w29ee011dip32(Chip):
 			self.__swDataProtect(True)
 			assert(len(pageData) <= 128)
 			for byte in pageData:
-				self.__writeBufAppend(ord(byte))
+				self.__writeBufAppend(byte2int(byte))
 			self.__loadWriteAddr(pageAddress)
 			self.__runCommandSync(self.PROGCMD_WRITEBUF)
 			self.top.hostDelay(0.01)
@@ -230,7 +230,7 @@ class Chip_w29ee011dip32(Chip):
 	def __getStatusFlags(self):
 		self.top.cmdFPGARead(0x12)
 		stat = self.top.cmdReadBufferReg()
-		return ord(stat[0])
+		return byte2int(stat[0])
 
 	def __busy(self):
 		return bool(self.__getStatusFlags() & self.STAT_BUSY)

@@ -18,14 +18,23 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
+import sys
+__pymajor = sys.version_info[0]
+__pyminor = sys.version_info[1]
+if __pymajor < 2 or (__pymajor == 2 and __pyminor < 6):
+	print "FATAL: TOPrammer requires Python version 2.6. Please install Python 2.6"
+	sys.exit(1)
+
+
+# TOPrammer version stamp
 VERSION_MAJOR	= 0
 VERSION_MINOR	= 8
 VERSION = "%d.%d" % (VERSION_MAJOR, VERSION_MINOR)
 
+
 from bitfile import *
 from util import *
 
-import sys
 import time
 import re
 try:
@@ -232,14 +241,14 @@ class TOP:
 		else:
 			assert(0)
 
-		self.queueCommand("\x0D")
+		self.queueCommand(b"\x0D")
 		stat = self.cmdReadBufferReg32()
 		if stat != 0x00020C69:
 			self.printWarning("Init: Unexpected status (a): 0x%08X" % stat)
 
 		self.cmdSetVPPVoltage(0)
 		self.cmdSetVPPVoltage(0)
-		self.queueCommand("\x0E\x20\x00\x00")
+		self.queueCommand(b"\x0E\x20\x00\x00")
 		self.cmdDelay(0.01)
 		self.cmdSetVCCXVoltage(0)
 
@@ -247,9 +256,9 @@ class TOP:
 		self.cmdLoadVPPLayout(0)
 		self.cmdLoadVCCXLayout(0)
 
-		self.queueCommand("\x0E\x20\x00\x00")
+		self.queueCommand(b"\x0E\x20\x00\x00")
 		self.cmdDelay(0.01)
-		self.queueCommand("\x0E\x25\x00\x00")
+		self.queueCommand(b"\x0E\x25\x00\x00")
 		stat = self.cmdReadBufferReg32()
 		if stat != 0x0000686C:
 			self.printWarning("Init: Unexpected status (b): 0x%08X" % stat)
@@ -272,10 +281,10 @@ class TOP:
 		self.cmdFPGARead(0xFE)
 		self.cmdFPGARead(0xFF)
 		data = self.cmdReadBufferReg(3)
-		gotID = ord(data[0]) | (ord(data[1]) << 8)
+		gotID = byte2int(data[0]) | (byte2int(data[1]) << 8)
 		if gotID == 0xFEFD or gotID == 0xFFFF:
 			gotID = 0
-		gotRev = ord(data[2])
+		gotRev = byte2int(data[2])
 		if gotRev == 0xFF:
 			gotRev = 0
 		return (gotID, gotRev)
@@ -426,10 +435,10 @@ class TOP:
 		self.printDebug("Done writing the image.")
 
 	def __cmdDelay_4usec(self):
-		self.queueCommand(chr(0x00))
+		self.queueCommand(int2byte(0x00))
 
 	def __cmdDelay_10msec(self):
-		self.queueCommand(chr(0x1B))
+		self.queueCommand(int2byte(0x1B))
 
 	def cmdDelay(self, seconds):
 		"""Send a delay request to the device. Note that this causes the
@@ -470,76 +479,77 @@ class TOP:
 		assert(nrBytes <= regSize)
 		if not nrBytes:
 			return ""
-		self.queueCommand(chr(0x07))
+		self.queueCommand(int2byte(0x07))
 		return self.receive(regSize)[0:nrBytes]
 
 	def cmdReadBufferReg8(self):
 		"""Read a 8bit value from the buffer register."""
 		stat = self.cmdReadBufferReg(1)
-		stat = ord(stat[0])
+		stat = byte2int(stat[0])
 		return stat
 
 	def cmdReadBufferReg16(self):
 		"""Read a 16bit value from the buffer register."""
 		stat = self.cmdReadBufferReg(2)
-		stat = ord(stat[0]) | (ord(stat[1]) << 8)
+		stat = byte2int(stat[0]) | (byte2int(stat[1]) << 8)
 		return stat
 
 	def cmdReadBufferReg24(self):
 		"""Read a 24bit value from the buffer register."""
 		stat = self.cmdReadBufferReg(3)
-		stat = ord(stat[0]) | (ord(stat[1]) << 8) | (ord(stat[2]) << 16)
+		stat = byte2int(stat[0]) | (byte2int(stat[1]) << 8) | (byte2int(stat[2]) << 16)
 		return stat
 
 	def cmdReadBufferReg32(self):
 		"""Read a 32bit value from the buffer register."""
 		stat = self.cmdReadBufferReg(4)
-		stat = ord(stat[0]) | (ord(stat[1]) << 8) | \
-		       (ord(stat[2]) << 16) | (ord(stat[3]) << 24)
+		stat = byte2int(stat[0]) | (byte2int(stat[1]) << 8) | \
+		       (byte2int(stat[2]) << 16) | (byte2int(stat[3]) << 24)
 		return stat
 
 	def cmdReadBufferReg48(self):
 		"""Read a 48bit value from the buffer register."""
 		stat = self.cmdReadBufferReg(6)
-		stat = ord(stat[0]) | (ord(stat[1]) << 8) | \
-		       (ord(stat[2]) << 16) | (ord(stat[3]) << 24) | \
-		       (ord(stat[4]) << 32) | (ord(stat[5]) << 40)
+		stat = byte2int(stat[0]) | (byte2int(stat[1]) << 8) | \
+		       (byte2int(stat[2]) << 16) | (byte2int(stat[3]) << 24) | \
+		       (byte2int(stat[4]) << 32) | (byte2int(stat[5]) << 40)
 		return stat
 
 	def cmdRequestVersion(self):
 		"""Returns the device ID and versioning string."""
-		self.queueCommand("\x0E\x11\x00\x00")
+		self.queueCommand(b"\x0E\x11\x00\x00")
 		data = self.cmdReadBufferReg(16)
 		return data.strip()
 
 	def cmdFPGAInitiateConfig(self):
 		"""Initiate a configuration sequence on the FPGA."""
-		self.queueCommand("\x0E\x21\x00\x00")
+		self.queueCommand(b"\x0E\x21\x00\x00")
 
 	def cmdFPGAUploadConfig(self, data):
 		"""Upload configuration data into the FPGA."""
 		assert(len(data) <= 60)
-		cmd = "\x0E\x22\x00\x00" + data
-		cmd += "\x00" * (64 - len(cmd)) # padding
+		cmd = b"\x0E\x22\x00\x00" + data
+		cmd += b"\x00" * (64 - len(cmd)) # padding
+		print len(cmd)
 		self.queueCommand(cmd)
 
 	def cmdFPGARead(self, address):
 		"""Read a byte from the FPGA at address into the buffer register."""
 		if address == 0x10: # Fast tracked
-			self.queueCommand(chr(0x01))
+			self.queueCommand(int2byte(0x01))
 			return
-		self.queueCommand(chr(0x0B) + chr(address))
+		self.queueCommand(int2byte(0x0B) + int2byte(address))
 
 	def cmdFPGAWrite(self, address, byte):
 		"""Write a byte to an FPGA address."""
 		if address == 0x10: # Fast tracked
-			self.queueCommand(chr(0x10) + chr(byte))
+			self.queueCommand(int2byte(0x10) + int2byte(byte))
 			return
-		self.queueCommand(chr(0x0A) + chr(address) + chr(byte))
+		self.queueCommand(int2byte(0x0A) + int2byte(address) + int2byte(byte))
 
 	def cmdLoadGNDLayout(self, layout):
 		"""Load the GND configuration into the H/L shiftregisters."""
-		cmd = chr(0x0E) + chr(0x16) + chr(layout) + chr(0)
+		cmd = int2byte(0x0E) + int2byte(0x16) + int2byte(layout) + int2byte(0)
 		self.queueCommand(cmd)
 		self.cmdDelay(0.01)
 		self.hostDelay(0.15)
@@ -547,13 +557,13 @@ class TOP:
 	def cmdSetVPPVoltage(self, voltage):
 		"""Set the VPP voltage. voltage is a floating point voltage number."""
 		centivolt = int(voltage * 10)
-		cmd = chr(0x0E) + chr(0x12) + chr(centivolt) + chr(0)
+		cmd = int2byte(0x0E) + int2byte(0x12) + int2byte(centivolt) + int2byte(0)
 		self.queueCommand(cmd)
 		self.cmdDelay(0.01)
 
 	def cmdLoadVPPLayout(self, layout):
 		"""Load the VPP configuration into the shift registers."""
-		cmd = chr(0x0E) + chr(0x14) + chr(layout) + chr(0)
+		cmd = int2byte(0x0E) + int2byte(0x14) + int2byte(layout) + int2byte(0)
 		self.queueCommand(cmd)
 		self.cmdDelay(0.01)
 		self.hostDelay(0.15)
@@ -561,13 +571,13 @@ class TOP:
 	def cmdSetVCCXVoltage(self, voltage):
 		"""Set the VCCX voltage. voltage is a floating point voltage number."""
 		centivolt = int(voltage * 10)
-		cmd = chr(0x0E) + chr(0x13) + chr(centivolt) + chr(0)
+		cmd = int2byte(0x0E) + int2byte(0x13) + int2byte(centivolt) + int2byte(0)
 		self.queueCommand(cmd)
 		self.cmdDelay(0.01)
 
 	def cmdLoadVCCXLayout(self, layout):
 		"""Load the VCCX configuration into the shift registers."""
-		cmd = chr(0x0E) + chr(0x15) + chr(layout) + chr(0)
+		cmd = int2byte(0x0E) + int2byte(0x15) + int2byte(layout) + int2byte(0)
 		self.queueCommand(cmd)
 		self.cmdDelay(0.01)
 		self.hostDelay(0.15)
@@ -577,7 +587,7 @@ class TOP:
 		param = 0
 		if enable:
 			param = 1
-		cmd = chr(0x0E) + chr(0x28) + chr(param) + chr(0)
+		cmd = int2byte(0x0E) + int2byte(0x28) + int2byte(param) + int2byte(0)
 		self.queueCommand(cmd)
 
 	def __doSend(self, command):
@@ -612,8 +622,8 @@ class TOP:
 		self.flushCommands()
 		try:
 			ep = self.bulkIn.address
-			data = "".join(map(lambda b: chr(b),
-					   self.usbh.bulkRead(ep, size)))
+			data = b"".join(map(lambda b: int2byte(b),
+					    self.usbh.bulkRead(ep, size)))
 			if len(data) != size:
 				raise TOPException("USB bulk read error: Could not read the " +\
 					"requested number of bytes (req %d, got %d)" % (size, len(data)))
@@ -626,12 +636,12 @@ class TOP:
 
 	def flushCommands(self):
 		"""Flush the command queue."""
-		command = ""
+		command = b""
 		for oneCommand in self.commandQueue:
 			assert(len(oneCommand) <= 64)
 			if len(command) + len(oneCommand) > 64:
 				self.__doSend(command)
-				command = ""
+				command = b""
 			command += oneCommand
 		if command:
 			self.__doSend(command)

@@ -106,7 +106,7 @@ class Chip_ATMega_common(Chip):
 				self.__loadAddr(addr)
 				addr *= 2
 				data = image[addr : addr + 2]
-				self.__loadData(ord(data[0]) | (ord(data[1]) << 8))
+				self.__loadData(byte2int(data[0]) | (byte2int(data[1]) << 8))
 				self.__setBS1(1)
 				self.__pulsePAGEL()
 			self.__setBS1(0)
@@ -146,7 +146,7 @@ class Chip_ATMega_common(Chip):
 				addr = (page * self.eepromPageSize) + byte
 				self.__loadAddr(addr)
 				data = image[addr]
-				self.__loadDataLow(ord(data[0]))
+				self.__loadDataLow(byte2int(data[0]))
 				self.__pulsePAGEL()
 			self.__setBS1(0)
 			self.__pulseWR()
@@ -170,11 +170,11 @@ class Chip_ATMega_common(Chip):
 		self.progressMeterInit("Writing Fuse bits", 0)
 		self.__loadCommand(self.CMD_WRITEFUSE)
 		self.__setBS2(0)
-		self.__loadDataLow(ord(image[0]))
+		self.__loadDataLow(byte2int(image[0]))
 		self.__pulseWR()
 		self.__waitForRDY()
 		self.__loadCommand(self.CMD_WRITEFUSE)
-		self.__loadDataLow(ord(image[1]))
+		self.__loadDataLow(byte2int(image[1]))
 		self.__setBS1(1)
 		self.__pulseWR()
 		self.__waitForRDY()
@@ -197,7 +197,7 @@ class Chip_ATMega_common(Chip):
 
 		self.progressMeterInit("Writing lock bits", 0)
 		self.__loadCommand(self.CMD_WRITELOCK)
-		self.__loadDataLow(ord(image[0]))
+		self.__loadDataLow(byte2int(image[0]))
 		self.__pulseWR()
 		self.__waitForRDY()
 		self.progressMeterFinish()
@@ -272,10 +272,10 @@ class Chip_ATMega_common(Chip):
 		if signature != self.signature:
 			msg = "Unexpected device signature. " +\
 			      "Want %02X%02X%02X, but got %02X%02X%02X" % \
-				(ord(self.signature[0]), ord(self.signature[1]),
-				 ord(self.signature[2]),
-				 ord(signature[0]), ord(signature[1]),
-				 ord(signature[2]))
+				(byte2int(self.signature[0]), byte2int(self.signature[1]),
+				 byte2int(self.signature[2]),
+				 byte2int(signature[0]), byte2int(signature[1]),
+				 byte2int(signature[2]))
 			if self.top.getForceLevel() >= 1:
 				self.printWarning(msg)
 			else:
@@ -373,7 +373,7 @@ class Chip_ATMega_common(Chip):
 		"""Read the programmer status register"""
 		self.top.cmdFPGARead(0x12)
 		stat = self.top.cmdReadBufferReg()
-		return ord(stat[0])
+		return byte2int(stat[0])
 
 	def __setOE(self, high):
 		"""Set the OE pin of the DUT"""
