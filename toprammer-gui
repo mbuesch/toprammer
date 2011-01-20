@@ -659,7 +659,10 @@ class HwThread(QThread):
 
 		self.waitCondition = QWaitCondition()
 		self.mutex = QMutex()
+
 		self.setTopParameters()
+		self.setDevice()
+
 		self.start()
 
 	def killThread(self):
@@ -671,10 +674,16 @@ class HwThread(QThread):
 			self.mutex.unlock()
 			self.wait()
 
-	def setTopParameters(self, busDev=None, verbose=2, forceLevel=0,
+	def setDevice(self, busNr=None, devNr=None):
+		assert(self.top is None and self.task is None)
+		busDev = None
+		if busNr is not None and devNr is not None:
+			busDev = (busNr, devNr)
+		self.param_busDev = busDev
+
+	def setTopParameters(self, verbose=2, forceLevel=0,
 			     usebroken=True, forceBitfileUpload=False):
 		assert(self.top is None and self.task is None)
-		self.param_busDev = busDev
 		self.param_verbose = verbose
 		self.param_forceLevel = forceLevel
 		self.param_usebroken = usebroken
@@ -1975,6 +1984,51 @@ class AutorunWidget(QDockWidget):
 			return True
 		return False
 
+class ProgrammerSelectDialog(QDialog):
+	def __init__(self, parent=None):
+		QDialog.__init__(self, parent)
+		self.setWindowTitle("Select programmer device")
+		self.setLayout(QGridLayout(self))
+
+		self.deviceList = QListWidget(self)
+		self.layout().addWidget(self.deviceList, 0, 0, 1, 2)
+
+		self.rescanButton = QPushButton("&Rescan USB busses", self)
+		self.layout().addWidget(self.rescanButton, 1, 0, 1, 2)
+
+		self.okButton = QPushButton("&OK", self)
+		self.layout().addWidget(self.okButton, 2, 0)
+
+		self.cancelButton = QPushButton("&Cancel", self)
+		self.layout().addWidget(self.cancelButton, 2, 1)
+
+		self.rescan()
+
+		self.connect(self.deviceList, SIGNAL("currentRowChanged(int)"), self.selectionChanged)
+		self.connect(self.okButton, SIGNAL("released()"), self.accept)
+		self.connect(self.cancelButton, SIGNAL("released()"), self.reject)
+		self.connect(self.rescanButton, SIGNAL("released()"), self.rescan)
+
+	def rescan(self):
+		self.deviceList.clear()
+		for (toptype, busNr, devNr) in TOP.findDevices():
+			text = "%s  (usb:%03d:%03d)" % (toptype, busNr, devNr)
+			item = QListWidgetItem(text, self.deviceList)
+			item.setData(Qt.UserRole, QVariant( (busNr, devNr) ))
+		self.deviceList.setCurrentRow(0)
+
+	def getUSBIDs(self):
+		item = self.deviceList.currentItem()
+		if not item:
+			return (None, None)
+		return item.data(Qt.UserRole).toPyObject()
+
+	def selectionChanged(self, unused):
+		if self.deviceList.currentItem():
+			self.okButton.setEnabled(True)
+		else:
+			self.okButton.setEnabled(False)
+
 class MainWindow(QMainWindow):
 	OP_NONE		= 0
 	OP_SHUTDOWN	= 1
@@ -2023,6 +2077,7 @@ class MainWindow(QMainWindow):
 		menu = QMenu("&Programmer", self)
 		menu.addAction("&Universal chip tester...", self.startUnitest)
 		menu.addSeparator()
+		menu.addAction("Select &programmer...", self.selectProgrammer)
 		menu.addAction("&Send raw command...", self.sendRawCommand)
 		self.menuBar().addMenu(menu)
 
@@ -2115,6 +2170,17 @@ class MainWindow(QMainWindow):
 		self.guiDisable -= 1
 		self.guiUpdateEnable()
 		self.runOperation(self.OP_SHUTDOWN, HwThread.TASK_SHUTDOWN)
+
+	def selectProgrammer(self):
+		dlg = ProgrammerSelectDialog(self)
+		if dlg.exec_() != QDialog.Accepted:
+			return
+		(busNr, devNr) = dlg.getUSBIDs()
+		self.runOperationSync(HwThread.TASK_SHUTDOWN)
+		self.hwThread.setDevice(busNr, devNr)
+		if self.currentChipDescription:
+			self.runOperation(self.OP_INITCHIP, HwThread.TASK_INITCHIP,
+					  self.currentChipDescription.chipID)
 
 	def sendRawCommand(self):
 		(string, ok) = QInputDialog.getText(self,

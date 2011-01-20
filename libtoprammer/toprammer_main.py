@@ -75,7 +75,7 @@ class TOP:
 			for dev in bus.devices:
 				if busDev and dev.filename != "%03d" % busDev[1]:
 					continue
-				if self.__isTOP(dev):
+				if self.__usbdev2toptype(dev):
 					break
 				if busDev:
 					raise TOPException(
@@ -165,12 +165,33 @@ class TOP:
 			self.userInterface.debugMessage(message)
 
 	@staticmethod
-	def __isTOP(usbdev):
-		"Returns true, if the USB device is a supported TOP programmer device."
-		ids = (
-			(0x2471, 0x0853),	# TOP2049
-		)
-		return (usbdev.idVendor, usbdev.idProduct) in ids
+	def __usbdev2toptype(usbdev):
+		"Returns the TOP type of the USB device. None, if this is not a TOP device."
+		try:
+			toptype = {
+				(0x2471, 0x0853):	TOP.TYPE_TOP2049,
+			}[ (usbdev.idVendor, usbdev.idProduct) ]
+		except (KeyError), e:
+			return None
+		return toptype
+
+	@staticmethod
+	def findDevices():
+		"""Rescan the USB busses and return a list of tuples (busNr, devNr)
+		for the found device."""
+		devices = []
+		for bus in usb.busses():
+			for dev in bus.devices:
+				toptype = TOP.__usbdev2toptype(dev)
+				if not toptype:
+					continue
+				try:
+					busNr = int(bus.dirname)
+					devNr = int(dev.filename)
+				except (ValueError), e:
+					pass
+				devices.append( (toptype, busNr, devNr) )
+		return devices
 
 	def __initializeUSB(self):
 		# Set up the USB interface
