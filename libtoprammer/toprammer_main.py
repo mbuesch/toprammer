@@ -551,7 +551,6 @@ class TOP:
 		assert(len(data) <= 60)
 		cmd = b"\x0E\x22\x00\x00" + data
 		cmd += b"\x00" * (64 - len(cmd)) # padding
-		print len(cmd)
 		self.queueCommand(cmd)
 
 	def cmdFPGARead(self, address):
