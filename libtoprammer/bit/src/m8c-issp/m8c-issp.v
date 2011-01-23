@@ -58,6 +58,9 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 	`define ISSPCMD_SENDVEC	3	/* Send the vector */
 	`define ISSPCMD_EXEC	4	/* Do an "execute" transfer */
 
+	`define IS_BUSY		(issp_busy[0] != issp_busy[1])
+	`define SET_FINISHED	issp_busy[1] <= issp_busy[0]
+
 	/* The M8C device signals */
 	reg dut_sdata;
 	reg dut_sdata_input;
@@ -76,193 +79,198 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 	wire osc;
 	IBUF osc_ibuf(.I(osc_in), .O(osc));
 
-	`define DELAY_250NS	6 - 1
+	`define DELAY_250NS	6 - 1		/* 250 ns */
+	`define DELAY_1US	24 - 1		/* 1 us */
+	`define DELAY_1MS	24000 - 1	/* 1 ms */
+	`define DELAY_1P5MS	36000 - 1	/* 1.5 ms */
+
+	initial begin
+		address <= 0;
+		read_data <= 0;
+
+		issp_busy <= 0;
+		issp_command <= 0;
+		issp_vector <= 0;
+		issp_input_mask <= 0;
+		issp_input_vector <= 0;
+		issp_vecbit <= `ISSP_VEC_SIZE;
+		issp_count <= 0;
+		issp_state <= 0;
+
+		dut_sdata <= 0;
+		dut_sdata_input <= 1;
+		dut_sclk <= 0;
+		dut_sclk_z <= 1;
+		dut_vdd <= `VDD_OFF;
+
+		delay_count <= 0;
+	end
 
 	always @(posedge osc) begin
-		if (delay_count == 0) begin
-			if (issp_busy[0] != issp_busy[1]) begin
-				/* busy0 != busy1 indicates that a command is running.
-				 * Continue executing it... */
-
-				if (issp_command == `ISSPCMD_POR) begin
-					case (issp_state)
-					0: begin
-						/* Turn on power and wait vDDwait time */
-						dut_vdd <= `VDD_ON;
-						dut_sclk_z <= 1;
-						dut_sclk <= 0;
-						dut_sdata_input <= 1;
-//						delay_count <= 24000 - 1; /* Wait 1ms */
-//						delay_count <= 12000 - 1;
-						delay_count <= 5000 - 1;
-						issp_state <= 1;
-					end
-					1: begin
-						if (zif[`ZIF_SDATA] == 1) begin
-							issp_state <= 2;
-							delay_count <= `DELAY_250NS;
-						end else begin
-							issp_state <= 1;
-						end
-					end
-					2: begin
-						if (zif[`ZIF_SDATA] == 0) begin
-							issp_state <= 3;
-							dut_sclk_z <= 0;
-							dut_sclk <= 0;
-							issp_vecbit <= `ISSP_VEC_SIZE;
-							delay_count <= `DELAY_250NS;
-						end else begin
-							issp_state <= 2;
-						end
-					end
-					3: begin
-						if (issp_vecbit == 0) begin
-							dut_sdata_input <= 1;
-							issp_state <= 5;
-						end else begin
-							/* Ok, ready to send the next bit */
-							dut_sclk_z <= 0;
-							dut_sdata_input <= 0;
-							dut_sdata <= issp_vector[issp_vecbit - 1];
-							dut_sclk <= 1;
-							issp_state <= 4;
-							delay_count <= `DELAY_250NS;
-						end
-					end
-					4: begin
-						dut_sclk <= 0;
-						issp_state <= 3;
-						issp_vecbit <= issp_vecbit - 1;
-						delay_count <= `DELAY_250NS;
-					end
-					5: begin
-						/* We're done. */
-						issp_busy[1] <= issp_busy[0];
-						issp_vecbit <= `ISSP_VEC_SIZE;
-						issp_state <= 0;
-					end
-					endcase
-				end
-				if (issp_command == `ISSPCMD_PWROFF) begin
-					dut_vdd <= `VDD_OFF;
-					dut_sdata <= 0;
-					dut_sdata_input <= 1;
-					dut_sclk <= 0;
+		if (delay_count == 0 && `IS_BUSY) begin
+			case (issp_command)
+			`ISSPCMD_POR: begin
+				case (issp_state)
+				0: begin
+					/* Turn on power and wait vDDwait time */
+					dut_vdd <= `VDD_ON;
 					dut_sclk_z <= 1;
+					dut_sclk <= 0;
+					dut_sdata_input <= 1;
+					delay_count <= `DELAY_1P5MS;	/* TvDDwait */
+					issp_state <= 1;
+				end
+				1: begin
+					dut_sclk_z <= 0;
+					dut_sclk <= 0;
+					if (zif[`ZIF_SDATA] == 0) begin
+						issp_state <= 2;
+						issp_vecbit <= `ISSP_VEC_SIZE;
+					end
+					delay_count <= `DELAY_250NS;
+				end
+				2: begin
+					if (issp_vecbit == 0) begin
+						issp_state <= 4;
+					end else begin
+						/* Ok, ready to send the next bit */
+						dut_sdata_input <= 0;
+						dut_sdata <= issp_vector[issp_vecbit - 1];
+						dut_sclk <= 1;
+						issp_state <= 3;
+					end
+					delay_count <= `DELAY_250NS;
+				end
+				3: begin
+					dut_sclk <= 0;
+					issp_state <= 2;
+					issp_vecbit <= issp_vecbit - 1;
+					delay_count <= `DELAY_250NS;
+				end
+				4: begin
+					/* We're done. */
+					`SET_FINISHED;
+					dut_sdata_input <= 1;
 					issp_vecbit <= `ISSP_VEC_SIZE;
 					issp_state <= 0;
-					delay_count <= 0;
-					/* We're done. */
-					issp_busy[1] <= issp_busy[0];
 				end
-				if (issp_command == `ISSPCMD_SENDVEC) begin
-					case (issp_state)
-					0: begin
-						dut_sclk_z <= 0;
-						if (issp_input_mask[issp_vecbit - 1] == 0) begin
-							/* Send bit */
-							dut_sdata_input <= 0;
-							dut_sdata <= issp_vector[issp_vecbit - 1];
-						end
-						dut_sclk <= 1;
-						issp_state <= 1;
-						delay_count <= `DELAY_250NS;
-					end
-					1: begin
-						if (issp_input_mask[issp_vecbit - 1] != 0) begin
-							/* Receive bit */
-							//FIXME?
-							dut_sdata_input <= 1;
-							issp_input_vector[issp_vecbit - 1] = zif[`ZIF_SDATA];
-						end
-						dut_sclk <= 0;
-						issp_state <= 2;
-						delay_count <= `DELAY_250NS;
-					end
-					2: begin//FIXME?
-						if (issp_vecbit == 0) begin
-							/* We're done. */
-							dut_sdata_input <= 1;
-							issp_busy[1] <= issp_busy[0];
-							issp_vecbit <= `ISSP_VEC_SIZE;
-							issp_state <= 0;
-						end else begin
-							/* The next bit */
-							issp_vecbit <= issp_vecbit - 1;
-							issp_state <= 0;
-						end
-					end
-					endcase
-				end
-				if (issp_command == `ISSPCMD_EXEC) begin
-					case (issp_state)
-					0: begin /* Init */
-						dut_sdata_input <= 1;
-						dut_sdata <= 0;
-						dut_sclk_z <= 0;
-						issp_count <= 40;
-						issp_state <= 1;
-						delay_count <= `DELAY_250NS;
-					end
-					1: begin /* Wait 40 cycles, set clk=hi */
-						dut_sclk <= 1;
-						issp_state <= 2;
-						issp_count <= issp_count - 1;
-						delay_count <= `DELAY_250NS;
-					end
-					2: begin /* Wait 40 cycles, set clk=lo */
-						dut_sclk <= 0;
-						if (issp_count == 0)
-							issp_state <= 3;
-						else
-							issp_state <= 1;
-						delay_count <= `DELAY_250NS;
-					end
-					3: begin /* Wait for SDATA=0, set clk=hi */
-						dut_sclk <= 1;
-						dut_sdata_input <= 1;
-						dut_sdata <= 0;
-						if (zif[`ZIF_SDATA] == 0) begin
-							/* Ok, got it. Now send 40 zeros. */
-							issp_count <= 39;
-							issp_state <= 5;
-						end else begin
-							issp_state <= 4;
-						end
-						delay_count <= `DELAY_250NS;
-					end
-					4: begin /* Wait for SDATA=0, set clk=lo */
-						dut_sclk <= 0;
-						issp_state <= 3;
-						delay_count <= `DELAY_250NS;
-					end
-					5: begin /* Send 40 zeros. set clk=lo */
+				endcase
+			end
+			`ISSPCMD_PWROFF: begin
+				dut_vdd <= `VDD_OFF;
+				dut_sdata <= 0;
+				dut_sdata_input <= 1;
+				dut_sclk <= 0;
+				dut_sclk_z <= 1;
+				issp_vecbit <= `ISSP_VEC_SIZE;
+				issp_state <= 0;
+				delay_count <= 0;
+				/* We're done. */
+				`SET_FINISHED;
+			end
+			`ISSPCMD_SENDVEC: begin
+				case (issp_state)
+				0: begin
+					dut_sclk_z <= 0;
+					if (issp_input_mask[issp_vecbit - 1] == 0) begin
+						/* Send bit */
 						dut_sdata_input <= 0;
-						dut_sclk <= 0;
-						if (issp_count == 0)
-							issp_state <= 7;
-						else
-							issp_state <= 6;
-						delay_count <= `DELAY_250NS;
-					end
-					6: begin /* Send 40 zeros. set clk=hi */
-						dut_sclk <= 1;
-						issp_count <= issp_count - 1;
-						issp_state <= 5;
-						delay_count <= `DELAY_250NS;
-					end
-					7: begin /* finish */
-						/* We're done. */
-						issp_busy[1] <= issp_busy[0];
+						dut_sdata <= issp_vector[issp_vecbit - 1];
+					end else begin
 						dut_sdata_input <= 1;
+					end
+					dut_sclk <= 1;
+					issp_state <= 1;
+					delay_count <= `DELAY_250NS;
+				end
+				1: begin
+					if (issp_input_mask[issp_vecbit - 1] != 0) begin
+						/* Receive bit */
+						issp_input_vector[issp_vecbit - 1] = zif[`ZIF_SDATA];
+					end
+					dut_sclk <= 0;
+					if (issp_vecbit == 0) begin
+						/* We're done. */
+						dut_sdata_input <= 1;
+						`SET_FINISHED;
+						issp_vecbit <= `ISSP_VEC_SIZE;
+						issp_state <= 0;
+					end else begin
+						/* The next bit */
+						issp_vecbit <= issp_vecbit - 1;
 						issp_state <= 0;
 					end
-					endcase
+					delay_count <= `DELAY_250NS;
 				end
+				endcase
 			end
+			`ISSPCMD_EXEC: begin
+				case (issp_state)
+				0: begin /* Init */
+					dut_sdata_input <= 1;
+					dut_sclk_z <= 0;
+					issp_count <= 40;
+					issp_state <= 1;
+				end
+				1: begin /* Wait 40 cycles, set clk=hi */
+					dut_sclk <= 1;
+					issp_state <= 2;
+					issp_count <= issp_count - 1;
+					delay_count <= `DELAY_250NS;
+				end
+				2: begin /* Wait 40 cycles, set clk=lo */
+					dut_sclk <= 0;
+					if (issp_count == 0)
+						issp_state <= 3;
+					else
+						issp_state <= 1;
+					delay_count <= `DELAY_250NS;
+				end
+				3: begin /* Wait for SDATA=0, set clk=hi */
+					dut_sclk <= 1;
+					if (zif[`ZIF_SDATA] == 0) begin
+						/* Ok, got it. Now send 40 zeros. */
+						dut_sdata_input <= 0;
+						dut_sdata <= 0;
+						issp_count <= 39;
+						issp_state <= 5;
+					end else begin
+						issp_state <= 4;
+					end
+					delay_count <= `DELAY_250NS;
+				end
+				4: begin /* Wait for SDATA=0, set clk=lo */
+					dut_sclk <= 0;
+					issp_state <= 3;
+					delay_count <= `DELAY_250NS;
+				end
+				5: begin /* Send 40 zeros. set clk=lo */
+					dut_sclk <= 0;
+					if (issp_count == 0)
+						issp_state <= 7;
+					else
+						issp_state <= 6;
+					delay_count <= `DELAY_250NS;
+				end
+				6: begin /* Send 40 zeros. set clk=hi */
+					dut_sclk <= 1;
+					issp_count <= issp_count - 1;
+					issp_state <= 5;
+					delay_count <= `DELAY_250NS;
+				end
+				7: begin /* finish */
+					/* We're done. */
+					dut_sdata_input <= 1;
+					issp_state <= 0;
+					`SET_FINISHED;
+				end
+				endcase
+			end
+			endcase
 		end else begin
-			delay_count <= delay_count - 1;
+			if (delay_count) begin
+				delay_count <= delay_count - 1;
+			end
 		end
 	end
 
@@ -319,7 +327,7 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 			read_data[3] <= issp_state[1];
 			read_data[4] <= issp_state[2];
 
-			read_data[5] <= 0;
+			read_data[5] <= zif[`ZIF_SDATA];
 			read_data[6] <= 0;
 			read_data[7] <= 0;
 		end
@@ -333,7 +341,8 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 		end
 		8'h15: begin
 			/* Read input vector high */
-			read_data <= issp_input_vector[21:16];
+			read_data[5:0] <= issp_input_vector[21:16];
+			read_data[7:6] <= 0;
 		end
 
 		8'hFD: read_data <= `RUNTIME_ID & 16'hFF;
@@ -367,8 +376,8 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 	bufif0(zif[17], low, low);
 	bufif0(zif[18], low, low);
 	bufif0(zif[19], low, low);
-	assign zif[20] = low;					/* GND */
-	assign zif[21] = high;					/* VDD */
+	bufif0(zif[20], low, low);				/* GND */
+	bufif0(zif[21], high, low);				/* VDD */
 	bufif0(zif[`ZIF_SDATA], dut_sdata, dut_sdata_input);	/* SDATA */
 	bufif0(zif[23], dut_sclk, dut_sclk_z);			/* SCLK */
 	bufif0(zif[24], dut_vdd, low);				/* VDDen */
