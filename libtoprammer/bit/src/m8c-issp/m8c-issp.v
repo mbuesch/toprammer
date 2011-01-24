@@ -83,6 +83,7 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 	`define DELAY_1US	24 - 1		/* 1 us */
 	`define DELAY_1MS	24000 - 1	/* 1 ms */
 	`define DELAY_1P5MS	36000 - 1	/* 1.5 ms */
+	`define DELAY_2MS	48000 - 1	/* 2 ms */
 
 	initial begin
 		address <= 0;
@@ -93,7 +94,7 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 		issp_vector <= 0;
 		issp_input_mask <= 0;
 		issp_input_vector <= 0;
-		issp_vecbit <= `ISSP_VEC_SIZE;
+		issp_vecbit <= 0;
 		issp_count <= 0;
 		issp_state <= 0;
 
@@ -150,8 +151,8 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 				4: begin
 					/* We're done. */
 					`SET_FINISHED;
+					dut_sclk <= 0;
 					dut_sdata_input <= 1;
-					issp_vecbit <= `ISSP_VEC_SIZE;
 					issp_state <= 0;
 				end
 				endcase
@@ -162,7 +163,6 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 				dut_sdata_input <= 1;
 				dut_sclk <= 0;
 				dut_sclk_z <= 1;
-				issp_vecbit <= `ISSP_VEC_SIZE;
 				issp_state <= 0;
 				delay_count <= 0;
 				/* We're done. */
@@ -171,34 +171,37 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 			`ISSPCMD_SENDVEC: begin
 				case (issp_state)
 				0: begin
+					issp_vecbit <= `ISSP_VEC_SIZE - 1;
 					dut_sclk_z <= 0;
-					if (issp_input_mask[issp_vecbit - 1] == 0) begin
+					issp_state <= 1;
+				end
+				1: begin
+					if (issp_input_mask[issp_vecbit] == 0) begin
 						/* Send bit */
 						dut_sdata_input <= 0;
-						dut_sdata <= issp_vector[issp_vecbit - 1];
+						dut_sdata <= issp_vector[issp_vecbit];
 					end else begin
 						dut_sdata_input <= 1;
 					end
 					dut_sclk <= 1;
-					issp_state <= 1;
+					issp_state <= 2;
 					delay_count <= `DELAY_250NS;
 				end
-				1: begin
-					if (issp_input_mask[issp_vecbit - 1] != 0) begin
+				2: begin
+					if (issp_input_mask[issp_vecbit] != 0) begin
 						/* Receive bit */
-						issp_input_vector[issp_vecbit - 1] = zif[`ZIF_SDATA];
+						issp_input_vector[issp_vecbit] = zif[`ZIF_SDATA];
 					end
 					dut_sclk <= 0;
 					if (issp_vecbit == 0) begin
 						/* We're done. */
 						dut_sdata_input <= 1;
-						`SET_FINISHED;
-						issp_vecbit <= `ISSP_VEC_SIZE;
 						issp_state <= 0;
+						`SET_FINISHED;
 					end else begin
 						/* The next bit */
 						issp_vecbit <= issp_vecbit - 1;
-						issp_state <= 0;
+						issp_state <= 1;
 					end
 					delay_count <= `DELAY_250NS;
 				end
