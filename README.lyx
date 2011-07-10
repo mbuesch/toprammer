@@ -46,7 +46,7 @@ Toprammer - TOPxxxx OpenSource suite
 \end_layout
 
 \begin_layout Author
-Copyright (c) 2009-2011 Michael Buesch <mb@bu3sch.de>
+Copyright (c) 2009-2011 Michael Buesch <m@bues.ch>
 \end_layout
 
 \begin_layout Section
@@ -54,7 +54,7 @@ Dependencies
 \end_layout
 
 \begin_layout Itemize
-Python 2.5 or Python 2.6 is required
+Python 2.5, Python 2.6 or Python 2.7 is required
 \end_layout
 
 \begin_layout LyX-Code
@@ -157,7 +157,11 @@ toprammer-gui
 \begin_layout Standard
 Note that, depending on your system config, you might need to run toprammer-gui
  as root to allow USB hardware access.
- If you get permission errors, try to re-run toprammer-gui as root.
+ If you get 
+\begin_inset Quotes eld
+\end_inset
+
+Operation not permitted" errors, try to re-run toprammer-gui as root.
 \end_layout
 
 \begin_layout Section
