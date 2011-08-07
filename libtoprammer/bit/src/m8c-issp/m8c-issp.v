@@ -1,10 +1,10 @@
 /*
  *   TOP2049 Open Source programming suite
  *
- *   Cypress M8C In System Serial Programmer
+ *   Cypress M8C/M7C In System Serial Programmer
  *   FPGA bottomhalf implementation
  *
- *   Copyright (c) 2010 Michael Buesch <mb@bu3sch.de>
+ *   Copyright (c) 2010-2011 Michael Buesch <mb@bu3sch.de>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -45,27 +45,33 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 	reg [1:0] issp_busy;				/* Busy state. We're busy, if bits are unequal */
 	reg [7:0] issp_command;				/* Currently loaded command */
 	reg [`ISSP_VEC_SIZE-1:0] issp_vector;		/* Currently loaded output vector */
-	reg [`ISSP_VEC_SIZE-1:0] issp_input_mask;	/* Vector input bits mask */
-	reg [`ISSP_VEC_SIZE-1:0] issp_input_vector;	/* Read data */
 	reg [5:0] issp_vecbit;				/* Currently TXed/RXed bit */
 	reg [7:0] issp_count;				/* General purpose counter */
-	reg [2:0] issp_state;				/* Statemachine */
+	reg [3:0] issp_state;				/* Statemachine */
 
 	/* The M8C programmer commands */
 	`define ISSPCMD_NONE	0	/* No command loaded */
 	`define ISSPCMD_POR	1	/* Perform a power-on-reset */
 	`define ISSPCMD_PWROFF	2	/* Turn power off */
-	`define ISSPCMD_SENDVEC	3	/* Send the vector */
-	`define ISSPCMD_EXEC	4	/* Do an "execute" transfer */
+	`define ISSPCMD_EXEC	3	/* Do an "execute" transfer */
 
 	`define IS_BUSY		(issp_busy[0] != issp_busy[1])
 	`define SET_FINISHED	issp_busy[1] <= issp_busy[0]
 
 	/* The M8C device signals */
+	wire sig_sdata;
+	wire sig_sdata_input;
+	wire sig_sclk;
+	wire sig_sclk_z;
 	reg dut_sdata;
 	reg dut_sdata_input;
 	reg dut_sclk;
 	reg dut_sclk_z;
+	reg dut_bitbang_disabled;
+	reg dut_bitbang_sdata;
+	reg dut_bitbang_sdata_input;
+	reg dut_bitbang_sclk;
+	reg dut_bitbang_sclk_z;
 	reg dut_vdd;
 	`define VDD_ON		1
 	`define VDD_OFF		0
@@ -92,8 +98,6 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 		issp_busy <= 0;
 		issp_command <= 0;
 		issp_vector <= 0;
-		issp_input_mask <= 0;
-		issp_input_vector <= 0;
 		issp_vecbit <= 0;
 		issp_count <= 0;
 		issp_state <= 0;
@@ -103,6 +107,12 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 		dut_sclk <= 0;
 		dut_sclk_z <= 1;
 		dut_vdd <= `VDD_OFF;
+
+		dut_bitbang_disabled <= 0;
+		dut_bitbang_sdata <= 0;
+		dut_bitbang_sdata_input <= 1;
+		dut_bitbang_sclk <= 0;
+		dut_bitbang_sclk_z <= 1;
 
 		delay_count <= 0;
 	end
@@ -115,10 +125,11 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 				0: begin
 					/* Turn on power and wait vDDwait time */
 					dut_vdd <= `VDD_ON;
+					dut_bitbang_disabled <= 1;
 					dut_sclk_z <= 1;
 					dut_sclk <= 0;
 					dut_sdata_input <= 1;
-					delay_count <= `DELAY_1P5MS;	/* TvDDwait */
+					delay_count <= `DELAY_1MS;	/* TvDDwait */
 					issp_state <= 1;
 				end
 				1: begin
@@ -128,7 +139,7 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 						issp_state <= 2;
 						issp_vecbit <= `ISSP_VEC_SIZE;
 					end
-					delay_count <= `DELAY_250NS;
+//					delay_count <= `DELAY_250NS;
 				end
 				2: begin
 					if (issp_vecbit == 0) begin
@@ -151,6 +162,7 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 				4: begin
 					/* We're done. */
 					`SET_FINISHED;
+					dut_bitbang_disabled <= 0;
 					dut_sclk <= 0;
 					dut_sdata_input <= 1;
 					issp_state <= 0;
@@ -159,6 +171,7 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 			end
 			`ISSPCMD_PWROFF: begin
 				dut_vdd <= `VDD_OFF;
+				dut_bitbang_disabled <= 0;
 				dut_sdata <= 0;
 				dut_sdata_input <= 1;
 				dut_sclk <= 0;
@@ -168,102 +181,84 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 				/* We're done. */
 				`SET_FINISHED;
 			end
-			`ISSPCMD_SENDVEC: begin
-				case (issp_state)
-				0: begin
-					issp_vecbit <= `ISSP_VEC_SIZE - 1;
-					dut_sclk_z <= 0;
-					issp_state <= 1;
-				end
-				1: begin
-					if (issp_input_mask[issp_vecbit] == 0) begin
-						/* Send bit */
-						dut_sdata_input <= 0;
-						dut_sdata <= issp_vector[issp_vecbit];
-					end else begin
-						dut_sdata_input <= 1;
-					end
-					dut_sclk <= 1;
-					issp_state <= 2;
-					delay_count <= `DELAY_250NS;
-				end
-				2: begin
-					if (issp_input_mask[issp_vecbit] != 0) begin
-						/* Receive bit */
-						issp_input_vector[issp_vecbit] = zif[`ZIF_SDATA];
-					end
-					dut_sclk <= 0;
-					if (issp_vecbit == 0) begin
-						/* We're done. */
-						dut_sdata_input <= 1;
-						issp_state <= 0;
-						`SET_FINISHED;
-					end else begin
-						/* The next bit */
-						issp_vecbit <= issp_vecbit - 1;
-						issp_state <= 1;
-					end
-					delay_count <= `DELAY_250NS;
-				end
-				endcase
-			end
 			`ISSPCMD_EXEC: begin
 				case (issp_state)
 				0: begin /* Init */
+					dut_bitbang_disabled <= 1;
+					dut_sdata <= 0;
 					dut_sdata_input <= 1;
 					dut_sclk_z <= 0;
-					issp_count <= 40;
+					dut_sclk <= 0;
+					issp_count <= 10;
 					issp_state <= 1;
 				end
-				1: begin /* Wait 40 cycles, set clk=hi */
+				1: begin /* Wait for SDATA=1 */
+					if (zif[`ZIF_SDATA]) begin
+						issp_state <= 5; /* goto wait-for-SDATA=0 */
+					end else begin
+						delay_count <= `DELAY_1US;
+						issp_count <= issp_count - 1;
+						issp_state <= 2;
+					end
+				end
+				2: begin
+					if (issp_count == 0) begin
+						/* Timeout */
+						issp_state <= 3; /* Send 33 CLKs */
+						issp_count <= 33;
+					end else begin
+						issp_state <= 1;
+					end
+				end
+				3: begin /* Send 33 CLKs */
 					dut_sclk <= 1;
-					issp_state <= 2;
 					issp_count <= issp_count - 1;
 					delay_count <= `DELAY_250NS;
+					issp_state <= 4;
 				end
-				2: begin /* Wait 40 cycles, set clk=lo */
+				4: begin
 					dut_sclk <= 0;
-					if (issp_count == 0)
-						issp_state <= 3;
-					else
-						issp_state <= 1;
-					delay_count <= `DELAY_250NS;
-				end
-				3: begin /* Wait for SDATA=0, set clk=hi */
-					dut_sclk <= 1;
-					if (zif[`ZIF_SDATA] == 0) begin
-						/* Ok, got it. Now send 40 zeros. */
-						dut_sdata_input <= 0;
-						dut_sdata <= 0;
-						issp_count <= 39;
-						issp_state <= 5;
+					if (issp_count == 0) begin
+						/* Sent all */
+						if (zif[`ZIF_SDATA]) begin
+							issp_state <= 5; /* goto wait-for-SDATA=0 */
+						end else begin
+							/* goto send-50-CLKs */
+							issp_state <= 6;
+							issp_count <= 50;
+						end
 					end else begin
-						issp_state <= 4;
+						issp_state <= 3;
 					end
 					delay_count <= `DELAY_250NS;
 				end
-				4: begin /* Wait for SDATA=0, set clk=lo */
-					dut_sclk <= 0;
-					issp_state <= 3;
-					delay_count <= `DELAY_250NS;
-				end
-				5: begin /* Send 40 zeros. set clk=lo */
-					dut_sclk <= 0;
-					if (issp_count == 0)
-						issp_state <= 7;
-					else
+				5: begin /* Wait for SDATA=0 */
+					if (zif[`ZIF_SDATA] == 0) begin
 						issp_state <= 6;
+						issp_count <= 50;
+					end else begin
+						issp_state <= 5;
+					end
 					delay_count <= `DELAY_250NS;
 				end
-				6: begin /* Send 40 zeros. set clk=hi */
+				6: begin /* Send 50 CLKs */
 					dut_sclk <= 1;
 					issp_count <= issp_count - 1;
-					issp_state <= 5;
+					delay_count <= `DELAY_250NS;
+					issp_state <= 7;
+				end
+				7: begin
+					dut_sclk <= 0;
+					if (issp_count == 0) begin
+						issp_state <= 8; /* done */
+					end else begin
+						issp_state <= 6;
+					end
 					delay_count <= `DELAY_250NS;
 				end
-				7: begin /* finish */
+				8: begin /* finish */
 					/* We're done. */
-					dut_sdata_input <= 1;
+					dut_bitbang_disabled <= 0;
 					issp_state <= 0;
 					`SET_FINISHED;
 				end
@@ -280,37 +275,28 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 	always @(posedge write) begin
 		case (address)
 		8'h10: begin
-			/* Data write */
-			/* Unused */
+			/* Bitbanging */
+			dut_bitbang_sdata <= data[0];
+			dut_bitbang_sdata_input <= data[1];
+			dut_bitbang_sclk <= data[2];
+			dut_bitbang_sclk_z <= data[3];
 		end
-		8'h12: begin
+		8'h11: begin
 			/* Load and execute command */
 			issp_command <= data;
 			issp_busy[0] <= ~issp_busy[1];
 		end
-		8'h13: begin
+		8'h12: begin
 			/* Load vector low */
 			issp_vector[7:0] <= data;
 		end
-		8'h14: begin
+		8'h13: begin
 			/* Load vector med */
 			issp_vector[15:8] <= data;
 		end
-		8'h15: begin
+		8'h14: begin
 			/* Load vector high */
 			issp_vector[21:16] <= data[5:0];
-		end
-		8'h16: begin
-			/* Load input mask low */
-			issp_input_mask[7:0] <= data;
-		end
-		8'h17: begin
-			/* Load input mask med */
-			issp_input_mask[15:8] <= data;
-		end
-		8'h18: begin
-			/* Load input mask high */
-			issp_input_mask[21:16] <= data[5:0];
 		end
 		endcase
 	end
@@ -318,10 +304,6 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 	always @(negedge read) begin
 		case (address)
 		8'h10: begin
-			/* Data read */
-			/* Unused */
-		end
-		8'h12: begin
 			/* Read status */
 			read_data[0] <= issp_busy[0];
 			read_data[1] <= issp_busy[1];
@@ -333,19 +315,6 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 			read_data[5] <= zif[`ZIF_SDATA];
 			read_data[6] <= 0;
 			read_data[7] <= 0;
-		end
-		8'h13: begin
-			/* Read input vector low */
-			read_data <= issp_input_vector[7:0];
-		end
-		8'h14: begin
-			/* Read input vector med */
-			read_data <= issp_input_vector[15:8];
-		end
-		8'h15: begin
-			/* Read input vector high */
-			read_data[5:0] <= issp_input_vector[21:16];
-			read_data[7:6] <= 0;
 		end
 
 		8'hFD: read_data <= `RUNTIME_ID & 16'hFF;
@@ -359,6 +328,11 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 	end
 
 	assign read_oe = !read && address[4];
+
+	assign sig_sdata = dut_bitbang_disabled ? dut_sdata : dut_bitbang_sdata;
+	assign sig_sdata_input = dut_bitbang_disabled ? dut_sdata_input : dut_bitbang_sdata_input;
+	assign sig_sclk = dut_bitbang_disabled ? dut_sclk : dut_bitbang_sclk;
+	assign sig_sclk_z = dut_bitbang_disabled ? dut_sclk_z : dut_bitbang_sclk_z;
 
 	bufif0(zif[1], low, low);
 	bufif0(zif[2], low, low);
@@ -381,8 +355,8 @@ module m8c_issp(data, ale, write, read, osc_in, zif);
 	bufif0(zif[19], low, low);
 	bufif0(zif[20], low, low);				/* GND */
 	bufif0(zif[21], high, low);				/* VDD */
-	bufif0(zif[`ZIF_SDATA], dut_sdata, dut_sdata_input);	/* SDATA */
-	bufif0(zif[23], dut_sclk, dut_sclk_z);			/* SCLK */
+	bufif0(zif[`ZIF_SDATA], sig_sdata, sig_sdata_input);	/* SDATA */
+	bufif0(zif[23], sig_sclk, sig_sclk_z);			/* SCLK */
 	bufif0(zif[24], dut_vdd, low);				/* VDDen */
 	bufif0(zif[25], low, low);
 	bufif0(zif[26], low, low);

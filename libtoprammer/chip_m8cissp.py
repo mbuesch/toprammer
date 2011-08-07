@@ -27,8 +27,7 @@ import time
 class Chip_M8C_ISSP(Chip):
 	ISSPCMD_POR	= 1 # Perform a power-on-reset
 	ISSPCMD_PWROFF	= 2 # Turn power off
-	ISSPCMD_SENDVEC	= 3 # Send a vector
-	ISSPCMD_EXEC	= 4 # Do an "execute" transfer
+	ISSPCMD_EXEC	= 3 # Do an "execute" transfer
 
 	STAT_BUSY0		= 0x01
 	STAT_BUSY1		= 0x02
@@ -36,177 +35,209 @@ class Chip_M8C_ISSP(Chip):
 	STAT_ISSPSTATE_SHIFT	= 2
 	STAT_SDATA		= 0x20
 
-	STRVEC_SETFREQ = {
-		2	: "1001111110000000101000",
-		3	: "1001111110000001001000",
-		3.578	: "1001111110000001011000",
-		4	: "1001111110000001101000",
-		5	: "1001111110000010001000",
-		6	: "1001111110000010101000",
-		6.66666	: "1001111110000010111000",
-		7	: "1001111110000011001000",
-		8	: "1001111110000011100000",
-		9	: "1001111110000100000000",
-		10	: "1001111110000100100000",
-		11	: "1001111110000101000000",
-		12	: "1001111110000101100000",
-	}
 	STRVEC_INIT1 = (
-		"1100101000000000000000",
+		"1100101010000000000111",
 		"0000000000000000000000",
 		"0000000000000000000000",
-		"1000111101100100000000",
-		"1101111011100000000000",
-		"1101111011000001000000",
-		"1001111100000111010000",
-		"1001111100100001011000",
-		"1101111010100000000000",
-		"1101111010000000011000",
-		"1001111101100100000000",
-		"1101111100100110000000",
-		"1101111101001000000000",
-		"1101111000000001000000",
-		"1101111100000000000000",
-		"1101111111100010010000",
+		"0000000000000000000000",
+		"0000000000000000000000",
+		"0000000000000000000000",
+		"1101111011100010000111",
+		"1101111101000000000111",
+		"1101111011100000000111",
+		"1101111011100010000111",
+		"1101111111000000100111",
+		"1101110001000000100111",
+		"1101110000000000011111",
+		"1101111011100000000111",
+		"1001111100000111010111",
+		"1001111100100000011111",
+		"1001111101101000000111",
+		"1001111110000000000111",
+		"1001111111001010110111",
+		"1001111110100000001111",
+		"1001111111100000001111",
+		"1001111111110000000111",
+		"1101111011100010000111",
+		"1101110001000000000111",
+		"1101111111000000000111",
+		"1101110000000000000111",
+		"1101111011100000000111",
+		"1101111010000000011111",
+		"1101111010100000000111",
+		"1101111011000000000111",
+		"1101111100000000000111",
+		"1101111100100110000111",
 	)
+
 	STRVEC_INIT2 = (
-		"1101111011100000000000",
-		"1101111011000001000000",
-		"1001111100000111010000",
-		"1001111100100001011000",
-		"1101111010100000000000",
-		"1101111010000000011000",
-		"1001111101100100000000",
-		"1101111100100110000000",
-		"1101111101001000000000",
-		"1001111101000000001000",
-		"1101111000000000110000",
-		"1101111100000000000000",
-		"1101111111100010010000",
+		"1001111101000000000111",
+		"1101111000000000110111",
+		"1101111100000000000111",
+		"1101111111100010010111",
 	)
-	STRVEC_INIT3_HIVDD = (
-		"1101111011100000000000",
-		"1101111010000000011000",
-		"1101111010100000000000",
-		"1101111011000001000000",
-		"1101111100001010001000",
-		"1101111100111111100000",
-		"1101111101000110000000",
-		"1101111111100010010000",
-		"0000000000000000000000",
-		"1101111011100000000000",
-		"1101111010000000011000",
-		"1101111010100000000000",
-		"1101111011000001000000",
-		"1101111100001100000000",
-		"1101111100111101010000",
-		"1101111101000110000000",
-		"1101111011100010000000",
-		"1101111111100010010000",
-		"0000000000000000000000",
-	)
-	STRVEC_INIT3_LOVDD = (
-		"1101111011100000000000",
-		"1101111010000000011000",
-		"1101111010100000000000",
-		"1101111011000001000000",
-		"1101111100001010001000",
-		"1101111100111111000000",
-		"1101111101000110000000",
-		"1101111111100010010000",
-		"0000000000000000000000",
-		"1101111011100000000000",
-		"1101111010000000011000",
-		"1101111010100000000000",
-		"1101111011000001000000",
-		"1101111100001100000000",
-		"1101111100111101010000",
-		"1101111101000110000000",
-		"1101111011100010000000",
-		"1101111111100010010000",
-		"0000000000000000000000",
-	)
+
 	STRVEC_IDSETUP = (
-		"1101111011100000000000",
-		"1101111011000001000000",
-		"1001111100000111010000",
-		"1001111100100001011000",
-		"1101111010100000000000",
-		"1101111010000000011000",
-		"1001111101100100000000",
-		"1101111100100110000000",
-		"1101111101001000000000",
-		"1001111101000000000000",
-		"1101111000000000110000",
-		"1101111100000000000000",
-		"1101111111100010010000",
+		"1101111011100010000111",
+		"1101110000000000010111",
+		"1101111011100010000111",
+		"1101111101000000000111",
+		"1101111011100000000111",
+		"1101111011100010000111",
+		"1101111111000000100111",
+		"1101110001000000100111",
+		"1101110000000000011111",
+		"1101111011100000000111",
+		"1001111100000111010111",
+		"1001111100100000011111",
+		"1001111101101000000111",
+		"1001111110000000000111",
+		"1001111111001010110111",
+		"1001111110100000001111",
+		"1001111111100000001111",
+		"1001111111110000000111",
+		"1101111011100010000111",
+		"1101110001000000000111",
+		"1101111111000000000111",
+		"1101110000000000000111",
+		"1101111011100000000111",
+		"1101111010000000011111",
+		"1101111010100000000111",
+		"1101111011000000000111",
+		"1101111100000000000111",
+		"1101111100100110000111",
+		"1001111101000000000111",
+		"1101111000000000110111",
+		"1101111100000000000111",
+		"1101111111100010010111",
 	)
-	STRVEC_READBYTE = "101aaaaaaaaZDDDDDDDDZ0"
-	STRVEC_WRITEBYTE = "100aaaaaaaadddddddd000"
+
+	STRVEC_READBYTE = (
+		"101aaaaaaaaZDDDDDDDDZ1",
+	)
+
+	STRVEC_WRITEBYTE = (
+		"100aaaaaaaadddddddd111",
+	)
+
 	STRVEC_ERASEALL = (
-		"1101111011100000000000",
-		"1101111011001000000000",
-		"1001111100000111010000",
-		"1001111100101000011000",
-		"1101111010100000000000",
-		"1101111010000000011000",
-		"1001111101110000000000",
-		"1101111100100110000000",
-		"1101111101001000000000",
-		"1101111000000000101000",
-		"1101111100000000000000",
-		"1101111111100010010000",
+		"1001111110000010101111",
+		"1001111111001010110111",
+		"1101111011100010000111",
+		"1101111101000000000111",
+		"1101111011100000000111",
+		"1101111011100010000111",
+		"1101111111000000100111",
+		"1101110001000000100111",
+		"1101110000000000011111",
+		"1101111011100000000111",
+		"1001111100000111010111",
+		"1001111100100000011111",
+		"1001111101101000000111",
+		"1001111110000000000111",
+		"1001111111001010110111",
+		"1001111110100000001111",
+		"1001111111100000001111",
+		"1001111111110000000111",
+		"1101111011100010000111",
+		"1101110001000000000111",
+		"1101111111000000000111",
+		"1101110000000000000111",
+		"1101111011100000000111",
+		"1101111010000000011111",
+		"1101111010100000000111",
+		"1101111011000000000111",
+		"1101111100000000000111",
+		"1101111100100110000111",
+		"1101111000000000101111",
+		"1101111100000000000111",
+		"1101111111100010010111",
 	)
-	STRVEC_SECURE = (
-		"1101111011100000000000",
-		"1101111011001000000000",
-		"1001111100000111010000",
-		"1001111100101000011000",
-		"1101111010100000000000",
-		"1101111010000000011000",
-		"1001111101110000000000",
-		"1101111100100110000000",
-		"1101111101001000000000",
-		"1101111000000000100000",
-		"1101111100000000000000",
-		"1101111111100010010000",
+
+	STRVEC_SETBLKNUM = (
+		"10011111010dddddddd111",
 	)
-	STRVEC_WRITESECBYTE = "10010aaaaaadddddddd000"
-	STRVEC_SETBLKNUM = "10011111010dddddddd000"
+
 	STRVEC_READBLK = (
-		"1101111011100000000000",
-		"1101111011000001000000",
-		"1001111100000111010000",
-		"1001111100100001011000",
-		"1101111010100000000000",
-		"1101111010000000011000",
-		"1001111101100100000000",
-		"1101111100100110000000",
-		"1101111101001000000000",
-		"1101111000000000001000",
-		"1101111100000000000000",
-		"1101111111100010010000",
+		"1101111011100010000111",
+		"1101111101000000000111",
+		"1101111011100000000111",
+		"1101111011100010000111",
+		"1101111111000000100111",
+		"1101110001000000100111",
+		"1101110000000000011111",
+		"1101111011100000000111",
+		"1001111100000111010111",
+		"1001111100100000011111",
+		"1001111101101000000111",
+		"1001111110000000000111",
+		"1001111111001010110111",
+		"1001111110100000001111",
+		"1001111111100000001111",
+		"1001111111110000000111",
+		"1101111011100010000111",
+		"1101110001000000000111",
+		"1101111111000000000111",
+		"1101110000000000000111",
+		"1101111011100000000111",
+		"1101111010000000011111",
+		"1101111010100000000111",
+		"1101111011000000000111",
+		"1101111100000000000111",
+		"1101111100100110000111",
+		"1101111000000000001111",
+		"1101111100000000000111",
+		"1101111111100010010111",
 	)
+
 	STRVEC_WRITEBLK = (
-		"1101111011100000000000",
-		"1101111011000001000000",
-		"1001111100000111010000",
-		"1001111100100001011000",
-		"1101111010100000000000",
-		"1101111010000000011000",
-		"1001111101100100000000",
-		"1101111100100110000000",
-		"1101111101001000000000",
-		"1101111000000000010000",
-		"1101111100000000000000",
-		"1101111111100010010000",
+		"1001111110001010100111",
+		"1001111111001010110111",
+		"1101111011100010000111",
+		"1101111101000000000111",
+		"1101111011100000000111",
+		"1101111011100010000111",
+		"1101111111000000100111",
+		"1101110001000000100111",
+		"1101110000000000011111",
+		"1101111011100000000111",
+		"1001111100000111010111",
+		"1001111100100000011111",
+		"1001111101101000000111",
+		"1001111110000000000111",
+		"1001111111001010110111",
+		"1001111110100000001111",
+		"1001111111100000001111",
+		"1001111111110000000111",
+		"1101111011100010000111",
+		"1101110001000000000111",
+		"1101111111000000000111",
+		"1101110000000000000111",
+		"1101111011100000000111",
+		"1101111010000000011111",
+		"1101111010100000000111",
+		"1101111011000000000111",
+		"1101111100000000000111",
+		"1101111100100110000111",
+		"1101111000000000010111",
+		"1101111100000000000111",
+		"1101111111100010010111",
 	)
-	STRVEC_READCHKSUM = "10111111001ZDDDDDDDDZ010111111000ZDDDDDDDDZ0"
+
+	STRVEC_READCHKSUM = (
+		"10111111001ZDDDDDDDDZ1",
+		"10111111000ZDDDDDDDDZ1",
+	)
+
+	STRVEC_READID = (
+		"10111111000ZDDDDDDDDZ1",
+		"10111111001ZDDDDDDDDZ1",
+	)
 
 	def __init__(self):
 		Chip.__init__(self)
 #		self.progmemSize = 1024 * 16
-		self.progmemSize = 128#FIXME
+		self.progmemSize = 256#XXX
 
 	def readSignature(self):
 		self.progressMeterInit("Reading chip ID", 0)
@@ -219,10 +250,7 @@ class Chip_M8C_ISSP(Chip):
 	def erase(self):
 		self.progressMeterInit("Erasing chip", 0)
 		self.__powerOnReset()
-		self.__sendSetFreqVector()
-		for vec in self.STRVEC_ERASEALL:
-			self.__loadStringVector(vec)
-			self.__runCommandSync(self.ISSPCMD_SENDVEC)
+		self.__bitbangStringVectors(self.STRVEC_ERASEALL)
 		self.__runCommandSync(self.ISSPCMD_EXEC)
 		self.progressMeterFinish()
 
@@ -238,13 +266,9 @@ class Chip_M8C_ISSP(Chip):
 			for i in range(0, 64):
 				self.progressMeter(blknum * 64 + i)
 				self.__writeByte(i, byte2int(image[blknum * 64 + i]))
-			self.__sendSetFreqVector()
-			vec = self.__stringVectorReplace(self.STRVEC_SETBLKNUM, "d", blknum)
-			self.__loadStringVector(vec)
-			self.__runCommandSync(self.ISSPCMD_SENDVEC)
-			for vec in self.STRVEC_WRITEBLK:
-				self.__loadStringVector(vec)
-				self.__runCommandSync(self.ISSPCMD_SENDVEC)
+			vec = self.__stringVectorReplace(self.STRVEC_SETBLKNUM[0], "d", blknum)
+			self.__bitbangStringVector(vec)
+			self.__bitbangStringVectors(self.STRVEC_WRITEBLK)
 			self.__runCommandSync(self.ISSPCMD_EXEC)
 		self.progressMeterFinish()
 
@@ -254,16 +278,14 @@ class Chip_M8C_ISSP(Chip):
 		assert(self.progmemSize % 64 == 0)
 		image = []
 		for blknum in range(0, self.progmemSize // 64):
-			vec = self.__stringVectorReplace(self.STRVEC_SETBLKNUM, "d", blknum)
-			self.__loadStringVector(vec)
-			self.__runCommandSync(self.ISSPCMD_SENDVEC)
-			for vec in self.STRVEC_READBLK:
-				self.__loadStringVector(vec)
-				self.__runCommandSync(self.ISSPCMD_SENDVEC)
+			vec = self.__stringVectorReplace(self.STRVEC_SETBLKNUM[0], "d", blknum)
+			self.__bitbangStringVector(vec)
+			self.__bitbangStringVectors(self.STRVEC_READBLK)
 			self.__runCommandSync(self.ISSPCMD_EXEC)
 			for i in range(0, 64):
 				self.progressMeter(blknum * 64 + i)
 				image.append(int2byte(self.__readByte(i)))
+			#FIXME return_code
 		self.progressMeterFinish()
 		return b"".join(image)
 
@@ -285,95 +307,60 @@ class Chip_M8C_ISSP(Chip):
 		self.top.gnd.setLayoutPins( (20,) )
 		self.top.vccx.setLayoutPins( (21,) )
 
+#FIXME when to do exec?
 		self.__powerDown()
 		self.printDebug("Performing a power-on-reset...")
-		self.__loadStringVector(self.STRVEC_INIT1[0])
+		self.__uploadStringVector(self.STRVEC_INIT1[0])
 		self.__runCommandSync(self.ISSPCMD_POR)
 		self.printDebug("Sending vector 1...")
-		for vec in self.STRVEC_INIT1[1:]:
-			self.__loadStringVector(vec)
-			self.__runCommandSync(self.ISSPCMD_SENDVEC)
-		self.__runCommandSync(self.ISSPCMD_EXEC)
+		self.__bitbangStringVectors(self.STRVEC_INIT1[1:])
+#XXX		self.__runCommandSync(self.ISSPCMD_EXEC)
 		self.printDebug("Sending vector 2...")
-		for vec in self.STRVEC_INIT2:
-			self.__loadStringVector(vec)
-			self.__runCommandSync(self.ISSPCMD_SENDVEC)
+		self.__bitbangStringVectors(self.STRVEC_INIT2)
 		self.__runCommandSync(self.ISSPCMD_EXEC)
-		self.printDebug("Sending vector 3...")
-		for vec in self.STRVEC_INIT3_HIVDD:
-			self.__loadStringVector(vec)
-			self.__runCommandSync(self.ISSPCMD_SENDVEC)
-#		self.__runCommandSync(self.ISSPCMD_EXEC)
 
 	def __readID(self):
 		"Read the silicon ID"
-		for vec in self.STRVEC_IDSETUP:
-			self.__loadStringVector(vec)
-			self.__runCommandSync(self.ISSPCMD_SENDVEC)
+		self.__bitbangStringVectors(self.STRVEC_IDSETUP)
 		self.__runCommandSync(self.ISSPCMD_EXEC)
 
-		low = self.__readByte(0xF8)
-		high = self.__readByte(0xF9)
+		low = (self.__bitbangStringVector(self.STRVEC_READID[0]) >> 2) & 0xFF
+		high = (self.__bitbangStringVector(self.STRVEC_READID[1]) >> 2) & 0xFF
 
 		return low | (high << 8)
 
 	def __readByte(self, address):
-		strVec = self.__stringVectorReplace(self.STRVEC_READBYTE, "a", address)
-		self.__loadStringVector(strVec)
-		self.__runCommandSync(self.ISSPCMD_SENDVEC)
-		input = self.__getInputVector()
-		return (input >> 2) & 0xFF
+		vec = self.__stringVectorReplace(self.STRVEC_READBYTE[0], "a", address)
+		inputData = self.__bitbangStringVector(vec)
+		return (inputData >> 2) & 0xFF
 
 	def __writeByte(self, address, byte):
-		vec = self.__stringVectorReplace(self.STRVEC_WRITEBYTE, "a", address)
+		vec = self.__stringVectorReplace(self.STRVEC_WRITEBYTE[0], "a", address)
 		vec = self.__stringVectorReplace(vec, "d", byte)
-		self.__loadStringVector(vec)
-		self.__runCommandSync(self.ISSPCMD_SENDVEC)
-
-	def __sendSetFreqVector(self):
-		sclkFreq = 2	# 2 Mhz. Hardcoded in FPGA.
-		strVec = self.STRVEC_SETFREQ[sclkFreq]
-		self.__loadStringVector(strVec)
-		self.__runCommandSync(self.ISSPCMD_SENDVEC)
+		self.__bitbangStringVector(vec)
 
 	def __loadCommand(self, command):
-		self.top.cmdFPGAWrite(0x12, command & 0xFF)
+		self.top.cmdFPGAWrite(0x11, command & 0xFF)
 
 	def __runCommandSync(self, command):
 		self.printDebug("Running synchronous command %d" % command)
 		self.__loadCommand(command)
 		self.__busyWait()
 
-	def __loadVectorLow(self, vecLow):
-		self.top.cmdFPGAWrite(0x13, vecLow & 0xFF)
-
-	def __loadVectorMed(self, vecMed):
-		self.top.cmdFPGAWrite(0x14, vecMed & 0xFF)
-
-	def __loadVectorHigh(self, vecHigh):
-		self.top.cmdFPGAWrite(0x15, vecHigh & 0xFF)
-
-	def __loadVector(self, vec):
-		self.__loadVectorLow(vec)
-		self.__loadVectorMed(vec >> 8)
-		self.__loadVectorHigh(vec >> 16)
-
-	def __loadVectorInputMaskLow(self, maskLow):
-		self.top.cmdFPGAWrite(0x16, maskLow & 0xFF)
-
-	def __loadVectorInputMaskMed(self, maskMed):
-		self.top.cmdFPGAWrite(0x17, maskMed & 0xFF)
-
-	def __loadVectorInputMaskHigh(self, maskHigh):
-		self.top.cmdFPGAWrite(0x18, maskHigh & 0xFF)
-
-	def __loadVectorInputMask(self, mask):
-		self.__loadVectorInputMaskLow(mask)
-		self.__loadVectorInputMaskMed(mask >> 8)
-		self.__loadVectorInputMaskHigh(mask >> 16)
+	def __setBitbang(self, SDATA, SDATA_in, SCLK, SCLK_z):
+		value = 0
+		if SDATA:
+			value |= 0x01
+		if SDATA_in:
+			value |= 0x02
+		if SCLK:
+			value |= 0x04
+		if SCLK_z:
+			value |= 0x08
+		self.top.cmdFPGAWrite(0x10, value)
 
 	def __getStatusFlags(self):
-		self.top.cmdFPGARead(0x12)
+		self.top.cmdFPGARead(0x10)
 		stat = self.top.cmdReadBufferReg8()
 		isspState = (stat & self.STAT_ISSPSTATE) >> self.STAT_ISSPSTATE_SHIFT
 		sdata = bool(stat & self.STAT_SDATA)
@@ -386,18 +373,16 @@ class Chip_M8C_ISSP(Chip):
 		(isBusy, sdata, isspState) = self.__getStatusFlags()
 		return isBusy
 
+	def __getSDATA(self):
+		(isBusy, sdata, isspState) = self.__getStatusFlags()
+		return int(sdata)
+
 	def __busyWait(self):
 		for i in range(0, 200):
 			if not self.__busy():
 				return
 			self.top.hostDelay(0.01)
 		self.throwError("Timeout in busywait. Chip not responding?")
-
-	def __getInputVector(self):
-		self.top.cmdFPGARead(0x13)
-		self.top.cmdFPGARead(0x14)
-		self.top.cmdFPGARead(0x15)
-		return self.top.cmdReadBufferReg24()
 
 	def __stringVectorToBinary(self, vector):
 		binary = 0
@@ -407,8 +392,12 @@ class Chip_M8C_ISSP(Chip):
 		for b in vector:
 			if b == "1":
 				binary |= (1 << bit)
-			if b == "H" or b == "L" or b == "Z" or b == "D":
+			elif b == "0":
+				pass
+			elif b == "H" or b == "L" or b == "Z" or b == "D":
 				inputMask |= (1 << bit)
+			else:
+				assert(0)
 			bit -= 1
 		return (binary, inputMask)
 
@@ -426,11 +415,35 @@ class Chip_M8C_ISSP(Chip):
 				ret = b + ret
 		return ret
 
-	def __loadStringVector(self, strVec):
+	def __bitbangStringVector(self, strVec):
+		vectorSize = len(strVec)
 		(vector, inputMask) = self.__stringVectorToBinary(strVec)
-#		print "Loading vector 0x%06X, 0x%06X" % (vector, inputMask)
-		self.__loadVectorInputMask(inputMask)
-		self.__loadVector(vector)
+		inputData = 0
+		self.__setBitbang(SDATA=0, SDATA_in=1, SCLK=0, SCLK_z=0)
+		for i in range(vectorSize - 1, -1, -1):
+			if inputMask & (1 << i):
+				self.__setBitbang(SDATA=0, SDATA_in=1, SCLK=1, SCLK_z=0)
+				self.__setBitbang(SDATA=0, SDATA_in=1, SCLK=0, SCLK_z=0)
+				self.top.cmdDelay(0.000001)
+				sdata = self.__getSDATA()
+				inputData |= (sdata << i)
+			else:
+				self.__setBitbang(SDATA=(vector & (1 << i)), SDATA_in=0,
+						  SCLK=1, SCLK_z=0)
+				self.__setBitbang(SDATA=0, SDATA_in=0, SCLK=0, SCLK_z=0)
+				self.top.cmdDelay(0.000001)
+		return inputData
+
+	def __bitbangStringVectors(self, strVecList):
+		for strVec in strVecList:
+			self.__bitbangStringVector(strVec)
+
+	def __uploadStringVector(self, strVec):
+		(vector, inputMask) = self.__stringVectorToBinary(strVec)
+		assert(inputMask == 0)
+		self.top.cmdFPGAWrite(0x12, vector & 0xFF)
+		self.top.cmdFPGAWrite(0x13, (vector >> 8) & 0xFF)
+		self.top.cmdFPGAWrite(0x14, (vector >> 8) & 0xFF)
 
 ChipDescription(
 	Chip_M8C_ISSP,
