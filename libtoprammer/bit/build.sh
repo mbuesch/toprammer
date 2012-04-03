@@ -1,29 +1,29 @@
-#!/bin/bash
+#!/bin/sh
 # Rebuild FPGA bit files
-# Copyright (c) 2010 Michael Buesch <m@bues.ch>
+# Copyright (c) 2010-2012 Michael Buesch <m@bues.ch>
 # Licensed under the GNU/GPL v2+
 
 basedir="$(dirname "$0")"
-[ "${basedir:0:1}" = "/" ] || basedir="$PWD/$basedir"
+[ "$(echo -n "$basedir" | cut -c1)" = "/" ] || basedir="$PWD/$basedir"
 
 srcdir="$basedir/src"
 bindir="$basedir"
-bitparser="python $basedir/../bitfile.py"
 
-function die
+
+die()
 {
 	echo "$*" >&2
 	exit 1
 }
 
-function terminate
+terminate()
 {
 	die "Interrupted."
 }
 
 trap terminate TERM INT
 
-function usage
+usage()
 {
 	echo "Usage: build.sh [OPTIONS] [TARGETS]"
 	echo
@@ -37,48 +37,46 @@ function usage
 
 # Parse commandline
 verbose=0
-nr_targets=0
+targets="/"
 while [ $# -gt 0 ]; do
-	if [ "$1" = "-h" -o "$1" = "--help" ]; then
+	[ "$1" = "-h" -o "$1" = "--help" ] && {
 		usage
 		exit 0
-	fi
-	if [ "$1" = "-v" -o "$1" = "--verbose" ]; then
+	}
+	[ "$1" = "-v" -o "$1" = "--verbose" ] && {
 		verbose=1
 		shift
 		continue
-	fi
+	}
 	target="$1"
 	target="${target%.bit}"	# strip .bit suffix
-	targets[nr_targets]="$target"
-	let nr_targets=nr_targets+1
+	# Add to list
+	targets="${targets}${target}/"
 	shift
 done
+[ "$targets" = "/" ] && targets=
 
-function bitparser
+bitparser()
 {
-	python "$basedir/../bitfile.py" "$@" || die "Failed to execute bitparser"
+	python "$basedir/../bitfile.py" "$@" ||\
+		die "Failed to execute bitparser"
 }
 
-function should_build # $1=target
+should_build() # $1=target
 {
 	target="$1"
 	[ "$target" = "template" ] && return 1
-	[ $nr_targets -eq 0 ] && return 0
-	let end=nr_targets-1
-	for i in $(seq 0 $end); do
-		[ ${targets[i]} = "$target" ] && return 0
-	done
-	return 1
+	[ -z "$targets" ] && return 0
+	echo "$targets" | grep -qe '/'"$target"'/'
 }
 
 # Check if the payload of two bitfiles matches
-function bitfile_is_equal # $1=file1, $2=file2
+bitfile_is_equal() # $1=file1, $2=file2
 {
 	[ -r $1 -a -r $2 ] || return 1
 	bitparser "$1" NOACTION # Test if bitparser works
-	sum1="$(bitparser "$1" GETPAYLOAD | sha1sum - | cut -d' ' -f1)"
-	sum2="$(bitparser "$2" GETPAYLOAD | sha1sum - | cut -d' ' -f1)"
+	sum1="$(bitparser "$1" GETPAYLOAD | sha1sum -b - | awk '{print $1;}')"
+	sum2="$(bitparser "$2" GETPAYLOAD | sha1sum -b - | awk '{print $1;}')"
 	[ "$sum1" = "$sum2" ]
 }
 
@@ -91,25 +89,17 @@ for src in $srcdir/*; do
 	should_build $srcname || continue
 
 	echo "Building $srcname..."
-	make -C $src/ clean >/dev/null
-	if [ $? -ne 0 ]; then
-		echo "FAILED to clean $srcname."
-		exit 1
-	fi
+	make -C $src/ clean >/dev/null ||\
+		die "FAILED to clean $srcname."
 	if [ $verbose -eq 0 ]; then
-		make -C $src/ all >$logfile
-		if [ $? -ne 0 ]; then
+		make -C $src/ all >$logfile || {
 			cat $logfile
-			echo "FAILED to build $srcname."
-			exit 1
-		fi
+			die "FAILED to build $srcname."
+		}
 		cat $logfile | grep WARNING
 	else
-		make -C $src/ all
-		if [ $? -ne 0 ]; then
-			echo "FAILED to build $srcname."
-			exit 1
-		fi
+		make -C $src/ all ||\
+			die "FAILED to build $srcname."
 	fi
 
 	new="$src/$srcname.bit"
@@ -119,11 +109,8 @@ for src in $srcdir/*; do
 	else
 		cp -f "$new" "$old"
 	fi
-	make -C $src/ clean >/dev/null
-	if [ $? -ne 0 ]; then
-		echo "FAILED to clean $srcname."
-		exit 1
-	fi
+	make -C $src/ clean >/dev/null ||\
+		die "FAILED to clean $srcname."
 	rm -f $logfile
 done
 echo "Successfully built all images."
