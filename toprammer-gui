@@ -4,7 +4,7 @@
 #
 #    Qt-based graphical user interface
 #
-#    Copyright (c) 2010-2011 Michael Buesch <mb@bu3sch.de>
+#    Copyright (c) 2010-2011 Michael Buesch <m@bues.ch>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -2151,7 +2151,7 @@ class MainWindow(QMainWindow):
 
 	def showAbout(self):
 		QMessageBox.information(self, "About TOPrammer",
-			"Copyright (c) Michael Buesch <mb@bu3sch.de>")
+			"Copyright (c) Michael Buesch <m@bues.ch>")
 
 	def startUnitest(self):
 		self.bufferTab.setupBuffers(0)

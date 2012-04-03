@@ -3,7 +3,7 @@
 #
 #    Chip support
 #
-#    Copyright (c) 2009-2011 Michael Buesch <mb@bu3sch.de>
+#    Copyright (c) 2009-2011 Michael Buesch <m@bues.ch>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -271,7 +271,7 @@ class ChipDescription:
 		     chipVendors="Other",
 		     description="", fuseDesc=(), lockbitDesc=(),
 		     packages=None, comment="",
-		     maintainer="Michael Buesch <mb@bu3sch.de>",
+		     maintainer="Michael Buesch <m@bues.ch>",
 		     broken=False):
 		"""Chip implementation class description.
 		chipImplClass	=> The implementation class of the chip.

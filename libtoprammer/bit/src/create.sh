@@ -1,6 +1,6 @@
 #!/bin/bash
 # Create source template
-# Copyright (c) 2010 Michael Buesch <mb@bu3sch.de>
+# Copyright (c) 2010 Michael Buesch <m@bues.ch>
 # Licensed under the GNU/GPL v2+
 
 basedir="$(dirname "$0")"

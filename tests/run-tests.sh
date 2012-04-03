@@ -1,6 +1,6 @@
 #!/bin/bash
 # Toprammer regression tests
-# Copyright (c) 2010 Michael Buesch <mb@bu3sch.de>
+# Copyright (c) 2010 Michael Buesch <m@bues.ch>
 
 basedir="$(dirname "$0")"
 [ "${basedir:0:1}" = "/" ] || basedir="$PWD/$basedir"

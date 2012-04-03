@@ -3,7 +3,7 @@
 #
 #    Implements the Atmel Mega MCU parallel HV programming algorithm
 #
-#    Copyright (c) 2009-2010 Michael Buesch <mb@bu3sch.de>
+#    Copyright (c) 2009-2010 Michael Buesch <m@bues.ch>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by

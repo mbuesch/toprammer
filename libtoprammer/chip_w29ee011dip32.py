@@ -4,7 +4,7 @@
 #    Winbond W29EE011 DIP32
 #    Winbond W29EE011 PLCC32 (inside 1:1 PLCC32->DIP32 adapter)
 #
-#    Copyright (c) 2010 Michael Buesch <mb@bu3sch.de>
+#    Copyright (c) 2010 Michael Buesch <m@bues.ch>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
