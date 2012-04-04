@@ -1540,10 +1540,10 @@ class BufferTabWidget(QTabWidget):
 		self.ramBuffer = ImageBufferWidget(mainWindow, "RAM memory")
 
 		self.setTabPosition(self.South)
-		self.__addBufferTab(self.infoBuffer)
+		self.__addBufferTab(self.infoBuffer, readOnly=True)
 		self.removeAll()
 
-	def __addBufferTab(self, bufferWidget, readOnly=True):
+	def __addBufferTab(self, bufferWidget, readOnly=False):
 		self.addTab(bufferWidget, bufferWidget.getName())
 		bufferWidget.setReadOnly(readOnly)
 		bufferWidget.setAvailable(True)
@@ -1566,14 +1566,14 @@ class BufferTabWidget(QTabWidget):
 	def setupBuffers(self, chipSupportFlags):
 		prevSelect = self.getCurrentBuffer()
 		self.__removeAll()
-		for (bufferWidget, readMask, writeMask) in (
-				(self.progmemBuffer, Chip.SUPPORT_PROGMEMREAD, Chip.SUPPORT_PROGMEMWRITE),
-				(self.eepromBuffer, Chip.SUPPORT_EEPROMREAD, Chip.SUPPORT_EEPROMWRITE),
-				(self.fuseBuffer, Chip.SUPPORT_FUSEREAD, Chip.SUPPORT_FUSEWRITE),
-				(self.lockBuffer, Chip.SUPPORT_LOCKREAD, Chip.SUPPORT_LOCKWRITE),
-				(self.ramBuffer, Chip.SUPPORT_RAMREAD, Chip.SUPPORT_RAMWRITE)):
-			if chipSupportFlags & (readMask | writeMask):
-				self.__addBufferTab(bufferWidget, not bool(chipSupportFlags & writeMask))
+		for (bufferWidget, flagsMask) in (
+		    (self.progmemBuffer, Chip.SUPPORT_PROGMEMREAD | Chip.SUPPORT_PROGMEMWRITE),
+		    (self.eepromBuffer, Chip.SUPPORT_EEPROMREAD | Chip.SUPPORT_EEPROMWRITE),
+		    (self.fuseBuffer, Chip.SUPPORT_FUSEREAD | Chip.SUPPORT_FUSEWRITE),
+		    (self.lockBuffer, Chip.SUPPORT_LOCKREAD | Chip.SUPPORT_LOCKWRITE),
+		    (self.ramBuffer, Chip.SUPPORT_RAMREAD | Chip.SUPPORT_RAMWRITE)):
+			if chipSupportFlags & flagsMask:
+				self.__addBufferTab(bufferWidget)
 		if prevSelect and prevSelect.isAvailable():
 			self.setCurrentIndex(self.indexOf(prevSelect))
 
