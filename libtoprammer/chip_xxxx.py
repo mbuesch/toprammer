@@ -1,5 +1,6 @@
 # Import all chip modules in alphabetical order
 from chip_74hc4094 import *
+from chip_at27c256r import *
 from chip_at89c2051dip20 import *
 from chip_atmega32dip40 import *
 from chip_atmega8dip28 import *

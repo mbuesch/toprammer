@@ -77,7 +77,7 @@ class Chip:
 		"""chipPackage is the ID string for the package.
 		May be None, if no initial auto-layout is required.
 		chipPinVCCX is the required VCCX pin on the package.
-		chipPinVPP is the required VPP pin on the package.
+		chipPinsVPP is the required VPP pin on the package.
 		chipPinGND is the required GND pin on the package."""
 
 		self.__chipPackage = chipPackage

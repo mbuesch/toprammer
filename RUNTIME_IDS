@@ -29,5 +29,6 @@
 0x0009		=> w29ee011dip32
 0x000A		=> hm62256dip28
 0x000B		=> m24c16dip8
+0x000C		=> at27c256r
 0xFEFD		=> Reserved. Do not use.
 0xFFFF		=> Reserved. Do not use.
