@@ -4,7 +4,7 @@
  *   XXXXXXXXXXXXXXXX
  *   FPGA bottomhalf implementation
  *
- *   Copyright (c) 2011 Michael Buesch <m@bues.ch>
+ *   Copyright (c) YEAR NAME
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -39,7 +39,6 @@ module template(data, ale, write, read, osc_in, zif);
 	reg [7:0] read_data;	/* Cached read data */
 
 	wire low, high;		/* Constant lo/hi */
-
 	assign low = 0;
 	assign high = 1;
 
@@ -47,6 +46,12 @@ module template(data, ale, write, read, osc_in, zif);
 	reg [15:0] delay_count;
 	wire osc;
 	IBUF osc_ibuf(.I(osc_in), .O(osc));
+
+	initial begin
+		address <= 0;
+		read_data <= 0;
+		delay_count <= 0;
+	end
 
 	always @(posedge osc) begin
 		if (delay_count == 0) begin
