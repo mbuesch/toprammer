@@ -70,7 +70,9 @@ class Bitfile:
 
 	def parseFile(self, filename):
 		try:
-			data = file(filename, "rb").read()
+			fd = open(filename, "rb")
+			data = fd.read()
+			fd.close()
 		except (IOError), e:
 			raise BitfileException("Failed to read \"" + filename + "\": " + e.strerror)
 		self.filename = filename
@@ -125,7 +127,7 @@ class Bitfile:
 
 def __probeFile(fullpath):
 	try:
-		file(fullpath, "rb")
+		open(fullpath, "rb").close()
 	except (IOError), e:
 		return False
 	return True
@@ -137,12 +139,13 @@ def bitfileFind(filename):
 	if filename.startswith("/"):
 		if __probeFile(filename):
 			return filename
-	paths = ( ".", "./libtoprammer/bit", )
+	paths = ( ".", "./libtoprammer/fpga", )
 	for path in paths:
 		fullpath = path + "/" + filename
 		if __probeFile(fullpath):
 			return fullpath
-	fullpath = pkg_resources.resource_filename("libtoprammer", "bit/" + filename)
+	fullpath = pkg_resources.resource_filename("libtoprammer",
+						   "fpga/" + filename)
 	if __probeFile(fullpath):
 		return fullpath
 	return None

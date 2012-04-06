@@ -658,7 +658,7 @@ http://www.xilinx.com/support/download/index.htm
 
 \begin_layout Standard
 To create a new sourcecode template fileset for a new chip, go to the libtopramm
-er/bit/src/ subdirectory and execute the "create.sh" script:
+er/fpga/src/ subdirectory and execute the "create.sh" script:
 \end_layout
 
 \begin_layout LyX-Code
@@ -668,9 +668,9 @@ er/bit/src/ subdirectory and execute the "create.sh" script:
 \begin_layout Standard
 Where "bitfile_name" is the name of the new chip's bitfile.
  (That often matches the chip-ID).
- Now go to libtoprammer/bit/src/bitfile_name/ and implement the bottom-half
+ Now go to libtoprammer/fpga/src/bitfile_name/ and implement the bottom-half
  algorithm in the bitfile_name.v Verilog file.
- To build the .BIT file from the Verilog sources, go to the libtoprammer/bit/
+ To build the .BIT file from the Verilog sources, go to the libtoprammer/fpga/
  directory and execute:
 \end_layout
 
