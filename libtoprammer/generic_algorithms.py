@@ -69,7 +69,7 @@ class AddrSetter(object):
 			   ((self.prevAddr >> shift) & 0xFF) != addrByte:
 				self.addrSetupFunc(byteNr, addrByte)
 				self.chip.top.cmdFPGAWrite(fpgaCmd, addrByte)
-				self.addrSetupFunc(byteNr, addrByte)
+				self.addrFinishFunc(byteNr, addrByte)
 		self.prevAddr = addr
 
 class GenericAlgorithms(object):
