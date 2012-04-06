@@ -1,12 +1,12 @@
-#!/bin/bash
+#!/bin/sh
 
-function test_init
+test_init()
 {
 	request_DUT "at89c2051dip20" || return 1
 	return 0
 }
 
-function test_run
+test_run()
 {
 	# Check signature
 	toprammer --read-sig "$tmpfile"

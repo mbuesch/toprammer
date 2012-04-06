@@ -1,16 +1,16 @@
-#!/bin/bash
+#!/bin/sh
 # Toprammer regression tests
-# Copyright (c) 2010 Michael Buesch <m@bues.ch>
+# Copyright (c) 2010-2012 Michael Buesch <m@bues.ch>
 
 basedir="$(dirname "$0")"
-[ "${basedir:0:1}" = "/" ] || basedir="$PWD/$basedir"
+[ "$(echo -n "$basedir" | cut -c1)" = "/" ] || basedir="$PWD/$basedir"
 
 tmpdir="/tmp/toprammer-test-$$"
 
 
 cleanup_enabled=1
 
-function cleanup
+cleanup()
 {
 	[ $cleanup_enabled -ne 0 ] || return
 	echo "Cleanup..."
@@ -19,96 +19,94 @@ function cleanup
 
 trap cleanup INT TERM
 
-function info
+info()
 {
-	echo "$current_test:  $@"
+	echo "$current_test:  $*"
 }
 
-function warning
+warning()
 {
-	echo "WARNING $current_test:  $@"
+	echo "WARNING $current_test:  $*"
 }
 
-function error
+error()
 {
-	echo "ERROR $current_test:  $@"
+	echo "ERROR $current_test:  $*"
 }
 
-function abort
+abort()
 {
 	cleanup
 	exit 1
 }
 
-function die
+die()
 {
-	error $@
+	error "$@"
 	cleanup
 	exit 1
 }
 
-function toprammer
+toprammer()
 {
-	local args="$@"
 	local logfile="$tmpdir/toprammer.log"
+	local args=
 
 	[ -n "$current_chipid" ] && args="--chip-id $current_chipid $args"
 	args="-B -I bin -O bin $args"
 
-	echo "        toprammer $args"
+	echo "        toprammer $args $*"
 	cd "$basedir/.." || die "Failed to chdir"
 	if [ $verbose -eq 0 ]; then
-		./toprammer $args >$logfile 2>&1
+		./toprammer $args "$@" >$logfile 2>&1
 		if [ $? -ne 0 ]; then
 			[ -r "$logfile" ] && cat "$logfile"
-			die "toprammer $args  <<<FAILED>>>"
+			die "toprammer $args $*  <<<FAILED>>>"
 		fi
 	else
-		./toprammer $args -V2
-		[ $? -eq 0 ] || die "toprammer $args  <<<FAILED>>>"
+		./toprammer $args "$@" -V2
+		[ $? -eq 0 ] || die "toprammer $args $*  <<<FAILED>>>"
 	fi
 }
 
-function toprammer_layout_silent
+toprammer_layout_silent()
 {
-	local args="$@"
 	local logfile="$tmpdir/toprammer-layout.log"
-	echo "        toprammer-layout $args"
+	echo "        toprammer-layout $*"
 	cd "$basedir/.." || die "Failed to chdir"
-	./toprammer-layout $args >$logfile 2>&1
+	./toprammer-layout "$@" >$logfile 2>&1
 	if [ $? -ne 0 ]; then
 		[ -r "$logfile" ] && cat "$logfile"
-		die "toprammer-layout $args  <<<FAILED>>>"
+		die "toprammer-layout $*  <<<FAILED>>>"
 	fi
 }
 
-function toprammer_layout
+toprammer_layout()
 {
-	local args="$@"
 	cd "$basedir/.." || die "Failed to chdir"
-	./toprammer-layout $args
-	[ $? -eq 0 ] || die "toprammer-layout $args  <<<FAILED>>>"
+	./toprammer-layout "$@"
+	[ $? -eq 0 ] || die "toprammer-layout $*  <<<FAILED>>>"
 }
 
-function ask
+ask()
 {
-	read -n1 -p "$@ " ok
+	read -p "$* " ok
 	echo
 	[ "$ok" = "y" -o "$ok" = "Y" -o \
 	  "$ok" = "1" -o "$ok" = "" ] && return 0
 	return 1
 }
 
-function request
+request()
 {
-	read -s -n1 -p "$@" res
+	read -p "$*" res
 	echo
 	[ "$res" = "a" ] && abort
 	[ "$res" = "x" ] && return 1
 	return 0
 }
 
-function request_DUT # $1=DUT-name
+request_DUT() # $1=DUT-name
 {
 	local dut="$1"
 
@@ -120,12 +118,12 @@ function request_DUT # $1=DUT-name
 	request "Please insert a $dut into the ZIF socket (x to skip; a to abort)..."
 }
 
-function request_TOP # $1=TOPxxxx
+request_TOP() # $1=TOPxxxx
 {
-	request "Please connect the $@ programmer (x to skip; a to abort)..."
+	request "Please connect the $* programmer (x to skip; a to abort)..."
 }
 
-function create_random_file # $1=file $2=bs $3=count
+create_random_file() # $1=file $2=bs $3=count
 {
 	dd if=/dev/urandom of="$1" bs="$2" count="$3" >/dev/null 2>&1
 	[ $? -eq 0 ] || die "Failed to create $1"
@@ -133,7 +131,7 @@ function create_random_file # $1=file $2=bs $3=count
 	[ $? -eq 0 ] || die "Failed to set $1 read-only"
 }
 
-function compare_files # $1=file1 $2=file2
+compare_files() # $1=file1 $2=file2
 {
 	[ -r "$1" -a -r "$2" ] || return 1
 	sum1="$(sha1sum "$1" | cut -d' ' -f1)"
@@ -141,13 +139,13 @@ function compare_files # $1=file1 $2=file2
 	[ "$sum1" = "$sum2" ]
 }
 
-function compare_file_to_hex # $1=file $2=hex_string
+compare_file_to_hex() # $1=file $2=hex_string
 {
 	local filehex="$(hexdump -v -e '/1 "%02X"' $1)"
 	[ "$filehex" = "$2" ]
 }
 
-function usage
+usage()
 {
 	echo "Usage: run-tests.sh <OPTIONS> <SCRIPTPATH>"
 	echo
@@ -163,7 +161,7 @@ function usage
 }
 
 # Parse commandline
-nr_scriptpaths=0
+scriptpaths=
 verbose=0
 while [ $# -gt 0 ]; do
 	if [ "$1" = "-h" -o "$1" = "--help" ]; then
@@ -175,8 +173,7 @@ while [ $# -gt 0 ]; do
 		shift
 		continue
 	fi
-	scriptpaths[nr_scriptpaths]="$1"
-	let nr_scriptpaths=nr_scriptpaths+1
+	scriptpaths="$scriptpaths $1"
 	shift
 done
 
@@ -224,7 +221,7 @@ testfile_128k="$tmpdir/testfile_128k"
 create_random_file "$testfile_128k" 4096 32
 
 
-function do_run_test # $1=device, $2=testscript
+do_run_test() # $1=device, $2=testscript
 {
 	current_device="$1"
 	current_test="$1/$2"
@@ -261,11 +258,11 @@ function do_run_test # $1=device, $2=testscript
 	current_chipid=
 }
 
-if [ $nr_scriptpaths -eq 0 ]; then
+if [ -z "$scriptpaths" ]; then
 	# Run all scripts
 	for device in $(ls "$basedir"); do
 		[ -d "$basedir/$device" ] || continue
-		[ "$device" == "generic" ] || request_TOP "$device" || continue
+		[ "$device" = "generic" ] || request_TOP "$device" || continue
 
 		for testscript in $(ls "$basedir/$device"); do
 			do_run_test "$device" "$testscript"
@@ -273,9 +270,7 @@ if [ $nr_scriptpaths -eq 0 ]; then
 	done
 else
 	# Only run the specified tests
-	let end=nr_scriptpaths-1
-	for i in $(seq 0 $end); do
-		scriptpath="${scriptpaths[i]}"
+	for scriptpath in $scriptpaths; do
 		device="$(echo "$scriptpath" | cut -d'/' -f1)"
 		testscript="$(echo "$scriptpath" | cut -d'/' -f2)"
 		[ -d "$basedir/$device" -a -f "$basedir/$device/$testscript" ] || \

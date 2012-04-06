@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-function test_run
+test_run()
 {
 	# Some basic toprammer-layout tests
 	toprammer_layout_silent -h

@@ -1,16 +1,16 @@
-#!/bin/bash
+#!/bin/sh
 
-function test_init
+test_init()
 {
 	true
 }
 
-function test_exit
+test_exit()
 {
 	true
 }
 
-function test_run
+test_run()
 {
 	die "test_run unimplemented"
 }

@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-function test_run
+test_run()
 {
 	# Run some very basic tests
 	toprammer -h
