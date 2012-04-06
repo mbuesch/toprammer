@@ -21,7 +21,7 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from chip import *
+from libtoprammer.chip import *
 
 
 class Chip_AT89C2051dip20(Chip):

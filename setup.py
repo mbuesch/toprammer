@@ -9,7 +9,7 @@ setup(	name		= "toprammer",
 	author		= "Michael Buesch",
 	author_email	= "m@bues.ch",
 	url		= "http://bues.ch/cms/hacking/toprammer.html",
-	packages	= [ "libtoprammer", "libtoprammer/top2049", ],
+	packages	= [ "libtoprammer", "libtoprammer/top2049", "libtoprammer/chips" ],
 	package_data	= { "libtoprammer" : [ "bit/*.bit", "icons/*.png", ], },
 	scripts		= [ "toprammer", "toprammer-gui", "toprammer-layout", ],
 )

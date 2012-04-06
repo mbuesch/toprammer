@@ -20,7 +20,7 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from chip_generic_sram import *
+from generic_sram import *
 
 
 class Chip_HM62256DIP28(Chip_genericSRAM):

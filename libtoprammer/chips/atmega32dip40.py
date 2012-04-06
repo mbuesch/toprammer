@@ -1,7 +1,7 @@
 """
 #    TOP2049 Open Source programming suite
 #
-#    Atmel Tiny26 DIP20 support
+#    Atmel Mega32 DIP40 support
 #
 #    Copyright (c) 2009-2010 Michael Buesch <m@bues.ch>
 #
@@ -20,29 +20,28 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from chip_atmega_common import *
+from atmega_common import *
 
 
-class Chip_ATTiny26DIP20(Chip_ATMega_common):
+class Chip_ATMega32DIP40(Chip_ATMega_common):
 	def __init__(self):
 		Chip_ATMega_common.__init__(self,
-			chipPackage = "DIP20",
-			chipPinVCC = 5,
-			chipPinsVPP = 10,
-			chipPinGND = 6,
-			signature = "\x1E\x91\x09",
-			flashPageSize = 16,
-			flashPages = 64,
+			chipPackage = "DIP40",
+			chipPinVCC = 10,
+			chipPinsVPP = 9,
+			chipPinGND = 11,
+			signature = "\x1E\x95\x02",
+			flashPageSize = 64,
+			flashPages = 256,
 			eepromPageSize = 4,
-			eepromPages = 32)
+			eepromPages = 256)
 
 ChipDescription(
-	Chip_ATTiny26DIP20,
-	bitfile = "attiny26dip20",
-	runtimeID = (0x0002, 0x01),
+	Chip_ATMega32DIP40,
+	bitfile = "atmega32dip40",
+	runtimeID = (0x0004, 0x01),
 	chipVendors = "Atmel",
-	description = "AtTiny26",
-	packages = ( ("DIP20", ""), ),
-	comment = "Special ZIF position",
-	broken = True
+	description = "AtMega32",
+	packages = ( ("DIP40", ""), ),
+	comment = "Insert upside down into ZIF socket"
 )

@@ -469,12 +469,16 @@ The DUT specific top-half lives in the
 \begin_inset Quotes eld
 \end_inset
 
-chip_xxx.py
+libtoprammer/chips
 \begin_inset Quotes erd
 \end_inset
 
- files, where xxx is the ID of the DUT.
- This file contains a class derived from the 
+ module.
+ The files in that module contain the top-half algorithm implementation.
+ The files are named after the chip ID.
+ Make sure to update the __init__.py of the module when adding algorithm
+ implementations.
+ The top-half files contain a class derived from the 
 \begin_inset Quotes eld
 \end_inset
 
@@ -491,8 +495,7 @@ Chip
 \begin_inset Quotes erd
 \end_inset
 
- class provides some basic helper methods for algorithm implementation.
- It also defines the interface that is to be re-implemented in the derived
+ class defines the interface that is to be re-implemented in the derived
  subclass.
  This interface consists of the following methods:
 \end_layout

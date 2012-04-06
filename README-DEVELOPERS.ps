@@ -1,7 +1,7 @@
 %!PS-Adobe-2.0
 %%Creator: dvips(k) 5.991 Copyright 2011 Radical Eye Software
 %%Title: README-DEVELOPERS.dvi
-%%CreationDate: Fri Apr  6 21:24:07 2012
+%%CreationDate: Fri Apr  6 23:20:54 2012
 %%Pages: 7
 %%PageOrder: Ascend
 %%BoundingBox: 0 0 612 792
@@ -11,7 +11,7 @@
 %DVIPSWebPage: (www.radicaleye.com)
 %DVIPSCommandLine: dvips -o README-DEVELOPERS.ps README-DEVELOPERS.dvi
 %DVIPSParameters: dpi=600
-%DVIPSSource:  TeX output 2012.04.06:2124
+%DVIPSSource:  TeX output 2012.04.06:2320
 %%BeginProcSet: tex.pro 0 0
 %!
 /TeXDict 300 dict def TeXDict begin/N{def}def/B{bind def}N/S{exch}N/X{S
@@ -3480,54 +3480,57 @@ b(The)26 b(dela)n(y)f(is)h(p)r(erformed)g(on)g(the)g(host)g(computer)g
 %%Page: 4 4
 TeXDict begin 4 3 bop 515 523 a Fd(not)29 b(sending)g(commands)f(to)h
 (the)h(programmer)d(for)i(the)g(time)h(sp)r(eci\034ed)f(after)g
-(\035ushing)515 623 y(the)f(command)f(queue.)515 897
-y Ff(4)131 b(TX)44 b(command)f(queueing)515 1079 y Fd(All)29
+(\035ushing)515 623 y(the)f(command)f(queue.)515 894
+y Ff(4)131 b(TX)44 b(command)f(queueing)515 1076 y Fd(All)29
 b(commands)f(transmitted)h(to)f(the)h(device)g(are)e(not)i(sen)n(t)g
-(immediately)-7 b(,)29 b(but)g(queued)515 1179 y(in)f(soft)n(w)n(are)f
+(immediately)-7 b(,)29 b(but)g(queued)515 1176 y(in)f(soft)n(w)n(are)f
 (and)h(sen)n(t)h(later.)38 b(This)29 b(is)f(done)g(to)g(sp)r(eed)h(up)g
-(device)f(access)f(signi\034can)n(tly)-7 b(.)515 1278
+(device)f(access)f(signi\034can)n(tly)-7 b(.)515 1275
 y(The)27 b(command)g(transmission)g(queue)g(has)g(sev)n(eral)f
-(\035ushing)h(conditions:)639 1444 y Fc(\017)41 b Fd(Commands)18
+(\035ushing)h(conditions:)639 1428 y Fc(\017)41 b Fd(Commands)18
 b(can)g(b)r(e)h(\035ushed)f(explicitely)h(using)f(the)g
-(\020\035ushCommands\(\)\021)25 b(metho)r(d)722 1544
-y(of)j(\020class)e(TOP\021.)639 1710 y Fc(\017)41 b Fd(Commands)18
+(\020\035ushCommands\(\)\021)25 b(metho)r(d)722 1528
+y(of)j(\020class)e(TOP\021.)639 1687 y Fc(\017)41 b Fd(Commands)18
 b(are)g(automatically)f(\035ushed)i(on)g(cmdReadBu\033erReg\(\))f(b)r
-(efore)g(read-)722 1810 y(ing)30 b(the)h(data)f(from)g(the)h(device.)45
+(efore)g(read-)722 1787 y(ing)30 b(the)h(data)f(from)g(the)h(device.)45
 b(This)30 b(is)g(to)g(ensure)g(sequen)n(tial)g(consistency)f(of)722
-1909 y(the)f(commands.)639 2075 y Fc(\017)41 b Fd(Commands)27
+1886 y(the)f(commands.)639 2045 y Fc(\017)41 b Fd(Commands)27
 b(are)g(\035ushed)h(on)f(v)-5 b(arious)26 b(v)n(oltage-la)n(y)n(out)e
-(op)r(erations.)515 2241 y(Y)-7 b(ou)27 b(usually)g(do)h(not)f(need)h
-(to)f(\035ush)h(commands)f(explicitely)-7 b(.)515 2516
+(op)r(erations.)515 2198 y(Y)-7 b(ou)27 b(usually)g(do)h(not)f(need)h
+(to)f(\035ush)h(commands)f(explicitely)-7 b(.)515 2470
 y Ff(5)131 b(Implemen)l(ting)44 b(a)g(new)f(c)l(hip)j(\(DUT\))e
-(algorithm)515 2698 y Fd(The)32 b(reading)f(and)g(programming)f
+(algorithm)515 2652 y Fd(The)32 b(reading)f(and)g(programming)f
 (algorithms)h(for)g(the)i(c)n(hips)e(\(DUT)-7 b(s\))33
-b(are)e(separated)515 2797 y(in)n(to)c(t)n(w)n(o)g(parts:)639
-2963 y Fc(\017)41 b Fd(Lo)n(w)27 b(lev)n(el)g(FPGA)i(b)r(ottom-half)639
-3129 y Fc(\017)41 b Fd(High)28 b(lev)n(el)f(Python)h(co)r(de)f
-(top-half)515 3295 y(The)35 b(FPGA)i(b)r(ottom-half)f(implemen)n(ts)f
+b(are)e(separated)515 2751 y(in)n(to)c(t)n(w)n(o)g(parts:)639
+2904 y Fc(\017)41 b Fd(Lo)n(w)27 b(lev)n(el)g(FPGA)i(b)r(ottom-half)639
+3063 y Fc(\017)41 b Fd(High)28 b(lev)n(el)f(Python)h(co)r(de)f
+(top-half)515 3216 y(The)35 b(FPGA)i(b)r(ottom-half)f(implemen)n(ts)f
 (the)h(basic)f(op)r(erations)g(\(fetc)n(hing)g(data)g(from)515
-3395 y(DUT.)27 b(W)-7 b(riting)26 b(data)g(to)g(DUT.)h(etc...\).)37
+3315 y(DUT.)27 b(W)-7 b(riting)26 b(data)g(to)g(DUT.)h(etc...\).)37
 b(It)27 b(ma)n(y)f(also)f(implemen)n(t)i(timingcritical)f(parts)515
-3495 y(of)e(the)h(algorithm.)34 b(Ev)n(erything)24 b(else)g(is)g
+3415 y(of)e(the)h(algorithm.)34 b(Ev)n(erything)24 b(else)g(is)g
 (implemen)n(ted)h(in)f(the)h(high)f(lev)n(el)g(Python)g(co)r(de,)515
-3594 y(that)k(liv)n(es)e(on)i(the)g(other)f(end)g(of)h(the)g(USB)g
-(line.)515 3827 y Fb(5.1)112 b(Python)37 b(top-half)h(implemen)m
-(tation)515 3980 y Fd(The)27 b(DUT)i(sp)r(eci\034c)e(top-half)h(liv)n
-(es)f(in)h(the)g(\020c)n(hip_xxx.p)n(y\021)k(\034les,)c(where)f(xxx)g
-(is)h(the)g(ID)515 4080 y(of)23 b(the)h(DUT.)h(This)e(\034le)h(con)n
-(tains)f(a)g(class)g(deriv)n(ed)g(from)g(the)h(\020Chip\021)30
-b(class.)35 b(The)24 b(\020Chip\021)515 4179 y(class)g(pro)n(vides)g
-(some)h(basic)g(help)r(er)g(metho)r(ds)h(for)f(algorithm)f(implemen)n
-(tation.)36 b(It)26 b(also)515 4279 y(de\034nes)h(the)h(in)n(terface)f
-(that)h(is)f(to)h(b)r(e)f(re-implemen)n(ted)h(in)f(the)h(deriv)n(ed)f
-(sub)r(class.)36 b(This)515 4378 y(in)n(terface)27 b(consists)f(of)i
-(the)g(follo)n(wing)e(metho)r(ds:)515 4544 y Fe(sh)m(utdo)m(wnChip\(\))
-41 b Fd(Called)26 b(once)f(on)g(c)n(hip)h(sh)n(utdo)n(wn.)35
-b(The)26 b(default)g(implemen)n(tation)722 4644 y(turns)i(o\033)f(all)h
-(v)n(oltages.)34 b(There's)27 b(usually)g(no)h(need)f(to)h(o)n(v)n
-(erride)d(that.)515 4810 y Fe(readSignature\(\))42 b
+3515 y(that)k(liv)n(es)e(on)i(the)g(other)f(end)g(of)h(the)g(USB)g
+(line.)515 3744 y Fb(5.1)112 b(Python)37 b(top-half)h(implemen)m
+(tation)515 3897 y Fd(The)19 b(DUT)h(sp)r(eci\034c)g(top-half)f(liv)n
+(es)g(in)h(the)g(\020libtoprammer/c)n(hips\021)k(mo)r(dule.)34
+b(The)19 b(\034les)h(in)515 3997 y(that)g(mo)r(dule)g(con)n(tain)e(the)
+i(top-half)g(algorithm)e(implemen)n(tation.)34 b(The)20
+b(\034les)g(are)e(named)515 4097 y(after)30 b(the)h(c)n(hip)g(ID.)g
+(Mak)n(e)f(sure)g(to)g(up)r(date)h(the)g(__init__.p)n(y)e(of)i(the)g
+(mo)r(dule)g(when)515 4196 y(adding)k(algorithm)f(implemen)n(tations.)
+61 b(The)35 b(top-half)h(\034les)f(con)n(tain)g(a)g(class)g(deriv)n(ed)
+515 4296 y(from)d(the)g(\020Chip\021)39 b(class.)50 b(The)33
+b(\020Chip\021)38 b(class)32 b(de\034nes)g(the)h(in)n(terface)e(that)i
+(is)f(to)g(b)r(e)h(re-)515 4395 y(implemen)n(ted)j(in)g(the)g(deriv)n
+(ed)e(sub)r(class.)61 b(This)35 b(in)n(terface)g(consists)g(of)g(the)h
+(follo)n(wing)515 4495 y(metho)r(ds:)515 4648 y Fe(sh)m(utdo)m
+(wnChip\(\))41 b Fd(Called)26 b(once)f(on)g(c)n(hip)h(sh)n(utdo)n(wn.)
+35 b(The)26 b(default)g(implemen)n(tation)722 4747 y(turns)i(o\033)f
+(all)h(v)n(oltages.)34 b(There's)27 b(usually)g(no)h(need)f(to)h(o)n(v)
+n(erride)d(that.)515 4907 y Fe(readSignature\(\))42 b
 Fd(Read)31 b(the)i(DUT)f(signature)f(and)g(return)h(it.)49
-b(Reimplemen)n(t)33 b(this,)722 4910 y(if)28 b(y)n(our)f(DUT)h(supp)r
+b(Reimplemen)n(t)33 b(this,)722 5006 y(if)28 b(y)n(our)f(DUT)h(supp)r
 (orts)f(signature)f(reading.)1926 5255 y(4)p eop end
 %%Page: 5 5
 TeXDict begin 5 4 bop 515 523 a Fe(erase\(\))41 b Fd(Erase)d(the)g

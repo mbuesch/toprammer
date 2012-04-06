@@ -43,8 +43,8 @@ except (ImportError), e:
 	print "Python USB support module not found. Please install python-usb."
 	sys.exit(1)
 
-from top_xxxx import *
-from chip_xxxx import *
+from top_devices import *
+from chips import *
 from user_interface import *
 
 
