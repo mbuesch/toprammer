@@ -1,7 +1,6 @@
-diff --git a/libtoprammer/toprammer_main.py b/libtoprammer/toprammer_main.py
-index 3962d44..4b00100 100644
---- a/libtoprammer/toprammer_main.py
-+++ b/libtoprammer/toprammer_main.py
+diff -u a/libtoprammer/main.py b/libtoprammer/main.py
+--- a/libtoprammer/main.py
++++ b/libtoprammer/main.py
 @@ -204,7 +204,34 @@ class TOP:
  			raise TOPException("Init: Unexpected status register (b): 0x%08X" % stat)
  

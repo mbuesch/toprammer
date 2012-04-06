@@ -21,7 +21,7 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from libtoprammer.toprammer_main import *
+from libtoprammer.main import *
 from libtoprammer.util import *
 import sys
 import time

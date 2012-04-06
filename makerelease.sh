@@ -10,8 +10,8 @@ origin="$(dirname "$0")"
 do_git_tag=1
 [ "$1" = "--notag" ] && do_git_tag=0
 
-version_major="$(cat $origin/libtoprammer/toprammer_main.py | grep -e VERSION_MAJOR | head -n1 | cut -d'=' -f2)"
-version_minor="$(cat $origin/libtoprammer/toprammer_main.py | grep -e VERSION_MINOR | head -n1 | cut -d'=' -f2)"
+version_major="$(cat $origin/libtoprammer/main.py | grep -e VERSION_MAJOR | head -n1 | cut -d'=' -f2)"
+version_minor="$(cat $origin/libtoprammer/main.py | grep -e VERSION_MINOR | head -n1 | cut -d'=' -f2)"
 if [ -z "$version_major" -o -z "$version_minor" ]; then
 	echo "Could not determine version!"
 	exit 1

@@ -22,7 +22,7 @@
 """
 
 from libtoprammer.layout_generator import *
-from libtoprammer.toprammer_main import *
+from libtoprammer.main import *
 from libtoprammer.chip import *
 import getopt
 import sys

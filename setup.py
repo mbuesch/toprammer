@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from distutils.core import setup
-import libtoprammer.toprammer_main as toprammer_main
+import libtoprammer.main as toprammer_main
 
 setup(	name		= "toprammer",
 	version		= toprammer_main.VERSION,
