@@ -31,21 +31,21 @@ class Chip_AT89C2051dip20(Chip):
 	def __init__(self):
 		Chip.__init__(self,
 			      chipPackage = "DIP20",
-			      chipPinVCCX = 20,
+			      chipPinVCC = 20,
 			      chipPinsVPP = 1,
 			      chipPinGND = 10)
 
 	def __initChip(self):
-		self.applyVCCX(False)
+		self.applyVCC(False)
 		self.applyVPP(False)
 		self.applyGND(True)
-		self.top.cmdSetVCCXVoltage(5)
+		self.top.cmdSetVCCVoltage(5)
 		self.top.cmdSetVPPVoltage(5)
 
 	def readSignature(self):
 		self.__initChip()
 		self.applyGND(True)
-		self.applyVCCX(True)
+		self.applyVCC(True)
 		self.top.cmdSetVPPVoltage(5)
 		self.__loadCommand(5) # VPP on
 		self.__loadCommand(1) # set P3.2
@@ -70,7 +70,7 @@ class Chip_AT89C2051dip20(Chip):
 	def erase(self):
 		self.__initChip()
 		self.applyGND(True)
-		self.applyVCCX(True)
+		self.applyVCC(True)
 		self.__loadCommand(1) # set P3.2
 		self.top.cmdSetVPPVoltage(5)
 		self.applyVPP(True)
@@ -93,7 +93,7 @@ class Chip_AT89C2051dip20(Chip):
 	def readProgmem(self):
 		self.__initChip()
 		self.applyGND(True)
-		self.applyVCCX(True)
+		self.applyVCC(True)
 		self.__loadCommand(1) # set P3.2
 		self.top.cmdSetVPPVoltage(5)
 		self.applyVPP(True)
@@ -126,7 +126,7 @@ class Chip_AT89C2051dip20(Chip):
 				(len(image), 0x800))
 		self.__initChip()
 		self.applyGND(True)
-		self.applyVCCX(True)
+		self.applyVCC(True)
 		self.__loadCommand(1) # set P3.2
 		self.top.cmdSetVPPVoltage(5)
 		self.applyVPP(True)

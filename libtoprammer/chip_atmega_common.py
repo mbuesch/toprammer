@@ -36,14 +36,14 @@ class Chip_ATMega_common(Chip):
 	CMD_READEEPROM		= 0x03 # Read EEPROM
 
 	def __init__(self,
-		     chipPackage, chipPinVCCX, chipPinsVPP, chipPinGND,
+		     chipPackage, chipPinVCC, chipPinsVPP, chipPinGND,
 		     signature,
 		     flashPageSize, flashPages,
 		     eepromPageSize, eepromPages
 		    ):
 		Chip.__init__(self,
 			      chipPackage = chipPackage,
-			      chipPinVCCX = chipPinVCCX,
+			      chipPinVCC = chipPinVCC,
 			      chipPinsVPP = chipPinsVPP,
 			      chipPinGND = chipPinGND)
 		self.signature = signature
@@ -234,11 +234,11 @@ class Chip_ATMega_common(Chip):
 	def __enterPM(self):
 		"Enter HV programming mode."
 		self.applyVPP(False)
-		self.applyVCCX(False)
+		self.applyVCC(False)
 		self.applyGND(True)
 		self.top.cmdSetVPPVoltage(0)
 		self.top.cmdSetVPPVoltage(12)
-		self.top.cmdSetVCCXVoltage(5)
+		self.top.cmdSetVCCVoltage(5)
 
 		self.__setVoltageControl(VPP_en=1, VPP=0, VCC_en=1, VCC=0)
 		self.__setXA0(0)
@@ -248,7 +248,7 @@ class Chip_ATMega_common(Chip):
 		self.__setWR(0)
 		self.top.hostDelay(0.1)
 
-		self.applyVCCX(True)
+		self.applyVCC(True)
 		self.__setVoltageControl(VPP_en=1, VPP=0, VCC_en=1, VCC=1)
 		self.top.hostDelay(0.1)
 

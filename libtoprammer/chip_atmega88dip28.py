@@ -27,7 +27,7 @@ class Chip_ATMega88DIP28(Chip_ATMega_common):
 	def __init__(self):
 		Chip_ATMega_common.__init__(self,
 			chipPackage = "DIP28",
-			chipPinVCCX = 7,
+			chipPinVCC = 7,
 			chipPinsVPP = 1,
 			chipPinGND = 8,
 			signature = "\x1E\x93\x0A",

@@ -27,7 +27,7 @@ class Chip_ATMega32DIP40(Chip_ATMega_common):
 	def __init__(self):
 		Chip_ATMega_common.__init__(self,
 			chipPackage = "DIP40",
-			chipPinVCCX = 10,
+			chipPinVCC = 10,
 			chipPinsVPP = 9,
 			chipPinGND = 11,
 			signature = "\x1E\x95\x02",

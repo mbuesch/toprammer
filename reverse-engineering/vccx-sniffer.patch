@@ -17,8 +17,8 @@ index 3962d44..4b00100 100644
 +		s = hc4094sniffer.Sniffer("/dev/ttyUSB0", 3)
 +		count = 0
 +		for i in range(0, 0xFF+1):
-+			self.cmdLoadVCCXLayout(0)
-+			self.cmdLoadVCCXLayout(i)
++			self.cmdLoadVCCLayout(0)
++			self.cmdLoadVCCLayout(i)
 +			self.flushCommands()
 +			time.sleep(0.1)
 +			d = s.read()

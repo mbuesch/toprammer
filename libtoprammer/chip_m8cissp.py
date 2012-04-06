@@ -297,15 +297,15 @@ class Chip_M8C_ISSP(Chip):
 
 	def __powerOnReset(self):
 		"Perform a complete power-on-reset and initialization"
-		self.top.vccx.setLayoutMask(0)
+		self.top.vcc.setLayoutMask(0)
 		self.top.vpp.setLayoutMask(0)
 		self.top.gnd.setLayoutMask(0)
-		self.top.cmdSetVCCXVoltage(5)
+		self.top.cmdSetVCCVoltage(5)
 		self.top.cmdSetVPPVoltage(5)
 
 		self.printDebug("Initializing supply power...")
 		self.top.gnd.setLayoutPins( (20,) )
-		self.top.vccx.setLayoutPins( (21,) )
+		self.top.vcc.setLayoutPins( (21,) )
 
 #FIXME when to do exec?
 		self.__powerDown()

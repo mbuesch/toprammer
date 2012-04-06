@@ -27,7 +27,7 @@ class Chip_at27c256r(Chip):
 	def __init__(self):
 		Chip.__init__(self,
 			      chipPackage = "DIP28",
-			      chipPinVCCX = 28,
+			      chipPinVCC = 28,
 			      chipPinsVPP = 1,
 			      chipPinGND = 14)
 		self.sizeBytes = 32 * 1024

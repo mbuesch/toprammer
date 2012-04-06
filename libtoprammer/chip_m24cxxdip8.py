@@ -35,14 +35,14 @@ class Chip_m24cXXdip8_common(Chip):
 	def __init__(self, eepromSize):
 		Chip.__init__(self,
 			      chipPackage = "DIP8",
-			      chipPinVCCX = 8,
+			      chipPinVCC = 8,
 			      chipPinGND = 4)
 		self.eepromSize = eepromSize	# in bytes
 
 	def __chipTurnOn(self):
-		self.top.cmdSetVCCXVoltage(5)
+		self.top.cmdSetVCCVoltage(5)
 		self.top.cmdSetVPPVoltage(5)
-		self.applyVCCX(True)
+		self.applyVCC(True)
 		self.applyVPP(False)
 		self.applyGND(True)
 		self.top.cmdEnableZifPullups(True)

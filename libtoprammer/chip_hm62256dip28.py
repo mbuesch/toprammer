@@ -27,9 +27,9 @@ class Chip_HM62256DIP28(Chip_genericSRAM):
 	def __init__(self):
 		Chip_genericSRAM.__init__(self,
 			chipPackage = "DIP28",
-			chipPinVCCX = 28,
+			chipPinVCC = 28,
 			chipPinGND = 14,
-			VCCXVoltage = 5,
+			VCCVoltage = 5,
 			nrAddressBits = 15,
 			nrDataBits = 8,
 		)

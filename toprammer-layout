@@ -38,7 +38,7 @@ def usage():
 	print "                        Possible choices are: TOP2049"
 	print " -p|--package DIPxx     The package type of the DUT."
 	print "                        Package may also be the name of a supported chip."
-	print "                        In this case, --vccx, --vpp and --gnd are ignored."
+	print "                        In this case, --vcc, --vpp and --gnd are ignored."
 	print " -v|--vcc PIN           Set VCC pin number, relative to the package."
 	print " -P|--vpp PIN(s)        Set VPP pin number(s), relative to the package."
 	print "                        May be one pin number or a comma separated list of pin numbers."
@@ -53,7 +53,7 @@ def usage():
 def main(argv):
 	package = None
 	programmer = None
-	vccxPin = None
+	vccPin = None
 	vppPins = None
 	gndPin = None
 	showInsert = True
@@ -61,7 +61,7 @@ def main(argv):
 	try:
 		(opts, args) = getopt.getopt(argv[1:],
 			"d:p:hv:P:g:IS",
-			[ "help", "device=", "package=", "vccx=", "vcc=", "vpp=", "gnd=",
+			[ "help", "device=", "package=", "vcc=", "vcc=", "vpp=", "gnd=",
 			  "only-insert", "only-supply", ])
 		for (o, v) in opts:
 			if o in ("-h", "--help"):
@@ -71,8 +71,8 @@ def main(argv):
 				programmer = v
 			if o in ("-p", "--package"):
 				package = v
-			if o in ("-v", "--vcc", "--vccx"):
-				vccxPin = int(v)
+			if o in ("-v", "--vcc", "--vcc"):
+				vccPin = int(v)
 			if o in ("-P", "--vpp"):
 				if v.upper() == "NONE":
 					vppPins = None
@@ -100,8 +100,8 @@ def main(argv):
 			(unused, chip) = ChipDescription.findOne(programmer, package, allowBroken=True)
 		except (TOPException), e:
 			chip = None
-			if vccxPin is None or gndPin is None:
-				print "-v|--vccx and  -g|--gnd  " +\
+			if vccPin is None or gndPin is None:
+				print "-v|--vcc and  -g|--gnd  " +\
 					"are mandatory, if a package type is specified.\n"
 				raise ValueError()
 
@@ -123,7 +123,7 @@ def main(argv):
 		else:
 			generator = createLayoutGenerator(package)
 			generator.setProgrammerType(programmer.upper())
-			generator.setPins(vccxPin, vppPins, gndPin)
+			generator.setPins(vccPin, vppPins, gndPin)
 			generator.recalculate()
 		if showInsert:
 			print "Chip insert layout:\n"

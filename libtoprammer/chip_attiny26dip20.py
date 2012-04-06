@@ -27,7 +27,7 @@ class Chip_ATTiny26DIP20(Chip_ATMega_common):
 	def __init__(self):
 		Chip_ATMega_common.__init__(self,
 			chipPackage = "DIP20",
-			chipPinVCCX = 5,
+			chipPinVCC = 5,
 			chipPinsVPP = 10,
 			chipPinGND = 6,
 			signature = "\x1E\x91\x09",

@@ -24,14 +24,14 @@ from chip import *
 
 
 class Chip_genericSRAM(Chip):
-	def __init__(self, chipPackage, chipPinVCCX, chipPinGND,
-		     VCCXVoltage,
+	def __init__(self, chipPackage, chipPinVCC, chipPinGND,
+		     VCCVoltage,
 		     nrAddressBits, nrDataBits):
 		Chip.__init__(self,
 			      chipPackage = chipPackage,
-			      chipPinVCCX = chipPinVCCX,
+			      chipPinVCC = chipPinVCC,
 			      chipPinGND = chipPinGND)
-		self.VCCXVoltage = VCCXVoltage
+		self.VCCVoltage = VCCVoltage
 		self.nrAddressBits = nrAddressBits
 		self.nrAddressBytes = int(math.ceil((float(self.nrAddressBits) - 0.1) / 8))
 		self.nrDataBits = nrDataBits
@@ -89,9 +89,9 @@ class Chip_genericSRAM(Chip):
 
 	def __turnOnChip(self):
 		self.__setControlPins(CE=1, OE=1, WE=1)
-		self.top.cmdSetVCCXVoltage(self.VCCXVoltage)
+		self.top.cmdSetVCCVoltage(self.VCCVoltage)
 		self.applyGND(True)
-		self.applyVCCX(True)
+		self.applyVCC(True)
 		self.lastAddress = None
 
 	def __setControlPins(self, CE=1, OE=1, WE=1):

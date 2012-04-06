@@ -256,7 +256,7 @@ class TOP:
 
 		# Initialize the programmer specific layouts
 		if self.topType == self.TYPE_TOP2049:
-			self.vccx = top2049.vccx_layouts.VCCXLayout(self)
+			self.vcc = top2049.vcc_layouts.VCCLayout(self)
 			self.vpp = top2049.vpp_layouts.VPPLayout(self)
 			self.gnd = top2049.gnd_layouts.GNDLayout(self)
 		else:
@@ -271,11 +271,11 @@ class TOP:
 		self.cmdSetVPPVoltage(0)
 		self.queueCommand(b"\x0E\x20\x00\x00")
 		self.cmdDelay(0.01)
-		self.cmdSetVCCXVoltage(0)
+		self.cmdSetVCCVoltage(0)
 
 		self.cmdLoadGNDLayout(0)
 		self.cmdLoadVPPLayout(0)
-		self.cmdLoadVCCXLayout(0)
+		self.cmdLoadVCCLayout(0)
 
 		self.queueCommand(b"\x0E\x20\x00\x00")
 		self.cmdDelay(0.01)
@@ -588,15 +588,15 @@ class TOP:
 		self.cmdDelay(0.01)
 		self.hostDelay(0.15)
 
-	def cmdSetVCCXVoltage(self, voltage):
-		"""Set the VCCX voltage. voltage is a floating point voltage number."""
+	def cmdSetVCCVoltage(self, voltage):
+		"""Set the VCC voltage. voltage is a floating point voltage number."""
 		centivolt = int(voltage * 10)
 		cmd = int2byte(0x0E) + int2byte(0x13) + int2byte(centivolt) + int2byte(0)
 		self.queueCommand(cmd)
 		self.cmdDelay(0.01)
 
-	def cmdLoadVCCXLayout(self, layout):
-		"""Load the VCCX configuration into the shift registers."""
+	def cmdLoadVCCLayout(self, layout):
+		"""Load the VCC configuration into the shift registers."""
 		cmd = int2byte(0x0E) + int2byte(0x15) + int2byte(layout) + int2byte(0)
 		self.queueCommand(cmd)
 		self.cmdDelay(0.01)

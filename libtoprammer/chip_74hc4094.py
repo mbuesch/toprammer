@@ -25,9 +25,9 @@ from chip_unitest import *
 class Chip_74hc4094(Chip_Unitest):
 	def __init__(self):
 		Chip_Unitest.__init__(self, chipPackage="DIP16",
-					    chipPinVCCX=16,
+					    chipPinVCC=16,
 					    chipPinGND=8,
-					    VCCXVoltage=5)
+					    VCCVoltage=5)
 
 	def __initChip(self):
 		self.zifPin_STR = self.generator.getZifPinForPackagePin(1)
@@ -50,7 +50,7 @@ class Chip_74hc4094(Chip_Unitest):
 		self.setOutputEnableMask(outen)
 
 		self.applyGND(True)
-		self.applyVCCX(True)
+		self.applyVCC(True)
 
 	def test(self):
 		testPatterns = (0xFF, 0x00, 0xAA, 0x55, 0xF0, 0x0F,

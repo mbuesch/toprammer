@@ -74,15 +74,15 @@ class Chip:
 				flags |= flag
 		return flags
 
-	def __init__(self, chipPackage=None, chipPinVCCX=None, chipPinsVPP=None, chipPinGND=None):
+	def __init__(self, chipPackage=None, chipPinVCC=None, chipPinsVPP=None, chipPinGND=None):
 		"""chipPackage is the ID string for the package.
 		May be None, if no initial auto-layout is required.
-		chipPinVCCX is the required VCCX pin on the package.
+		chipPinVCC is the required VCC pin on the package.
 		chipPinsVPP is the required VPP pin on the package.
 		chipPinGND is the required GND pin on the package."""
 
 		self.__chipPackage = chipPackage
-		self.__chipPinVCCX = chipPinVCCX
+		self.__chipPinVCC = chipPinVCC
 		self.__chipPinsVPP = chipPinsVPP
 		self.__chipPinGND = chipPinGND
 
@@ -112,7 +112,7 @@ class Chip:
 		if self.__chipPackage:
 			self.generator = createLayoutGenerator(self.__chipPackage)
 			self.generator.setProgrammerType(self.programmerType)
-			self.generator.setPins(vccxPin=self.__chipPinVCCX,
+			self.generator.setPins(vccPin=self.__chipPinVCC,
 					       vppPins=self.__chipPinsVPP,
 					       gndPin=self.__chipPinGND)
 			self.generator.recalculate()
@@ -122,16 +122,16 @@ class Chip:
 			return self.generator
 		return None
 
-	def applyVCCX(self, turnOn):
-		"Turn VCCX on, using the auto-layout."
+	def applyVCC(self, turnOn):
+		"Turn VCC on, using the auto-layout."
 		if turnOn:
 			try:
 				generator = self.generator
 			except (AttributeError), e:
 				self.throwError("BUG: Using auto-layout, but did not initialize it.")
-			generator.applyVCCXLayout(self.top)
+			generator.applyVCCLayout(self.top)
 		else:
-			self.top.vccx.setLayoutMask(0)
+			self.top.vcc.setLayoutMask(0)
 
 	def applyVPP(self, turnOn, packagePinsToTurnOn=[]):
 		"""Turn VPP on, using the auto-layout.

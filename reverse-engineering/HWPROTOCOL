@@ -26,7 +26,7 @@ TOP2049 USB protocol (incomplete)
 0E12xx00	>= Set VPP, where xx is the voltage.
 		   xx is in centivolt.
 
-0E13xx00	>= Set VCCX, where xx is the voltage.
+0E13xx00	>= Set VCC, where xx is the voltage.
 		   xx is in centivolt.
 
 0E14xx00	>= Load the ZIF socket VPP supply layout.
@@ -34,7 +34,7 @@ TOP2049 USB protocol (incomplete)
 		   (Shift data into the 4 shiftregisters on the left side.
 		    Sends 4 times 8 clock pulses and one strobe.)
 
-0E15xx00	>= Load the ZIF socket VCCX supply layout.
+0E15xx00	>= Load the ZIF socket VCC supply layout.
 		   xx is the layout ID.
 		   (Shift data into the 3 shiftregisters on the right side.
 		    Sends 3 times 8 clock pulses and one strobe.)

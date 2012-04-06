@@ -77,7 +77,7 @@ VPP Programming voltage for the DUT (usually 12V)
 \end_layout
 
 \begin_layout Description
-VCCX Supply voltage for the DUT
+VCC Supply voltage for the DUT
 \end_layout
 
 \begin_layout Description
@@ -241,11 +241,11 @@ Set VPP (programming voltage) to the specified voltage.
 \end_layout
 
 \begin_layout Subsection
-cmdSetVCCXVoltage(voltage)
+cmdSetVCCVoltage(voltage)
 \end_layout
 
 \begin_layout Standard
-Set VCCX (DUT supply voltage) to the specified voltage.
+Set VCC (DUT supply voltage) to the specified voltage.
  Voltage is a floating point number.
 \end_layout
 
@@ -270,7 +270,7 @@ Load a ZIF-socket VPP-layout.
 \end_layout
 
 \begin_layout Subsection
-cmdLoadVCCXLayout(layoutID)
+cmdLoadVCCLayout(layoutID)
 \end_layout
 
 \begin_layout Standard
@@ -763,7 +763,7 @@ DIP40
 \end_layout
 
 \begin_layout Description
-chipPinVCCX This parameter is an integer specifying the VCC pin on the chip
+chipPinVCC This parameter is an integer specifying the VCC pin on the chip
  package.
  Note that it specifies the VCC pin on the chip package and _not_ on the
  ZIF socket.
@@ -814,7 +814,7 @@ class Chip
 \end_layout
 
 \begin_layout Description
-applyVCCX(on) This method enables or disables (depending on the 
+applyVCC(on) This method enables or disables (depending on the 
 \begin_inset Quotes eld
 \end_inset
 

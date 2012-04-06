@@ -35,23 +35,23 @@ class LayoutGenerator:
 	def setProgrammerType(self, programmer="TOP2049"):
 		supportedDevices = {
 			# Map  deviceName : layoutModules, ZIF-pin-count
-			"TOP2049"	: (top2049.vccx_layouts, top2049.vpp_layouts,
+			"TOP2049"	: (top2049.vcc_layouts, top2049.vpp_layouts,
 					   top2049.gnd_layouts, 48)
 		}
 		try:
-			(vccx_layouts, vpp_layouts, gnd_layouts, zifPins) = \
+			(vcc_layouts, vpp_layouts, gnd_layouts, zifPins) = \
 				supportedDevices[programmer.upper()]
 		except (KeyError), e:
 			raise TOPException("Programmer " + programmer + " not supported")
-		self.vccxLayout = vccx_layouts.VCCXLayout()
+		self.vccLayout = vcc_layouts.VCCLayout()
 		self.vppLayout = vpp_layouts.VPPLayout()
 		self.gndLayout = gnd_layouts.GNDLayout()
 		self.zifPins = zifPins
 
-	def setPins(self, vccxPin, vppPins, gndPin):
+	def setPins(self, vccPin, vppPins, gndPin):
 		"""Load the supply pin locations.
 		vppPins may either be one pin number or a list of pin numbers or None."""
-		self.vccxPin = vccxPin
+		self.vccPin = vccPin
 		if vppPins is None:
 			self.vppPins = None
 		else:
@@ -85,11 +85,11 @@ class LayoutGenerator:
 					self.gndLayout,
 					(1 << (zifGndPin - 1)))
 
-		# Find a VCCX layout
-		zifVccxPin = self.mapPin2zif(self.vccxPin, offset, upsideDown)
-		self.result_VCCX = self.__findSingleLayout(
-					self.vccxLayout,
-					(1 << (zifVccxPin - 1)))
+		# Find a VCC layout
+		zifVccPin = self.mapPin2zif(self.vccPin, offset, upsideDown)
+		self.result_VCC = self.__findSingleLayout(
+					self.vccLayout,
+					(1 << (zifVccPin - 1)))
 
 		# Find a (possibly cumulative) VPP layout
 		if self.vppPins is None:
@@ -117,8 +117,8 @@ class LayoutGenerator:
 
 	def zifPinAssignments(self):
 		"Returns a string describing the pin assignments"
-		vccx = str(self.__bitmask2pinList(self.result_VCCX[1])).strip("[]")
-		ret =  "VCCX ZIF pins: " + vccx + "\n"
+		vcc = str(self.__bitmask2pinList(self.result_VCC[1])).strip("[]")
+		ret =  "VCC ZIF pins: " + vcc + "\n"
 		if self.result_VPP:
 			vppBitmask = 0
 			for (id, mask) in self.result_VPP:
@@ -168,14 +168,14 @@ class LayoutGenerator:
 		(layoutID, layoutMask) = self.getGNDLayout()
 		top.gnd.setLayoutID(layoutID)
 
-	def getVCCXLayout(self):
-		"Get the calculated VCCX layout ID and mask. Returns a tuple (ID, mask)."
-		return self.result_VCCX
+	def getVCCLayout(self):
+		"Get the calculated VCC layout ID and mask. Returns a tuple (ID, mask)."
+		return self.result_VCC
 
-	def applyVCCXLayout(self, top):
-		"Send the VCCX layout to hardware"
-		(layoutID, layoutMask) = self.getVCCXLayout()
-		top.vccx.setLayoutID(layoutID)
+	def applyVCCLayout(self, top):
+		"Send the VCC layout to hardware"
+		(layoutID, layoutMask) = self.getVCCLayout()
+		top.vcc.setLayoutID(layoutID)
 
 	def getVPPLayouts(self):
 		"""Get the calculated VPP layout IDs and masks.
@@ -239,8 +239,8 @@ class LayoutGeneratorDIP(LayoutGenerator):
 		LayoutGenerator.verifyPins(self)
 		if self.nrPins < 2 or self.nrPins > self.zifPins or self.nrPins % 2 != 0:
 			raise TOPException("Invalid DIP package")
-		if self.vccxPin < 1 or self.vccxPin > self.nrPins:
-			raise TOPException("Invalid VCCX pin number for the selected package")
+		if self.vccPin < 1 or self.vccPin > self.nrPins:
+			raise TOPException("Invalid VCC pin number for the selected package")
 		if self.vppPins is not None:
 			for vppPin in self.vppPins:
 				if vppPin < 1 or vppPin > self.nrPins:

@@ -32,12 +32,12 @@ class Chip_w29ee011dip32(Chip):
 	def __init__(self):
 		Chip.__init__(self,
 			      chipPackage = "DIP32",
-			      chipPinVCCX = 32,
+			      chipPinVCC = 32,
 			      chipPinsVPP = None,
 			      chipPinGND = 16)
 
 	def erase(self):
-		self.applyVCCX(True)
+		self.applyVCC(True)
 		self.applyVPP(True)
 		self.applyGND(True)
 
@@ -67,7 +67,7 @@ class Chip_w29ee011dip32(Chip):
 		self.progressMeterFinish()
 
 	def readEEPROM(self):
-		self.applyVCCX(True)
+		self.applyVCC(True)
 		self.applyVPP(True)
 		self.applyGND(True)
 
@@ -110,7 +110,7 @@ class Chip_w29ee011dip32(Chip):
 			self.throwError("Invalid EPROM image size %d (expected <=%d)" %\
 				(len(image), 0x20000))
 
-		self.applyVCCX(True)
+		self.applyVCC(True)
 		self.applyVPP(True)
 		self.applyGND(True)
 

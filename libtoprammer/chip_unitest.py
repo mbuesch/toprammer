@@ -24,11 +24,11 @@ from chip import *
 
 
 class Chip_Unitest(Chip):
-	def __init__(self, chipPackage=None, chipPinVCCX=None, chipPinsVPP=None, chipPinGND=None,
-			   VCCXVoltage=None, VPPVoltage=None):
-		Chip.__init__(self, chipPackage=chipPackage, chipPinVCCX=chipPinVCCX,
+	def __init__(self, chipPackage=None, chipPinVCC=None, chipPinsVPP=None, chipPinGND=None,
+			   VCCVoltage=None, VPPVoltage=None):
+		Chip.__init__(self, chipPackage=chipPackage, chipPinVCC=chipPinVCC,
 			      chipPinsVPP=chipPinsVPP, chipPinGND=chipPinGND)
-		self.autogenVCCXVoltage = VCCXVoltage
+		self.autogenVCCVoltage = VCCVoltage
 		self.autogenVPPVoltage = VPPVoltage
 
 	def shutdownChip(self):
@@ -36,13 +36,13 @@ class Chip_Unitest(Chip):
 		self.reset()
 
 	def reset(self):
-		self.top.vccx.setLayoutPins( [] )
-		self.vccxMask = 0
+		self.top.vcc.setLayoutPins( [] )
+		self.vccMask = 0
 		self.top.vpp.setLayoutPins( [] )
 		self.vppMask = 0
 		self.top.gnd.setLayoutPins( [] )
 		self.gndMask = 0
-		self.top.cmdSetVCCXVoltage(self.top.vccx.minVoltage())
+		self.top.cmdSetVCCVoltage(self.top.vcc.minVoltage())
 		self.top.cmdSetVPPVoltage(self.top.vpp.minVoltage())
 		self.oscMask = 0
 		self.setOutputEnableMask(0)
@@ -50,11 +50,11 @@ class Chip_Unitest(Chip):
 		self.setOscMask(0)
 		self.top.flushCommands()
 
-	def setVCCX(self, voltage, layout):
-		self.vccxMask = self.top.vccx.ID2mask(layout)
+	def setVCC(self, voltage, layout):
+		self.vccMask = self.top.vcc.ID2mask(layout)
 		self.__updateOutEn()
-		self.top.cmdSetVCCXVoltage(voltage)
-		self.top.vccx.setLayoutID(layout)
+		self.top.cmdSetVCCVoltage(voltage)
+		self.top.vcc.setLayoutID(layout)
 		self.top.flushCommands()
 
 	def setVPP(self, voltage, layouts):
@@ -75,11 +75,11 @@ class Chip_Unitest(Chip):
 		self.top.flushCommands()
 
 	# Overloaded layout generator interface.
-	def applyVCCX(self, turnOn):
+	def applyVCC(self, turnOn):
 		layoutID = 0
 		if turnOn:
-			(layoutID, layoutMask) = self.generator.getVCCXLayout()
-		self.setVCCX(self.autogenVCCXVoltage, layoutID)
+			(layoutID, layoutMask) = self.generator.getVCCLayout()
+		self.setVCC(self.autogenVCCVoltage, layoutID)
 
 	# Overloaded layout generator interface.
 	def applyVPP(self, turnOn, packagePinsToTurnOn=[]):
@@ -100,7 +100,7 @@ class Chip_Unitest(Chip):
 	def __updateOutEn(self):
 		mask = self.desiredOutEnMask
 		mask &= ~self.gndMask
-		mask &= ~self.vccxMask
+		mask &= ~self.vccMask
 		mask &= ~self.vppMask
 		mask |= self.oscMask
 		self.top.cmdFPGAWrite(0x50, mask & 0xFF)

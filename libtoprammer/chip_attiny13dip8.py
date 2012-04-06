@@ -32,7 +32,7 @@ class Chip_AtTiny13dip8(Chip):
 	def __init__(self):
 		Chip.__init__(self,
 			      chipPackage = "DIP8",
-			      chipPinVCCX = 8,
+			      chipPinVCC = 8,
 			      chipPinsVPP = 1,
 			      chipPinGND = 4)
 		self.signature = "\x1E\x90\x07"
@@ -235,14 +235,14 @@ class Chip_AtTiny13dip8(Chip):
 
 	def __enterPM(self):
 		"Enter HV programming mode."
-		self.applyVCCX(False)
+		self.applyVCC(False)
 		self.applyVPP(False)
 		self.applyGND(False)
-		self.top.cmdSetVCCXVoltage(5)
+		self.top.cmdSetVCCVoltage(5)
 		self.top.cmdSetVPPVoltage(0)
 		self.top.cmdSetVPPVoltage(12)
 		self.applyGND(True)
-		self.applyVCCX(True)
+		self.applyVCC(True)
 
 		self.__setPins(SCI=0, SDO_en=0, RST_en=1, RST=0)
 		for i in range(0, 6):

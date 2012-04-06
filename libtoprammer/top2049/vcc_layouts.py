@@ -1,7 +1,7 @@
 """
 #    TOP2049 Open Source programming suite
 #
-#    TOP2049 VCCX layout definitions
+#    TOP2049 VCC layout definitions
 #
 #    Copyright (c) 2010 Michael Buesch <m@bues.ch>
 #
@@ -26,8 +26,8 @@ if __name__ == "__main__":
 from libtoprammer.shiftreg_layout import *
 
 
-class VCCXLayout(ShiftregLayout):
-	# "shiftreg_masks" is a dump of the VCCX shiftregister states. The array index
+class VCCLayout(ShiftregLayout):
+	# "shiftreg_masks" is a dump of the VCC shiftregister states. The array index
 	# is the layout ID and the array entries are the inverted shift
 	# register outputs. The least significant byte is the first
 	# shift register in the chain.
@@ -147,8 +147,8 @@ class VCCXLayout(ShiftregLayout):
 		return 5
 
 	def setLayoutID(self, id):
-		self.top.cmdLoadVCCXLayout(id)
+		self.top.cmdLoadVCCLayout(id)
 
 if __name__ == "__main__":
-	print "ZIF socket VCCX layouts"
-	print VCCXLayout()
+	print "ZIF socket VCC layouts"
+	print VCCLayout()

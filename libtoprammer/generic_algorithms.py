@@ -80,18 +80,18 @@ class GenericAlgorithms(object):
 
 	def simpleVoltageSetup(self, vcc=5.0, vpp=5.0, vppEnable=False):
 		"""Simple voltage setup."""
-		self.chip.top.cmdSetVCCXVoltage(vcc)
+		self.chip.top.cmdSetVCCVoltage(vcc)
 		self.chip.top.cmdSetVPPVoltage(vpp)
-		self.chip.applyVCCX(True)
+		self.chip.applyVCC(True)
 		self.chip.applyGND(True)
 		self.chip.applyVPP(vppEnable)
 
 	def simpleVoltageShutdown(self):
 		"""Turn off voltages."""
-		self.chip.applyVCCX(False)
+		self.chip.applyVCC(False)
 		self.chip.applyVPP(False)
 		self.chip.applyGND(False)
-		self.chip.top.cmdSetVCCXVoltage(self.chip.top.vccx.minVoltage())
+		self.chip.top.cmdSetVCCVoltage(self.chip.top.vcc.minVoltage())
 		self.chip.top.cmdSetVPPVoltage(self.chip.top.vpp.minVoltage())
 
 	def simpleRead(self, name, sizeBytes,

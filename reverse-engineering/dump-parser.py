@@ -89,13 +89,13 @@ def parseBulkOut(data):
 			i += 3
 		elif data[i] == 0x0E and data[i+1] == 0x13:
 			centivolts = data[i+2]
-			dumpInstr(data[i:i+4], "Set VCCX to %.2f Volts" % (float(centivolts) / 10))
+			dumpInstr(data[i:i+4], "Set VCC to %.2f Volts" % (float(centivolts) / 10))
 			i += 3
 		elif data[i] == 0x0E and data[i+1] == 0x14:
 			dumpInstr(data[i:i+4], "Loading VPP layout %d" % data[i+1])
 			i += 3
 		elif data[i] == 0x0E and data[i+1] == 0x15:
-			dumpInstr(data[i:i+4], "Loading VCCX layout %d" % data[i+1])
+			dumpInstr(data[i:i+4], "Loading VCC layout %d" % data[i+1])
 			i += 3
 		elif data[i] == 0x0E and data[i+1] == 0x16:
 			dumpInstr(data[i:i+4], "Loading GND layout %d" % data[i+1])

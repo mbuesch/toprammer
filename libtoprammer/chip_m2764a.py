@@ -31,23 +31,23 @@ class Chip_M2764A(Chip):
 	def __init__(self):
 		Chip.__init__(self,
 			      chipPackage = "DIP28",
-			      chipPinVCCX = 28,
+			      chipPinVCC = 28,
 			      chipPinsVPP = 1,
 			      chipPinGND = 14)
 
 	def __initChip(self):
-		self.applyVCCX(False)
+		self.applyVCC(False)
 		self.applyVPP(False)
 		self.applyGND(False)
-		self.top.cmdSetVCCXVoltage(5)
+		self.top.cmdSetVCCVoltage(5)
 		self.top.cmdSetVPPVoltage(0)
 		self.top.cmdSetVPPVoltage(5)
 
 	def readEEPROM(self):
 		self.__initChip()
-		self.top.cmdSetVCCXVoltage(5)
+		self.top.cmdSetVCCVoltage(5)
 		self.top.cmdSetVPPVoltage(5)
-		self.applyVCCX(True)
+		self.applyVCC(True)
 		self.applyVPP(True)
 		self.applyGND(True)
 
@@ -74,9 +74,9 @@ class Chip_M2764A(Chip):
 				(len(image), 0x2000))
 
 		self.__initChip()
-		self.top.cmdSetVCCXVoltage(5)
+		self.top.cmdSetVCCVoltage(5)
 		self.top.cmdSetVPPVoltage(12)
-		self.applyVCCX(True)
+		self.applyVCC(True)
 		self.applyVPP(True)
 		self.applyGND(True)
 
