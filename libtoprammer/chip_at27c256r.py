@@ -22,6 +22,7 @@
 
 from chip import *
 
+
 class Chip_at27c256r(Chip):
 	def __init__(self):
 		Chip.__init__(self,
@@ -30,48 +31,25 @@ class Chip_at27c256r(Chip):
 			      chipPinsVPP = 1,
 			      chipPinGND = 14)
 		self.sizeBytes = 32 * 1024
+		self.generic = GenericAlgorithms(self)
+		self.addrSetter = AddrSetter(self, 0x10, 0x11)
 
 	def readEEPROM(self):
 		self.__turnOn()
-		self.progressMeterInit("Reading EPROM", self.sizeBytes)
-		image, prevAddr, count = b"", None, 0
-		self.__setFlags(oe=0, ce=0)
-		for addr in range(0, self.sizeBytes):
-			self.progressMeter(addr)
-			if prevAddr is None or\
-			   (prevAddr & 0xFF) != (addr & 0xFF):
-				self.__setAddrLow(addr & 0xFF)
-			if prevAddr is None or\
-			   ((prevAddr >> 8) & 0xFF) != ((addr >> 8) & 0xFF):
-				self.__setAddrHigh((addr >> 8) & 0xFF)
-			prevAddr = addr
-			self.__dataRead()
-			count += 1
-			if count == self.top.getBufferRegSize():
-				image += self.top.cmdReadBufferReg()
-				count = 0
-		if count:
-			image += self.top.cmdReadBufferReg()
-		self.__setFlags(oe=1, ce=1)
-		self.progressMeterFinish()
-		return image
+		return self.generic.simpleReadEPROM(
+			sizeBytes = self.sizeBytes,
+			readData8Func = self.__dataRead,
+			addrSetter = self.addrSetter,
+			initFunc = lambda: self.__setFlags(oe=0, ce=0),
+			exitFunc = lambda: self.__setFlags(oe=1, ce=1)
+		)
 
 #	def writeEEPROM(self):
 #		pass#TODO
 
 	def __turnOn(self):
 		self.__setFlags()
-		self.top.cmdSetVCCXVoltage(5)
-		self.top.cmdSetVPPVoltage(5)
-		self.applyVCCX(True)
-		self.applyVPP(False)
-		self.applyGND(True)
-
-	def __setAddrLow(self, value):
-		self.top.cmdFPGAWrite(0x10, value)
-
-	def __setAddrHigh(self, value):
-		self.top.cmdFPGAWrite(0x11, value)
+		self.generic.simpleVoltageSetup()
 
 	def __setDataPins(self, value):
 		self.top.cmdFPGAWrite(0x12, value)

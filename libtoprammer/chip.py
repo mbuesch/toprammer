@@ -3,7 +3,7 @@
 #
 #    Chip support
 #
-#    Copyright (c) 2009-2011 Michael Buesch <m@bues.ch>
+#    Copyright (c) 2009-2012 Michael Buesch <m@bues.ch>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 from util import *
 from layout_generator import *
 from user_interface import *
+from generic_algorithms import *
 
 
 class Chip:
@@ -168,21 +169,10 @@ class Chip:
 		self.top.progressMeter(AbstractUserInterface.PROGRESSMETER_CHIPACCESS,
 				       step)
 
-	def genericTest(self, readFunc, writeFunc, size):
-		"Generic test. Call from test() in the chip implementation, if desired."
-		image = genRandomBlob(size)
-		writeFunc(image)
-		if readFunc() != image:
-			self.throwError("Unit-test failed. The chip may be physically broken.")
-
 	def shutdownChip(self):
 		# Override me in the subclass, if required.
 		self.printDebug("Default chip shutdown")
-		self.applyVCCX(False)
-		self.applyVPP(False)
-		self.applyGND(False)
-		self.top.cmdSetVCCXVoltage(self.top.vccx.minVoltage())
-		self.top.cmdSetVPPVoltage(self.top.vpp.minVoltage())
+		GenericAlgorithms(self).simpleVoltageShutdown()
 
 	def readSignature(self):
 		# Override me in the subclass, if required.

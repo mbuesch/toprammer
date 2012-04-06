@@ -41,8 +41,9 @@ class Chip_genericSRAM(Chip):
 		self.writeRAM(int2byte(0) * self.__sizeBytes())
 
 	def test(self):
-		self.genericTest(self.readRAM, self.writeRAM,
-				 self.__sizeBytes())
+		generic = GenericAlgorithms(self)
+		generic.simpleTest(self.readRAM, self.writeRAM,
+				   self.__sizeBytes())
 
 	def readRAM(self):
 		image = []
