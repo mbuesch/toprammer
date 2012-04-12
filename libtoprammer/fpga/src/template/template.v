@@ -21,73 +21,37 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-/* The runtime ID and revision. */
-`define RUNTIME_ID	16'hTODO   Get an unused ID from the file "RUNTIME_IDS"
-`define RUNTIME_REV	16'h01
+`include "common.vh"
 
-module template(data, ale, write, read, osc_in, zif);
-	inout [7:0] data;
-	input ale;
-	input write;
-	input read;
-	input osc_in; /* 24MHz oscillator */
-	inout [48:1] zif;
-
-	/* Interface to the microcontroller */
-	wire read_oe;		/* Read output-enable */
-	reg [7:0] address;	/* Cached address value */
-	reg [7:0] read_data;	/* Cached read data */
-
-	wire low, high;		/* Constant lo/hi */
-	assign low = 0;
-	assign high = 1;
-
-	/* The delay counter. Based on the 24MHz input clock. */
-	reg [15:0] delay_count;
-	wire osc;
-	IBUF osc_ibuf(.I(osc_in), .O(osc));
+`BOTTOMHALF_BEGIN(template, 16'hCAFE, 42) /* TODO: <<< Adjust IDs here */
+	reg examplereg;
 
 	initial begin
-		address <= 0;
-		read_data <= 0;
-		delay_count <= 0;
+		examplereg <= 0;
 	end
 
-	always @(posedge osc) begin
-		if (delay_count == 0) begin
-			/* TODO */
-		end else begin
-			delay_count <= delay_count - 1;
-		end
-	end
+	`ASYNCPROC_BEGIN
+		/* TODO */
+		examplereg <= ~examplereg;
+		`UDELAY(42)
+	`ASYNCPROC_END
 
-	always @(posedge write) begin
-		case (address)
-		8'h10: begin /* Bulk write */
+	`DATAWRITE_BEGIN
+		`ADDR(0): begin /* Write command 0 */
 			/* TODO */
 		end
-		endcase
-	end
-
-	always @(negedge read) begin
-		case (address)
-		8'h10: begin /* Bulk read */
+		`ADDR(1): begin /* Write command 1 */
 			/* TODO */
 		end
+	`DATAWRITE_END
 
-		8'hFD: read_data <= `RUNTIME_ID & 16'hFF;
-		8'hFE: read_data <= (`RUNTIME_ID >> 8) & 16'hFF;
-		8'hFF: read_data <= `RUNTIME_REV;
-		endcase
-	end
+	`DATAREAD_BEGIN
+		`ADDR(0): begin /* Read command 0 */
+			/* TODO */
+		end
+	`DATAREAD_END
 
-	always @(negedge ale) begin
-		address <= data;
-	end
-
-	assign read_oe = !read && address[4];
-
-	bufif0(zif[1], low, low);
+	bufif0(zif[1], examplereg, low);
 	bufif0(zif[2], low, low);
 	bufif0(zif[3], low, low);
 	bufif0(zif[4], low, low);
@@ -135,13 +99,4 @@ module template(data, ale, write, read, osc_in, zif);
 	bufif0(zif[46], low, low);
 	bufif0(zif[47], low, low);
 	bufif0(zif[48], low, low);
-
-	bufif1(data[0], read_data[0], read_oe);
-	bufif1(data[1], read_data[1], read_oe);
-	bufif1(data[2], read_data[2], read_oe);
-	bufif1(data[3], read_data[3], read_oe);
-	bufif1(data[4], read_data[4], read_oe);
-	bufif1(data[5], read_data[5], read_oe);
-	bufif1(data[6], read_data[6], read_oe);
-	bufif1(data[7], read_data[7], read_oe);
-endmodule
+`BOTTOMHALF_END
