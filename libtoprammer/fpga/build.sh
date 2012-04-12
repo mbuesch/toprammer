@@ -7,7 +7,7 @@ basedir="$(dirname "$0")"
 [ "$(echo -n "$basedir" | cut -c1)" = "/" ] || basedir="$PWD/$basedir"
 
 srcdir="$basedir/src"
-bindir="$basedir"
+bindir="$basedir/bin"
 
 
 die()
@@ -48,8 +48,7 @@ while [ $# -gt 0 ]; do
 		shift
 		continue
 	}
-	target="$1"
-	target="${target%.bit}"	# strip .bit suffix
+	target="$(basename "$1" .bit)"
 	# Add to list
 	targets="${targets}${target}/"
 	shift
@@ -84,21 +83,21 @@ for src in $srcdir/*; do
 	[ -d "$src" ] || continue
 
 	srcname="$(basename $src)"
-	logfile="$bindir/$srcname.build.log"
+	logfile="$basedir/$srcname.build.log"
 
-	should_build $srcname || continue
+	should_build "$srcname" || continue
 
 	echo "Building $srcname..."
-	make -C $src/ clean >/dev/null ||\
+	make -C "$src/" clean >/dev/null ||\
 		die "FAILED to clean $srcname."
 	if [ $verbose -eq 0 ]; then
-		make -C $src/ all >$logfile || {
-			cat $logfile
+		make -C "$src/" all > "$logfile" || {
+			cat "$logfile"
 			die "FAILED to build $srcname."
 		}
-		cat $logfile | grep WARNING
+		cat "$logfile" | grep WARNING
 	else
-		make -C $src/ all ||\
+		make -C "$src/" all ||\
 			die "FAILED to build $srcname."
 	fi
 
@@ -109,9 +108,9 @@ for src in $srcdir/*; do
 	else
 		cp -f "$new" "$old"
 	fi
-	make -C $src/ clean >/dev/null ||\
+	make -C "$src/" clean > /dev/null ||\
 		die "FAILED to clean $srcname."
-	rm -f $logfile
+	rm -f "$logfile"
 done
 echo "Successfully built all images."
 

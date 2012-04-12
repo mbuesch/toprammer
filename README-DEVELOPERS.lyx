@@ -679,7 +679,17 @@ Where "bitfile_name" is the name of the new chip's bitfile.
 \end_layout
 
 \begin_layout Standard
-(if you omit the bitfile_name, all bitfiles will be rebuilt).
+If you omit the 
+\begin_inset Quotes eld
+\end_inset
+
+bitfile_name
+\begin_inset Quotes erd
+\end_inset
+
+, all bitfiles will be rebuilt.
+ The resulting .BIT file will be copied to the libtoprammer/fpga/bin/ directory,
+ after build finished successfully.
 \end_layout
 
 \begin_layout Section

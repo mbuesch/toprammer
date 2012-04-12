@@ -139,13 +139,13 @@ def bitfileFind(filename):
 	if filename.startswith("/"):
 		if __probeFile(filename):
 			return filename
-	paths = ( ".", "./libtoprammer/fpga", )
+	paths = ( ".", "./libtoprammer/fpga/bin", )
 	for path in paths:
 		fullpath = path + "/" + filename
 		if __probeFile(fullpath):
 			return fullpath
 	fullpath = pkg_resources.resource_filename("libtoprammer",
-						   "fpga/" + filename)
+						   "fpga/bin/" + filename)
 	if __probeFile(fullpath):
 		return fullpath
 	return None

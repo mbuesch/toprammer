@@ -10,6 +10,6 @@ setup(	name		= "toprammer",
 	author_email	= "m@bues.ch",
 	url		= "http://bues.ch/cms/hacking/toprammer.html",
 	packages	= [ "libtoprammer", "libtoprammer/top2049", "libtoprammer/chips" ],
-	package_data	= { "libtoprammer" : [ "fpga/*.bit", "icons/*.png", ], },
+	package_data	= { "libtoprammer" : [ "fpga/bin/*.bit", "icons/*.png", ], },
 	scripts		= [ "toprammer", "toprammer-gui", "toprammer-layout", ],
 )
