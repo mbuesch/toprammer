@@ -96,7 +96,7 @@ warning_filter()
 	grep -e "$warn_regex" | while read line; do
 		local discard=
 		for discard_regex in $discard_regexes; do
-			echo "$line" | grep -qe "$discard_regex" && {
+			echo "$line" | grep -Eqe "$discard_regex" && {
 				discard=1
 				break
 			}

@@ -57,8 +57,8 @@
 									\
 		/* Delay counter, based on 24MHz __osc. */		\
 		reg [15:0] __delay_count;				\
-		wire __osc_signal;					\
-		IBUF __osc_ibuf(.I(__osc), .O(__osc_signal));
+		wire osc_signal;					\
+		IBUF __osc_ibuf(.I(__osc), .O(osc_signal));
 
 /** BOTTOMHALF_END - End bottom-half module */
 `define BOTTOMHALF_END							\
@@ -86,7 +86,7 @@
 
 /** ASYNCPROC_BEGIN - Begin asynchronous OSC-based processing section. */
 `define ASYNCPROC_BEGIN							\
-	always @(posedge __osc_signal) begin				\
+	always @(posedge osc_signal) begin				\
 		if (__delay_count == 0) begin				\
 			/* Payload code follows... */
 
