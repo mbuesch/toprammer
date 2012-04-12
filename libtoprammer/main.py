@@ -553,16 +553,22 @@ class TOP:
 		cmd += b"\x00" * (64 - len(cmd)) # padding
 		self.queueCommand(cmd)
 
+	def __makeFPGAAddr(self, address):
+		# Set the "address OK" bit
+		return address | 0x10
+
 	def cmdFPGARead(self, address):
 		"""Read a byte from the FPGA at address into the buffer register."""
-		if address == 0x10: # Fast tracked
+		address = self.__makeFPGAAddr(address)
+		if address == self.__makeFPGAAddr(0): # Fast tracked
 			self.queueCommand(int2byte(0x01))
 			return
 		self.queueCommand(int2byte(0x0B) + int2byte(address))
 
 	def cmdFPGAWrite(self, address, byte):
 		"""Write a byte to an FPGA address."""
-		if address == 0x10: # Fast tracked
+		address = self.__makeFPGAAddr(address)
+		if address == self.__makeFPGAAddr(0): # Fast tracked
 			self.queueCommand(int2byte(0x10) + int2byte(byte))
 			return
 		self.queueCommand(int2byte(0x0A) + int2byte(address) + int2byte(byte))
