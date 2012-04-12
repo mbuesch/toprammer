@@ -1,4 +1,4 @@
 NAME:=m8c-issp
-SRCS:=$(NAME).v
-
-include ../makefile.common
+XST_OPT_MODE:=Area
+XST_OPT_LEVEL:=2
+include ../../common/makefile

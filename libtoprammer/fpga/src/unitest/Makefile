@@ -1,4 +1,2 @@
 NAME:=unitest
-SRCS:=$(NAME).v
-
-include ../makefile.common
+include ../../common/makefile

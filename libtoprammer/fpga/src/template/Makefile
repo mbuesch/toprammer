@@ -1,4 +1,2 @@
 NAME:=template
-SRCS:=$(NAME).v
-
-include ../makefile.common
+include ../../common/makefile

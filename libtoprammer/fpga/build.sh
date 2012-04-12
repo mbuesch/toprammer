@@ -79,6 +79,32 @@ bitfile_is_equal() # $1=file1, $2=file2
 	[ "$sum1" = "$sum2" ]
 }
 
+# $1=src-directory
+warning_filter()
+{
+	local filterfile="$1/warning.filter"
+	local warn_regex='^WARNING'
+
+	[ -r "$filterfile" ] || {
+		# Show all warnings
+		grep -e "$warn_regex"
+		return 0
+	}
+
+	# Remove blacklisted warnings
+	local discard_regexes="$(cat "$filterfile")"
+	grep -e "$warn_regex" | while read line; do
+		local discard=
+		for discard_regex in $discard_regexes; do
+			echo "$line" | grep -qe "$discard_regex" && {
+				discard=1
+				break
+			}
+		done
+		[ -z "$discard" ] && echo "$line"
+	done
+}
+
 for src in $srcdir/*; do
 	[ -d "$src" ] || continue
 
@@ -95,7 +121,7 @@ for src in $srcdir/*; do
 			cat "$logfile"
 			die "FAILED to build $srcname."
 		}
-		cat "$logfile" | grep WARNING
+		cat "$logfile" | warning_filter "$src"
 	else
 		make -C "$src/" all ||\
 			die "FAILED to build $srcname."

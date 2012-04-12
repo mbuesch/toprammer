@@ -5,7 +5,7 @@
  *   Atmel Mega88 DIP28
  *   FPGA bottomhalf implementation
  *
- *   Copyright (c) 2010-2011 Michael Buesch <m@bues.ch>
+ *   Copyright (c) 2010-2012 Michael Buesch <m@bues.ch>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,184 +22,129 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-/* The runtime ID and revision. */
-`define RUNTIME_ID	16'h0003
-`define RUNTIME_REV	16'h01
+`include "common.vh"
 
-module atmega8dip28(data, ale, write, read, zif);
-	inout [7:0] data;
-	input ale;
-	input write;
-	input read;
-	inout [48:1] zif;
-
-	reg [7:0] address;
-	reg [7:0] read_data;
-	wire read_oe;
-
-	/* Signals to/from the DUT */
-	reg dut_oe, dut_wr, dut_xtal, dut_pagel;
-	reg dut_bs1, dut_bs2;
-	reg dut_xa0, dut_xa1;
-	reg [7:0] dut_data;
-	reg dut_vpp_en;
-	reg dut_vpp;
-	reg dut_vcc_en;
-	reg dut_vcc;
-
-	/* Constant lo/hi */
-	wire low, high;
-	assign low = 0;
-	assign high = 1;
+`BOTTOMHALF_BEGIN(atmega8dip28, 3, 1)
+	reg oe, wr, xtal, pagel;
+	reg bs1, bs2;
+	reg xa0, xa1;
+	reg [7:0] datap;
+	reg vpp_en;
+	reg vpp;
+	reg vcc_en;
+	reg vcc;
 
 	initial begin
-		address <= 0;
-		read_data <= 0;
-		dut_oe <= 0;
-		dut_wr <= 0;
-		dut_xtal <= 0;
-		dut_pagel <= 0;
-		dut_bs1 <= 0;
-		dut_bs2 <= 0;
-		dut_xa0 <= 0;
-		dut_xa1 <= 0;
-		dut_data <= 0;
-		dut_vpp_en <= 0;
-		dut_vpp <= 0;
-		dut_vcc_en <= 0;
-		dut_vcc <= 0;
+		oe <= 0;
+		wr <= 0;
+		xtal <= 0;
+		pagel <= 0;
+		bs1 <= 0;
+		bs2 <= 0;
+		xa0 <= 0;
+		xa1 <= 0;
+		datap <= 0;
+		vpp_en <= 0;
+		vpp <= 0;
+		vcc_en <= 0;
+		vcc <= 0;
 	end
 
-	always @(negedge ale) begin
-		address <= data;
-	end
+	`ASYNCPROC_NONE
 
-	always @(posedge write) begin
-		case (address)
-		8'h10: begin
+	`DATAWRITE_BEGIN
+		`ADDR(0): begin
 			/* Data write */
-			dut_data <= data;
+			datap <= in_data;
 		end
-		8'h11: begin /* VCC/VPP control */
-			dut_vpp_en <= data[0];
-			dut_vpp <= data[1];
-			dut_vcc_en <= data[2];
-			dut_vcc <= data[3];
+		`ADDR(1): begin /* VCC/VPP control */
+			vpp_en <= in_data[0];
+			vpp <= in_data[1];
+			vcc_en <= in_data[2];
+			vcc <= in_data[3];
 		end
-		8'h12: begin
+		`ADDR(2): begin
 			/* Control pin access */
-			case (data[6:0])
+			case (in_data[6:0])
 			1: begin
 				/* Unused */
 			end
 			2: begin
-				dut_oe <= data[7];
+				oe <= in_data[7];
 			end
 			3: begin
-				dut_wr <= data[7];
+				wr <= in_data[7];
 			end
 			4: begin
-				dut_bs1 <= data[7];
+				bs1 <= in_data[7];
 			end
 			5: begin
-				dut_xa0 <= data[7];
+				xa0 <= in_data[7];
 			end
 			6: begin
-				dut_xa1 <= data[7];
+				xa1 <= in_data[7];
 			end
 			7: begin
-				dut_xtal <= data[7];
+				xtal <= in_data[7];
 			end
 			8: begin
 				/* Unused */
 			end
 			9: begin
-				dut_pagel <= data[7];
+				pagel <= in_data[7];
 			end
 			10: begin
-				dut_bs2 <= data[7];
+				bs2 <= in_data[7];
 			end
 			endcase
 		end
-		endcase
-	end
+	`DATAWRITE_END
 
-	always @(negedge read) begin
-		case (address)
-		8'h10: begin
+	`DATAREAD_BEGIN
+		`ADDR(0): begin
 			/* Data read */
-			read_data[5:0] <= zif[29:24];
-			read_data[7:6] <= zif[34:33];
+			out_data[5:0] <= zif[29:24];
+			out_data[7:6] <= zif[34:33];
 		end
-		8'h12: begin
+		`ADDR(2): begin
 			/* Status read */
-			read_data[0] <= zif[13];	/* RDY */
-			read_data[7:1] <= 0;
+			out_data[0] <= zif[13];	/* RDY */
+			out_data[7:1] <= 0;
 		end
+	`DATAREAD_END
 
-		8'hFD: read_data <= `RUNTIME_ID & 16'hFF;
-		8'hFE: read_data <= (`RUNTIME_ID >> 8) & 16'hFF;
-		8'hFF: read_data <= `RUNTIME_REV;
-		endcase
-	end
-
-	assign read_oe = !read && address[4];
-
-	bufif0(zif[1], low, low);
-	bufif0(zif[2], low, low);
-	bufif0(zif[3], low, low);
-	bufif0(zif[4], low, low);
-	bufif0(zif[5], low, low);
-	bufif0(zif[6], low, low);
-	bufif0(zif[7], low, low);
-	bufif0(zif[8], low, low);
-	bufif0(zif[9], low, low);
-	bufif0(zif[10], low, low);
-	bufif0(zif[11], dut_vpp, !dut_vpp_en);	/* PC6, /RESET */
+	`ZIF_UNUSED(1)	`ZIF_UNUSED(2)	`ZIF_UNUSED(3)	`ZIF_UNUSED(4)
+	`ZIF_UNUSED(5)	`ZIF_UNUSED(6)	`ZIF_UNUSED(7)	`ZIF_UNUSED(8)
+	`ZIF_UNUSED(9)	`ZIF_UNUSED(10)
+	bufif0(zif[11], vpp, !vpp_en);		/* PC6, /RESET */
 	bufif0(zif[12], low, high);		/* PD0 */
 	bufif0(zif[13], low, high);		/* PD1, RDY/BSY */
-	bufif0(zif[14], dut_oe, low);		/* PD2, /OE */
-	bufif0(zif[15], dut_wr, low);		/* PD3, /WR */
-	bufif0(zif[16], dut_bs1, low);		/* PD4, BS1 */
-	bufif0(zif[17], dut_vcc, !dut_vcc_en);	/* VCC */
+	bufif0(zif[14], oe, low);		/* PD2, /OE */
+	bufif0(zif[15], wr, low);		/* PD3, /WR */
+	bufif0(zif[16], bs1, low);		/* PD4, BS1 */
+	bufif0(zif[17], vcc, !vcc_en);		/* VCC */
 	bufif0(zif[18], low, low);		/* GND */
-	bufif0(zif[19], dut_xtal, low);		/* PB6, XTAL1 */
+	bufif0(zif[19], xtal, low);		/* PB6, XTAL1 */
 	bufif0(zif[20], low, high);		/* PB7, XTAL2 */
-	bufif0(zif[21], dut_xa0, low);		/* PD5, XA0 */
-	bufif0(zif[22], dut_xa1, low);		/* PD6, XA1 */
-	bufif0(zif[23], dut_pagel, low);	/* PD7, PAGEL */
-	bufif0(zif[24], dut_data[0], !dut_oe);	/* PB0, DATA0 */
-	bufif0(zif[25], dut_data[1], !dut_oe);	/* PB1, DATA1 */
-	bufif0(zif[26], dut_data[2], !dut_oe);	/* PB2, DATA2 */
-	bufif0(zif[27], dut_data[3], !dut_oe);	/* PB3, DATA3 */
-	bufif0(zif[28], dut_data[4], !dut_oe);	/* PB4, DATA4 */
-	bufif0(zif[29], dut_data[5], !dut_oe);	/* PB5, DATA5 */
-	bufif0(zif[30], dut_vcc, !dut_vcc_en);	/* AVCC */
+	bufif0(zif[21], xa0, low);		/* PD5, XA0 */
+	bufif0(zif[22], xa1, low);		/* PD6, XA1 */
+	bufif0(zif[23], pagel, low);		/* PD7, PAGEL */
+	bufif0(zif[24], datap[0], !oe);		/* PB0, DATA0 */
+	bufif0(zif[25], datap[1], !oe);		/* PB1, DATA1 */
+	bufif0(zif[26], datap[2], !oe);		/* PB2, DATA2 */
+	bufif0(zif[27], datap[3], !oe);		/* PB3, DATA3 */
+	bufif0(zif[28], datap[4], !oe);		/* PB4, DATA4 */
+	bufif0(zif[29], datap[5], !oe);		/* PB5, DATA5 */
+	bufif0(zif[30], vcc, !vcc_en);		/* AVCC */
 	bufif0(zif[31], low, high);		/* AREF */
 	bufif0(zif[32], low, low);		/* GND */
-	bufif0(zif[33], dut_data[6], !dut_oe);	/* PC0, DATA6 */
-	bufif0(zif[34], dut_data[7], !dut_oe);	/* PC1, DATA7 */
-	bufif0(zif[35], dut_bs2, low);		/* PC2, BS2 */
+	bufif0(zif[33], datap[6], !oe);		/* PC0, DATA6 */
+	bufif0(zif[34], datap[7], !oe);		/* PC1, DATA7 */
+	bufif0(zif[35], bs2, low);		/* PC2, BS2 */
 	bufif0(zif[36], low, high);		/* PC3 */
 	bufif0(zif[37], low, high);		/* PC4 */
 	bufif0(zif[38], low, high);		/* PC5 */
-	bufif0(zif[39], low, low);
-	bufif0(zif[40], low, low);
-	bufif0(zif[41], low, low);
-	bufif0(zif[42], low, low);
-	bufif0(zif[43], low, low);
-	bufif0(zif[44], low, low);
-	bufif0(zif[45], low, low);
-	bufif0(zif[46], low, low);
-	bufif0(zif[47], low, low);
-	bufif0(zif[48], low, low);
-
-	bufif1(data[0], read_data[0], read_oe);
-	bufif1(data[1], read_data[1], read_oe);
-	bufif1(data[2], read_data[2], read_oe);
-	bufif1(data[3], read_data[3], read_oe);
-	bufif1(data[4], read_data[4], read_oe);
-	bufif1(data[5], read_data[5], read_oe);
-	bufif1(data[6], read_data[6], read_oe);
-	bufif1(data[7], read_data[7], read_oe);
-endmodule
+	`ZIF_UNUSED(39)	`ZIF_UNUSED(40)	`ZIF_UNUSED(41)	`ZIF_UNUSED(42)
+	`ZIF_UNUSED(43)	`ZIF_UNUSED(44)	`ZIF_UNUSED(45)	`ZIF_UNUSED(46)
+	`ZIF_UNUSED(47)	`ZIF_UNUSED(48)
+`BOTTOMHALF_END
