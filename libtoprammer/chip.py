@@ -282,7 +282,7 @@ class ChipDescription:
 
 		if not chipID:
 			chipID = bitfile
-		if type(chipVendors) == type(str()):
+		if isinstance(chipVendors, str):
 			chipVendors = (chipVendors, )
 		self.chipImplClass = chipImplClass
 		self.bitfile = bitfile
