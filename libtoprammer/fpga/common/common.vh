@@ -58,13 +58,22 @@
 		/* Delay counter, based on 24MHz __osc. */		\
 		reg [15:0] __delay_count;				\
 		wire osc_signal;					\
-		IBUF __osc_ibuf(.I(__osc), .O(osc_signal));
+		IBUF __osc_ibuf(.I(__osc), .O(osc_signal));		\
+									\
+		/* Command state */					\
+		reg [1:0] __cmd_running;				\
+		reg [3:0] __cmd;					\
+		reg [3:0] __cmd_state;
 
 /** BOTTOMHALF_END - End bottom-half module */
 `define BOTTOMHALF_END							\
 		initial begin						\
 			__addr_latch <= 0;				\
 			out_data <= 0;					\
+			__delay_count <= 0;				\
+			__cmd_running <= 0;				\
+			__cmd <= 0;					\
+			__cmd_state <= 0;				\
 		end							\
 									\
 		always @(negedge __ale) begin				\
@@ -142,6 +151,40 @@
  */
 `define ZIF_UNUSED(PIN)							\
 	bufif0(zif[PIN], low, low);
+
+/** CMD_RUN - Run a command.
+ * @NR: The command number.
+ */
+`define CMD_RUN(NR)							\
+	__cmd <= (NR);							\
+	__cmd_running[0] <= ~__cmd_running[1];
+
+/** CMD_IS_RUNNING - Returns a boolean whether a command is running. */
+`define CMD_IS_RUNNING							\
+	(__cmd_running[0] != __cmd_running[1])
+
+/** CMD_IS_RUNNING - Returns a boolean whether a certain command is running.
+ * @NR: The command number to check.
+ */
+`define CMD_IS(NR)							\
+	(`CMD_IS_RUNNING && __cmd == (NR))
+
+/** CMD_NR - Returns the command number. */
+`define CMD_NR	__cmd
+
+/** CMD_FINISH - Finishes a command. */
+`define CMD_FINISH							\
+	__cmd_running[1] <= __cmd_running[0];				\
+	__cmd_state <= 0;
+
+/** CMD_STATE - Get command state. */
+`define CMD_STATE	__cmd_state
+
+/** CMD_STATE_SET - Set command state.
+ * @VALUE: New value.
+ */
+`define CMD_STATE_SET(VALUE)						\
+	__cmd_state <= (VALUE);
 
 /* vim: filetype=verilog:shiftwidth=8:tabstop=8:softtabstop=8
  */

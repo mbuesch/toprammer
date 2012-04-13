@@ -1,2 +1,2 @@
-NAME:=m2764a
+NAME:=_27cxxxdip28
 include ../../common/makefile

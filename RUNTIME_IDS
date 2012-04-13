@@ -23,12 +23,12 @@
 0x0003		=> atmega8dip28
 0x0004		=> atmega32dip40
 0x0005		=> at89c2051dip20
-0x0006		=> m2764a
+0x0006		=> UNUSED
 0x0007		=> m8c_issp
 0x0008		=> unitest
 0x0009		=> w29ee011dip32
 0x000A		=> hm62256dip28
 0x000B		=> m24c16dip8
-0x000C		=> at27c256r
+0x000C		=> 27cxxxdip28
 0xFEFD		=> Reserved. Do not use.
 0xFFFF		=> Reserved. Do not use.

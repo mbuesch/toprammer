@@ -80,8 +80,7 @@ def nrBitsSet(integer):
 	return count
 
 def roundup(x, y):
-	x = int(x)
-	y = int(y)
+	x, y = int(x), int(y)
 	return ((x + (y - 1)) // y) * y
 
 hexdump_re = re.compile(r"0x[0-9a-fA-F]+:\s+([0-9a-fA-F\s]+)\s*.*")
