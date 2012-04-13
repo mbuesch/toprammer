@@ -159,7 +159,7 @@
 	assign a15    = (ctype >= `CTYPE_512) ? caddr[15] : low;
 
 	wire oe_en;
-	assign oe_en = (ctype == `CTYPE_32 || ctype == `CTYPE_512) ?
+	assign oe_en = (prog_en && (ctype == `CTYPE_32 || ctype == `CTYPE_512)) ?
 			high : low;
 
 	/* !CE and !P handling */
