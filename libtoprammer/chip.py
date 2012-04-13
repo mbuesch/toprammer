@@ -74,6 +74,14 @@ class Chip:
 				flags |= flag
 		return flags
 
+	@classmethod
+	def createInstance(cls, chipDescription, programmerType):
+		instance = cls()
+		instance.chipDescription = chipDescription
+		instance.programmerType = programmerType
+		instance.generateVoltageLayouts()
+		return instance
+
 	def __init__(self, chipPackage=None, chipPinVCC=None, chipPinsVPP=None, chipPinGND=None):
 		"""chipPackage is the ID string for the package.
 		May be None, if no initial auto-layout is required.
@@ -89,24 +97,17 @@ class Chip:
 	def setTOP(self, top):
 		self.top = top
 
-	def setChipID(self, chipID):
-		self.chipID = chipID
-
-	def setProgrammerType(self, programmerType):
-		"Set the TOP programmer type. See class TOP.TYPE_..."
-		self.programmerType = programmerType
-
 	def printWarning(self, message):
-		self.top.printWarning(self.chipID + ": " + message)
+		self.top.printWarning(self.chipDescription.chipID + ": " + message)
 
 	def printInfo(self, message):
-		self.top.printInfo(self.chipID + ": " + message)
+		self.top.printInfo(self.chipDescription.chipID + ": " + message)
 
 	def printDebug(self, message):
-		self.top.printDebug(self.chipID + ": " + message)
+		self.top.printDebug(self.chipDescription.chipID + ": " + message)
 
 	def throwError(self, message):
-		raise TOPException(self.chipID + ": " + message)
+		raise TOPException(self.chipDescription.chipID + ": " + message)
 
 	def generateVoltageLayouts(self):
 		if self.__chipPackage:
@@ -176,55 +177,55 @@ class Chip:
 
 	def readSignature(self):
 		# Override me in the subclass, if required.
-		raise TOPException("Signature reading not supported on " + self.chipID)
+		self.throwError("Signature reading not supported")
 
 	def erase(self):
 		# Override me in the subclass, if required.
-		raise TOPException("Chip erasing not supported on " + self.chipID)
+		self.throwError("Chip erasing not supported")
 
 	def test(self):
 		# Override me in the subclass, if required.
-		raise TOPException("Chip testing not supported on " + self.chipID)
+		self.throwError("Chip testing not supported")
 
 	def readProgmem(self):
 		# Override me in the subclass, if required.
-		raise TOPException("Program memory reading not supported on " + self.chipID)
+		self.throwError("Program memory reading not supported")
 
 	def writeProgmem(self, image):
 		# Override me in the subclass, if required.
-		raise TOPException("Program memory writing not supported on " + self.chipID)
+		self.throwError("Program memory writing not supported")
 
 	def readEEPROM(self):
 		# Override me in the subclass, if required.
-		raise TOPException("EEPROM reading not supported on " + self.chipID)
+		self.throwError("EEPROM reading not supported")
 
 	def writeEEPROM(self, image):
 		# Override me in the subclass, if required.
-		raise TOPException("EEPROM writing not supported on " + self.chipID)
+		self.throwError("EEPROM writing not supported")
 
 	def readFuse(self):
 		# Override me in the subclass, if required.
-		raise TOPException("Fuse reading not supported on " + self.chipID)
+		self.throwError("Fuse reading not supported")
 
 	def writeFuse(self, image):
 		# Override me in the subclass, if required.
-		raise TOPException("Fuse writing not supported on " + self.chipID)
+		self.throwError("Fuse writing not supported")
 
 	def readLockbits(self):
 		# Override me in the subclass, if required.
-		raise TOPException("Lockbit reading not supported on " + self.chipID)
+		self.throwError("Lockbit reading not supported")
 
 	def writeLockbits(self, image):
 		# Override me in the subclass, if required.
-		raise TOPException("Lockbit writing not supported on " + self.chipID)
+		self.throwError("Lockbit writing not supported")
 
 	def readRAM(self):
 		# Override me in the subclass, if required.
-		raise TOPException("RAM reading not supported on " + self.chipID)
+		self.throwError("RAM reading not supported")
 
 	def writeRAM(self, image):
 		# Override me in the subclass, if required.
-		raise TOPException("RAM writing not supported on " + self.chipID)
+		self.throwError("RAM writing not supported")
 
 __registeredChips = []
 
@@ -307,16 +308,14 @@ class ChipDescription:
 		"""Find chip implementations by ID and return a list of descriptors
 		and instances of it."""
 		found = []
-		for chip in getRegisteredChips():
-			if chip.broken and not allowBroken:
+		for chipDesc in getRegisteredChips():
+			if chipDesc.broken and not allowBroken:
 				continue
-			if chip.chipID.lower().find(chipID.lower()) >= 0:
-				instance = chip.chipImplClass()
-				instance.registeredChip = chip
-				instance.setChipID(chip.chipID)
-				instance.setProgrammerType(programmerType)
-				instance.generateVoltageLayouts()
-				found.append( (chip, instance) )
+			if chipDesc.chipID.lower().find(chipID.lower()) >= 0:
+				instance = chipDesc.chipImplClass.createInstance(
+					chipDescription = chipDesc,
+					programmerType = programmerType)
+				found.append( (chipDesc, instance) )
 		return found
 
 	@staticmethod
