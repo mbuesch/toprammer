@@ -41,19 +41,16 @@ class Chip:
 	SUPPORT_RAMWRITE	= (1 << 11)
 	SUPPORT_TEST		= (1 << 12)
 
-	@staticmethod
-	def chipSupportsAttr(chipImplClass, attribute):
+	@classmethod
+	def chipSupportsAttr(cls, methodName):
 		"""Check if a chip implementation supports a feature.
-		'attribute' is the class member function to check for"""
+		'methodName' is the class member function to check for"""
 		# This works by checking whether the subclass overloaded
 		# the member function attribute.
-		if str(type(chipImplClass)) == "<type 'instance'>":
-			# This is an instance. Get the class
-			chipImplClass = chipImplClass.registeredChip.chipImplClass
-		return getattr(chipImplClass, attribute) != getattr(Chip, attribute)
+		return getattr(cls, methodName) != getattr(Chip, methodName)
 
-	@staticmethod
-	def getSupportFlags(chip):
+	@classmethod
+	def getSupportFlags(cls):
 		"Get the SUPPORT_... flags for this chip"
 		flags = 0
 		for (methodName, flag) in (
@@ -70,7 +67,7 @@ class Chip:
 				("readRAM",		Chip.SUPPORT_RAMREAD),
 				("writeRAM",		Chip.SUPPORT_RAMWRITE),
 				("test",		Chip.SUPPORT_TEST)):
-			if Chip.chipSupportsAttr(chip, methodName):
+			if cls.chipSupportsAttr(methodName):
 				flags |= flag
 		return flags
 
@@ -387,7 +384,7 @@ class ChipDescription:
 				(Chip.SUPPORT_RAMWRITE,		"RAM writing"),
 				(Chip.SUPPORT_TEST,		"Unit-testing"),
 			)
-			supportFlags = Chip.getSupportFlags(self.chipImplClass)
+			supportFlags = self.chipImplClass.getSupportFlags()
 			for (flag, description) in supportedFeatures:
 				if flag & supportFlags:
 					fd.write("%25s:  %s\n" % ("Support for", description))

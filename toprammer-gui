@@ -796,12 +796,12 @@ class HwThread(QThread):
 			layoutGen = chip.getLayoutGenerator()
 			if layoutGen:
 				asciiArtLayout = layoutGen.zifLayoutAsciiArt()
-			chipSupportFlags = Chip.getSupportFlags(chip)
+			chipSupportFlags = chip.getSupportFlags()
 			self.__unblockCancellation()
 			retval = (chipSupportFlags, asciiArtLayout)
 		elif task == self.TASK_READALL:
 			self.top.checkChip()
-			supportFlags = Chip.getSupportFlags(self.top.getChip())
+			supportFlags = self.top.getChip().getSupportFlags()
 			self.__globalProgressInit(nrBitsSet(supportFlags & (
 					Chip.SUPPORT_SIGREAD |
 					Chip.SUPPORT_PROGMEMREAD |
