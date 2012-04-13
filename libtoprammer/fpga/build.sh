@@ -79,25 +79,32 @@ bitfile_is_equal() # $1=file1, $2=file2
 	[ "$sum1" = "$sum2" ]
 }
 
-# $1=src-directory
+# $1=src-directory, $1=verbose
 warning_filter()
 {
-	local filterfile="$1/warning.filter"
-	local warn_regex='^WARNING'
+	local chip_filter="$1/warning.filter"
+	local global_filter="$basedir/warning.filter"
+	local verbose="$2"
 
-	[ -r "$filterfile" ] || {
-		# Show all warnings
-		grep -e "$warn_regex"
+	[ -n "$verbose" -a "$verbose" != "0" ] && {
+		# Show all messages
+		cat
 		return 0
 	}
 
-	# Remove blacklisted warnings
-	local discard_regexes="$(cat "$filterfile")"
-	grep -e "$warn_regex" | while read line; do
+	# Read filter regexes
+	local discard_regexes=
+	[ -r "$global_filter" ] &&\
+		discard_regexes="$discard_regexes $(cat "$global_filter")"
+	[ -r "$chip_filter" ] &&\
+		discard_regexes="$discard_regexes $(cat "$chip_filter")"
+
+	# Filter for warnings and remove blacklisted warnings.
+	grep -Ee '^WARNING' | while read line; do
 		local discard=
 		for discard_regex in $discard_regexes; do
 			echo "$line" | grep -Eqe "$discard_regex" && {
-				discard=1
+				discard=1  # Discard it!
 				break
 			}
 		done
@@ -114,18 +121,20 @@ for src in $srcdir/*; do
 	should_build "$srcname" || continue
 
 	echo "Building $srcname..."
+	rm -f "$logfile"
 	make -C "$src/" clean >/dev/null ||\
 		die "FAILED to clean $srcname."
-	if [ $verbose -eq 0 ]; then
-		make -C "$src/" all > "$logfile" || {
-			cat "$logfile"
-			die "FAILED to build $srcname."
-		}
-		cat "$logfile" | warning_filter "$src"
-	else
-		make -C "$src/" all ||\
-			die "FAILED to build $srcname."
-	fi
+	errfile="$(mktemp)"
+	{
+		make -C "$src/" all 2>&1
+		echo "$?" >> "$errfile"
+	} | tee "$logfile" | warning_filter "$src" "$verbose"
+	errcode="$(cat "$errfile")"
+	rm -f "$errfile"
+	[ "$errcode" = "0" ] || {
+		[ $verbose -eq 0 ] && cat "$logfile"
+		die "FAILED to build $srcname."
+	}
 
 	new="$src/$srcname.bit"
 	old="$bindir/$srcname.bit"
