@@ -29,10 +29,14 @@ import getopt
 def usage():
 	print "TOP2049 Open Source programming suite v%s" % VERSION
 	print ""
-	print "Usage: %s [OPTIONS]" % sys.argv[0]
+	print "Usage: %s [OPTIONS] [ACTIONS]" % sys.argv[0]
 	print ""
 	print " -c|--chip-id            The ID of the handled chip. (mandatory)"
 	print "                         See -t|--list for a list of supported chips."
+	print ""
+	print "Optional:"
+	print " -C|--chip-opt NAME=VAL  Set a chip-id specific option."
+	print "                         Use  -c CHIPID -t  to get a list of options."
 	print ""
 	print "Actions:"
 	print " -s|--read-sig FILE      Read the signature bytes"
@@ -54,7 +58,7 @@ def usage():
 	print " -r|--read-ram FILE      Read the RAM"
 	print " -R|--write-ram FILE     Write the RAM"
 	print ""
-	print "Optional:"
+	print "Other options:"
 	print " -t|--list               Print a list of supported chips and exit."
 	print "                         Use -V|--verbose to control the list verbosity (1-4)"
 	print " -d|--device BUS.DEV     Use the programmer at BUS.DEV"
@@ -116,6 +120,7 @@ def main(argv):
 	opt_forceLevel = 0
 	opt_forceBitfileUpload = False
 	opt_chipID = None
+	opt_chipOptions = []
 	opt_device = None
 	opt_action = None
 	opt_file = None
@@ -125,19 +130,28 @@ def main(argv):
 	opt_outformat = "bin"
 	try:
 		(opts, args) = getopt.getopt(sys.argv[1:],
-			"hc:d:V:Qs:xTp:P:e:E:f:F:o:Ul:L:r:R:BtI:O:",
+			"hc:d:V:Qs:xTp:P:e:E:f:F:o:Ul:L:r:R:BtI:O:C:",
 			[ "help", "chip-id=", "device=", "verbose=", "noqueue",
 			  "read-sig=", "erase", "test", "read-prog=", "write-prog=",
 			  "read-eeprom=", "write-eeprom=", "read-fuse=", "write-fuse=",
 			  "read-lock=", "write-lock=", "read-ram=", "write-ram=",
 			  "force=", "force-upload", "broken", "list",
-			  "in-format=", "out-format=", ])
+			  "in-format=", "out-format=", "chip-opt=", ])
 		for (o, v) in opts:
 			if o in ("-h", "--help"):
 				usage()
 				return 0
 			if o in ("-c", "--chip-id"):
 				opt_chipID = v
+			if o in ("-C", "--chip-opt"):
+				try:
+					v = v.split('=')
+					name, value = v[0], v[1]
+				except (IndexError, ValueError), e:
+					print "-C|--chip-opt invalid parameter"
+					return 1
+				copt = AssignedChipOption(name, value)
+				opt_chipOptions.append(copt)
 			if o in ("-t", "--list"):
 				opt_action = "print-list"
 			if o in ("-d", "--device"):
@@ -213,14 +227,20 @@ def main(argv):
 
 	try:
 		if opt_action == "print-list":
-			ChipDescription.dumpAll(sys.stdout, verbose=opt_verbose, showBroken=True)
+			if opt_chipID:
+				desc = ChipDescription.findOne(opt_chipID, True)
+				desc.dump(sys.stdout, verbose=opt_verbose)
+			else:
+				ChipDescription.dumpAll(sys.stdout,
+					verbose=opt_verbose, showBroken=True)
 			return 0
 
 		top = TOP(busDev = opt_device,
 			  verbose = opt_verbose, forceLevel = opt_forceLevel,
 			  noqueue = opt_noqueue, usebroken = opt_usebroken,
 			  forceBitfileUpload = opt_forceBitfileUpload)
-		top.initializeChip(opt_chipID)
+		top.initializeChip(chipID = opt_chipID,
+				   assignedChipOptions = opt_chipOptions)
 		if opt_action == "read-sig":
 			fileOut(opt_file, opt_outformat, top.readSignature())
 		elif opt_action == "erase":

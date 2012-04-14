@@ -96,14 +96,21 @@ class TOP:
 
 		self.initializeProgrammer()
 
-	def initializeChip(self, chipID):
+	def getProgrammerType(self):
+		"Returns the TYPE_TOPxxxx"
+		return self.topType
+
+	def initializeChip(self, chipID, assignedChipOptions=()):
 		"Initialize the programmer for a chip"
 		# If a chip is initialized, shut it down first.
 		if self.chip:
 			self.shutdownChip()
 		# Find the implementation of the chip.
-		(descriptor, self.chip) = ChipDescription.findOne(self.topType, chipID, self.usebroken)
-		self.chip.setTOP(self)
+		descriptor = ChipDescription.findOne(chipID, self.usebroken)
+		self.chip = descriptor.chipImplClass.createInstance(
+			top = self,
+			chipDescription = descriptor,
+			assignedChipOptions = assignedChipOptions)
 		# Find the bitfile for the chip.
 		bitfile = bitfileFind(descriptor.bitfile)
 		if not bitfile:

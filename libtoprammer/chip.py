@@ -72,10 +72,18 @@ class Chip:
 		return flags
 
 	@classmethod
-	def createInstance(cls, chipDescription, programmerType):
+	def createInstance(cls, top, chipDescription, assignedChipOptions=()):
 		instance = cls()
+		instance.top = top
 		instance.chipDescription = chipDescription
-		instance.programmerType = programmerType
+		for acopt in assignedChipOptions:
+			copt = chipDescription.getChipOption(acopt.name)
+			if not copt:
+				raise TOPException("'%s' is not a valid chip option "
+					"for chip ID '%s'" %\
+					(acopt.name, chipDescription.chipID))
+			acopt.detectAndVerifyType(copt.optType)
+		instance.assignedChipOptions = assignedChipOptions
 		instance.generateVoltageLayouts()
 		return instance
 
@@ -90,9 +98,6 @@ class Chip:
 		self.__chipPinVCC = chipPinVCC
 		self.__chipPinsVPP = chipPinsVPP
 		self.__chipPinGND = chipPinGND
-
-	def setTOP(self, top):
-		self.top = top
 
 	def printWarning(self, message):
 		self.top.printWarning(self.chipDescription.chipID + ": " + message)
@@ -109,7 +114,7 @@ class Chip:
 	def generateVoltageLayouts(self):
 		if self.__chipPackage:
 			self.generator = createLayoutGenerator(self.__chipPackage)
-			self.generator.setProgrammerType(self.programmerType)
+			self.generator.setProgrammerType(self.top.getProgrammerType())
 			self.generator.setPins(vccPin=self.__chipPinVCC,
 					       vppPins=self.__chipPinsVPP,
 					       gndPin=self.__chipPinGND)
@@ -166,6 +171,15 @@ class Chip:
 	def progressMeter(self, step):
 		self.top.progressMeter(AbstractUserInterface.PROGRESSMETER_CHIPACCESS,
 				       step)
+
+	def getChipOptionValue(self, name, default=None):
+		"""Get an AssignedChipOption value that was set by the user.
+		If no such option is found, it returns 'default'."""
+		name = name.lower()
+		for acopt in self.assignedChipOptions:
+			if acopt.name.lower() == name:
+				return acopt.value
+		return default
 
 	def shutdownChip(self):
 		# Override me in the subclass, if required.
@@ -243,6 +257,46 @@ class BitDescription:
 		self.bitNr = bitNr
 		self.description = description
 
+class ChipOption(object):
+	TYPE_UNKNOWN	= "unknown"
+	TYPE_BOOL	= "boolean"
+
+	def __init__(self, optType, name, description=""):
+		self.optType = optType
+		self.name = name
+		self.description = description
+
+	def __repr__(self):
+		return self.name
+
+class ChipOptionBool(ChipOption):
+	def __init__(self, name, description=""):
+		ChipOption.__init__(self, ChipOption.TYPE_BOOL,
+				    name, description)
+
+	def __repr__(self):
+		desc = " / " + self.description if self.description else ""
+		return "%s (boolean%s)" % (self.name, desc)
+
+class AssignedChipOption(ChipOption):
+	def __init__(self, name, value):
+		ChipOption.__init__(self, ChipOption.TYPE_UNKNOWN, name)
+		self.value = value
+
+	def detectAndVerifyType(self, expectType):
+		assert(expectType != self.TYPE_UNKNOWN)
+		if self.optType != self.TYPE_UNKNOWN:
+			return
+		value = None
+		if expectType == self.TYPE_BOOL:
+			value = str2bool(self.value)
+		if value is None:
+			raise TOPException("Chip option '%s' type mismatch. "
+				"Must be '%s'." %\
+				(self.name, expectType))
+		self.optType = expectType
+		self.value = value
+
 class ChipDescription:
 	# Possible chip types
 	TYPE_MCU	= 0	# Microcontroller
@@ -259,6 +313,7 @@ class ChipDescription:
 		     chipVendors="Other",
 		     description="", fuseDesc=(), lockbitDesc=(),
 		     packages=None, comment="",
+		     chipOptions=(),
 		     maintainer="Michael Buesch <m@bues.ch>",
 		     broken=False):
 		"""Chip implementation class description.
@@ -276,6 +331,7 @@ class ChipDescription:
 		packages	=> List of supported packages.
 				   Each entry is a tuple of two strings: ("PACKAGE", "description")
 		comment		=> Additional comment string.
+		chipOptions	=> Tuple of ChipOption instances, if any.
 		maintainer	=> Maintainer name.
 		broken		=> Boolean flag to mark the implementation as broken.
 		"""
@@ -295,48 +351,43 @@ class ChipDescription:
 		self.lockbitDesc = lockbitDesc
 		self.packages = packages
 		self.comment = comment
+		self.chipOptions = chipOptions
 		self.maintainer = maintainer
 		self.broken = broken
 
 		getRegisteredChips().append(self)
 
-	@staticmethod
-	def find(programmerType, chipID, allowBroken=False):
-		"""Find chip implementations by ID and return a list of descriptors
-		and instances of it."""
-		found = []
-		for chipDesc in getRegisteredChips():
-			if chipDesc.broken and not allowBroken:
-				continue
-			if chipDesc.chipID.lower().find(chipID.lower()) >= 0:
-				instance = chipDesc.chipImplClass.createInstance(
-					chipDescription = chipDesc,
-					programmerType = programmerType)
-				found.append( (chipDesc, instance) )
+	@classmethod
+	def findAll(cls, chipID, allowBroken=False):
+		"Find all ChipDescriptions by fuzzy chipID match."
+		found = [ chipDesc for chipDesc in getRegisteredChips() if (
+			(not chipDesc.broken or allowBroken) and\
+			(chipDesc.chipID.lower().find(chipID.lower()) >= 0)
+		) ]
 		return found
 
-	@staticmethod
-	def findOne(programmerType, chipID, allowBroken=False):
-		"""Find a chip implementation and return the descriptor
-		and an instance of it. If chipID is not unique, this raises
-		an exception"""
-		found = ChipDescription.find(programmerType, chipID, allowBroken)
+	@classmethod
+	def findOne(cls, chipID, allowBroken=False):
+		"""Find a chip implementation and return the ChipDescriptor.
+		Raise an exception, if chipID is not unique."""
+		found = cls.findAll(chipID, allowBroken)
 		if not found:
 			raise TOPException("Did not find chipID \"%s\"" % chipID)
 		if len(found) != 1:
-			choices = map(lambda (desc, inst): desc.chipID, found)
-			raise TOPException("The chipID \"%s\" is not unique. Choices are: %s" %\
+			choices = [ desc.chipID for desc in found ]
+			raise TOPException(
+				"The chipID \"%s\" is not unique. Choices are: %s" %\
 				(chipID, ", ".join(choices)))
 		return found[0]
 
-	@staticmethod
-	def dumpAll(fd, verbose=1, showBroken=True):
+	@classmethod
+	def dumpAll(cls, fd, verbose=1, showBroken=True):
 		"Dump all supported chips to file fd."
 		count = 0
 		for chip in getRegisteredChips():
 			if chip.broken and not showBroken:
 				continue
-			if chip.chipType == ChipDescription.TYPE_INTERNAL:
+			if chip.chipType == cls.TYPE_INTERNAL:
 				continue
 			count = count + 1
 			if count >= 2:
@@ -345,29 +396,43 @@ class ChipDescription:
 
 	def dump(self, fd, verbose=1):
 		"Dump information about a registered chip to file fd."
+
+		def wrline(prefix, content):
+			# Write a formatted feature line
+			fd.write("%15s:  %s\n" % (prefix, content))
+
+		banner = ""
 		if self.chipVendors:
-			fd.write(", ".join(self.chipVendors) + "  ")
+			banner += ", ".join(self.chipVendors) + "  "
 		if self.description:
-			fd.write(self.description)
+			banner += self.description
 		else:
-			fd.write(self.bitfile)
+			banner += self.bitfile
 		extraFlags = []
 		if not self.maintainer:
 			extraFlags.append("Orphaned")
 		if self.broken:
 			extraFlags.append("Broken implementation")
 		if extraFlags:
-			fd.write("  (%s)" % "; ".join(extraFlags))
-		fd.write("\n")
+			banner += "  (%s)" % "; ".join(extraFlags)
+		sep = '+' + '-' * (len(banner) + 4) + '+\n'
+		fd.write(sep + '|  ' + banner + '  |\n' + sep)
+
 		if verbose >= 1:
-			fd.write("%25s:  %s\n" % ("ChipID", self.chipID))
+			wrline("Chip ID", self.chipID)
 		if verbose >= 2:
-			fd.write("%25s:  %s\n" % ("BIT-file", self.bitfile))
+			bitfile = self.bitfile
+			if not bitfile.endswith('.bit'):
+				bitfile += '.bit'
+			wrline("BIT file", bitfile)
+		if verbose >= 1:
+			for opt in self.chipOptions:
+				wrline("Chip option", str(opt))
 		if verbose >= 3 and self.packages:
 			for (package, description) in self.packages:
 				if description:
 					description = "  (" + description + ")"
-				fd.write("%25s:  %s%s\n" % ("Supported package", package, description))
+				wrline("Chip package", package + description)
 		if verbose >= 4:
 			supportedFeatures = (
 				(Chip.SUPPORT_ERASE,		"Full chip erase"),
@@ -387,11 +452,19 @@ class ChipDescription:
 			supportFlags = self.chipImplClass.getSupportFlags()
 			for (flag, description) in supportedFeatures:
 				if flag & supportFlags:
-					fd.write("%25s:  %s\n" % ("Support for", description))
+					wrline("Support for", description)
 		if verbose >= 2 and self.comment:
-			fd.write("%25s:  %s\n" % ("Comment", self.comment))
+			wrline("Comment", self.comment)
 		if verbose >= 3:
 			maintainer = self.maintainer
 			if not maintainer:
 				maintainer = "NONE"
-			fd.write("%25s:  %s\n" % ("Maintainer", maintainer))
+			wrline("Maintainer", maintainer)
+
+	def getChipOption(self, name):
+		"Get a ChipOption by case insensitive 'name'."
+		name = name.lower()
+		for opt in self.chipOptions:
+			if opt.name.lower() == name:
+				return opt
+		return None
