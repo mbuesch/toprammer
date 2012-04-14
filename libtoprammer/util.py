@@ -67,6 +67,18 @@ def bytes2ascii(bindata):
 		return ""
 	return "".join(map(byte2ascii, bindata))
 
+def str2bool(string):
+	string = str(string).lower().strip()
+	if string in ("false", "off", "no"):
+		return False
+	if string in ("true", "on", "yes"):
+		return True
+	try:
+		return bool(int(string, 10))
+	except (ValueError), e:
+		pass
+	return None
+
 def genRandomBlob(size):
 	blob = map(lambda x: int2byte(random.randint(0, 0xFF)),
 		   range(0, size))
