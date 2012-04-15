@@ -100,16 +100,20 @@ class Chip:
 		self.__chipPinGND = chipPinGND
 
 	def printWarning(self, message):
-		self.top.printWarning(self.chipDescription.chipID + ": " + message)
+		self.top.printWarning(self.chipDescription.chipID +\
+				      ": Warning - " + message)
 
 	def printInfo(self, message):
-		self.top.printInfo(self.chipDescription.chipID + ": " + message)
+		self.top.printInfo(self.chipDescription.chipID +\
+				   ": " + message)
 
 	def printDebug(self, message):
-		self.top.printDebug(self.chipDescription.chipID + ": " + message)
+		self.top.printDebug(self.chipDescription.chipID +\
+				    ": Debug - " + message)
 
 	def throwError(self, message):
-		raise TOPException(self.chipDescription.chipID + ": " + message)
+		raise TOPException(self.chipDescription.chipID +\
+				   ": " + message)
 
 	def generateVoltageLayouts(self):
 		if self.__chipPackage:
