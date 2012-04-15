@@ -62,12 +62,12 @@ class Chip_27cXXX(Chip):
 
 	# Programming pulse lengths (in microseconds)
 	ppulseLengths = {
-		CTYPE_16	: 500,
-		CTYPE_32	: 500,
-		CTYPE_64	: 500,
+		CTYPE_16	: 1000,
+		CTYPE_32	: 1000,
+		CTYPE_64	: 1000,
 		CTYPE_128	: 1000,
 		CTYPE_256	: 500,
-		CTYPE_512	: 100,
+		CTYPE_512	: 500,
 	}
 
 	# Can we read the chip with VPP enabled?
@@ -90,17 +90,6 @@ class Chip_27cXXX(Chip):
 		CTYPE_128	: True,
 		CTYPE_256	: True,
 		CTYPE_512	: False,
-	}
-
-	# Chip has 'margin mode'.
-	# Can be overridden by 'margin_mode' chip option.
-	hasMarginMode = {
-		CTYPE_16	: False,
-		CTYPE_32	: False,
-		CTYPE_64	: False,
-		CTYPE_128	: False,
-		CTYPE_256	: False,
-		CTYPE_512	: True,
 	}
 
 	def __init__(self, chipType,
@@ -143,16 +132,13 @@ class Chip_27cXXX(Chip):
 		progpulseUsec = self.getChipOptionValue(
 			"ppulse_length",
 			self.ppulseLengths[self.chipType])
-		marginMode = self.getChipOptionValue(
-			"margin_mode",
-			self.hasMarginMode[self.chipType])
 
 		# Run the write algorithm
 		self.__writeAlgo(image, vppVolt, immediateVerify, overprogram,
-				 progpulseUsec, marginMode)
+				 progpulseUsec)
 
 	def __writeAlgo(self, image, vppVolt, immediateVerify, overprogramPulse,
-			progpulseUsec, marginMode):
+			progpulseUsec):
 		self.printInfo("Using %.2f VPP" % vppVolt)
 		self.printInfo("Using %s verify." %\
 			("immediate" if immediateVerify else "detached"))
@@ -167,10 +153,6 @@ class Chip_27cXXX(Chip):
 				"you intended.")
 		self.printInfo("Using ppulse length: %d microseconds" %\
 			progpulseUsec)
-		self.printInfo("%s 'margin mode'." %\
-			("Using" if marginMode else "Not using"))
-
-		#TODO margin mode
 
 		self.__turnOn()
 		self.addrSetter.reset()
@@ -313,8 +295,6 @@ class ChipDescription_27cXXX(ChipDescription):
 					"Immediately verify each written byte"),
 				ChipOptionBool("overprogram_pulse",
 					"Perform an 'overprogramming' pulse"),
-				ChipOptionBool("margin_mode",
-					"Force enable 'Margin mode'. See datasheet!"),
 				ChipOptionFloat("vpp_voltage",
 					"Override the default VPP voltage",
 					minVal=10.0, maxVal=14.0),
