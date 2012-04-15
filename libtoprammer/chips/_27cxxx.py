@@ -40,7 +40,7 @@ class Chip_27cXXX(Chip):
 	CTYPE_256	= 4
 	CTYPE_512	= 5
 
-	# Type to size (in bytes)
+	# Chip sizes (in bytes)
 	ctype2size = {
 		CTYPE_16	: 16 * 1024 // 8,
 		CTYPE_32	: 32 * 1024 // 8,
@@ -48,6 +48,59 @@ class Chip_27cXXX(Chip):
 		CTYPE_128	: 128 * 1024 // 8,
 		CTYPE_256	: 256 * 1024 // 8,
 		CTYPE_512	: 512 * 1024 // 8,
+	}
+
+	# Programming voltages
+	vppTable = {
+		CTYPE_16	: 12.75,
+		CTYPE_32	: 12.75,
+		CTYPE_64	: 12.75,
+		CTYPE_128	: 12.75,
+		CTYPE_256	: 12.75,
+		CTYPE_512	: 12.75,
+	}
+
+	# Programming pulse lengths (in microseconds)
+	ppulseLengths = {
+		CTYPE_16	: 500,
+		CTYPE_32	: 500,
+		CTYPE_64	: 500,
+		CTYPE_128	: 1000,
+		CTYPE_256	: 500,
+		CTYPE_512	: 100,
+	}
+
+	# Can we read the chip with VPP enabled?
+	readWithVPP = {
+		CTYPE_16	: True,
+		CTYPE_32	: False, # VPP is shared with OE
+		CTYPE_64	: True,
+		CTYPE_128	: True,
+		CTYPE_256	: True,
+		CTYPE_512	: False, # VPP is shared with OE
+	}
+
+	# Chips that need overprogramming pulse.
+	# This may not be true for all manufacturers.
+	# Let the user set the chip option 'overprogram_pulse' in that case.
+	needOverprogram = {
+		CTYPE_16	: True,
+		CTYPE_32	: True,
+		CTYPE_64	: True,
+		CTYPE_128	: True,
+		CTYPE_256	: True,
+		CTYPE_512	: False,
+	}
+
+	# Chip has 'margin mode'.
+	# Can be overridden by 'margin_mode' chip option.
+	hasMarginMode = {
+		CTYPE_16	: False,
+		CTYPE_32	: False,
+		CTYPE_64	: False,
+		CTYPE_128	: False,
+		CTYPE_256	: False,
+		CTYPE_512	: True,
 	}
 
 	def __init__(self, chipType,
@@ -70,8 +123,137 @@ class Chip_27cXXX(Chip):
 			exitFunc = lambda: self.__setFlags(oe=1, ce=1)
 		)
 
-#	def writeEEPROM(self):
-#		pass#TODO
+	def writeEEPROM(self, image):
+		sizeBytes = self.ctype2size[self.chipType]
+		if len(image) > sizeBytes:
+			self.throwError("Invalid image size. "
+				"Got %d bytes, but EPROM is only %d bytes." %\
+				(len(image), sizeBytes))
+
+		# Get the options
+		immediateVerify = self.getChipOptionValue(
+			"immediate_verify",
+			self.readWithVPP[self.chipType])
+		overprogram = self.getChipOptionValue(
+			"overprogram_pulse",
+			self.needOverprogram[self.chipType])
+		vppVolt = self.getChipOptionValue(
+			"vpp_voltage",
+			self.vppTable[self.chipType])
+		progpulseUsec = self.getChipOptionValue(
+			"ppulse_length",
+			self.ppulseLengths[self.chipType])
+		marginMode = self.getChipOptionValue(
+			"margin_mode",
+			self.hasMarginMode[self.chipType])
+
+		# Run the write algorithm
+		self.__writeAlgo(image, vppVolt, immediateVerify, overprogram,
+				 progpulseUsec, marginMode)
+
+	def __writeAlgo(self, image, vppVolt, immediateVerify, overprogramPulse,
+			progpulseUsec, marginMode):
+		self.printInfo("Using %.2f VPP" % vppVolt)
+		self.printInfo("Using %s verify." %\
+			("immediate" if immediateVerify else "detached"))
+		if immediateVerify and not self.readWithVPP[self.chipType]:
+			self.printWarning("Immediate verify will be slow "
+				"on this chip!")
+		self.printInfo("%s overprogramming pulse." %\
+			("Using" if overprogramPulse else "Not using"))
+		if not immediateVerify and overprogramPulse:
+			self.printWarning("Using overprogramming, but no "
+				"immediate verify. This probably is NOT what "
+				"you intended.")
+		self.printInfo("Using ppulse length: %d microseconds" %\
+			progpulseUsec)
+		self.printInfo("%s 'margin mode'." %\
+			("Using" if marginMode else "Not using"))
+
+		#TODO margin mode
+
+		self.__turnOn()
+		self.addrSetter.reset()
+		self.applyVPP(False)
+		self.top.cmdSetVPPVoltage(vppVolt)
+		okMask = [ False ] * len(image)
+		nrRetries = 25
+		for retry in range(0, nrRetries):
+			# Program
+			self.progressMeterInit("Writing EPROM", len(image))
+			self.__setFlags(prog_en=1, ce=0, oe=1)
+			self.applyVPP(True)
+			for addr in range(0, len(image)):
+				self.progressMeter(addr)
+				if okMask[addr]:
+					continue
+				data = byte2int(image[addr])
+				if data == 0xFF:
+					okMask[addr] = True
+				else:
+					self.__writeByte(addr, data,
+						immediateVerify, overprogramPulse,
+						progpulseUsec)
+			self.applyVPP(False)
+			self.__setFlags(prog_en=0, ce=0, oe=0)
+			self.progressMeterFinish()
+			if immediateVerify:
+				break
+			if all(okMask):
+				break
+			# Detached verify
+			readImage = self.generic.simpleReadEPROM(
+				sizeBytes = len(image),
+				readData8Func = self.__dataRead,
+				addrSetter = self.addrSetter,
+				initFunc = lambda: self.__setFlags(oe=0, ce=0),
+				exitFunc = lambda: self.__setFlags(oe=1, ce=1)
+			)
+			for addr in range(0, len(image)):
+				if okMask[addr]:
+					continue
+				if image[addr] == readImage[addr]:
+					okMask[addr] = True
+			if all(okMask):
+				break
+			self.printInfo("%d of %d bytes failed verification. "
+				"Retrying those bytes..." %\
+				(len([ ok for ok in okMask if ok]),
+				 len(okMask)))
+		else:
+			self.throwError("Failed to write EPROM. "
+				"Tried %d times." % nrRetries)
+		self.__setFlags()
+		self.top.cmdSetVPPVoltage(5)
+
+	def __writeByte(self, addr, data,
+			doVerify, doOverprogram, progpulseUsec):
+		self.addrSetter.load(addr)
+		self.__setDataPins(data)
+		for retry in range(0, 25):
+			self.__progPulse(progpulseUsec)
+			if not doVerify:
+				break
+			# Immediate verify
+			if not self.readWithVPP[self.chipType]:
+				self.applyVPP(False)
+			self.__setFlags(prog_en=0, ce=0, oe=0)
+			readData = self.__readByte(addr)
+			self.__setFlags(prog_en=1, ce=0, oe=1)
+			if not self.readWithVPP[self.chipType]:
+				self.applyVPP(True)
+			if readData == data:
+				break
+		else:
+			self.throwError("Failed to write EPROM address %d" % addr)
+		if doOverprogram:
+			self.addrSetter.load(addr)
+			self.__progPulse(progpulseUsec * 3 * (retry + 1))
+
+	def __readByte(self, addr):
+		self.addrSetter.load(addr)
+		self.__dataRead()
+		return self.top.cmdReadBufferReg8()
 
 	def __turnOn(self):
 		self.__setType(self.chipType)
@@ -101,12 +283,46 @@ class Chip_27cXXX(Chip):
 				self.throwError("__progPulse time too big")
 			value |= 0x80 # Set "times 8" multiplier
 		self.top.cmdFPGAWrite(4, value)
+		seconds = float(value & 0x7F) / 10000
+		if value & 0x80:
+			seconds *= 8
+		self.top.cmdDelay(seconds)
+		self.top.flushCommands()
 
 	def __setType(self, typeNumber):
 		self.top.cmdFPGAWrite(5, typeNumber)
 
 	def __dataRead(self):
 		self.top.cmdFPGARead(0)
+
+class ChipDescription_27cXXX(ChipDescription):
+	"Generic 27cXXX ChipDescription"
+
+	def __init__(self, chipImplClass, name):
+		ChipDescription.__init__(self,
+			chipImplClass = chipImplClass,
+			bitfile = "_27cxxxdip28",
+			chipID = name,
+			runtimeID = (12, 1),
+			chipType = ChipDescription.TYPE_EPROM,
+			chipVendors = "Various",
+			description = name + " EPROM",
+			packages = ( ("DIP28", ""), ),
+			chipOptions = (
+				ChipOptionBool("immediate_verify",
+					"Immediately verify each written byte"),
+				ChipOptionBool("overprogram_pulse",
+					"Perform an 'overprogramming' pulse"),
+				ChipOptionBool("margin_mode",
+					"Force enable 'Margin mode'. See datasheet!"),
+				ChipOptionFloat("vpp_voltage",
+					"Override the default VPP voltage",
+					minVal=10.0, maxVal=14.0),
+				ChipOptionInt("ppulse_length",
+					"Force 'Programming pulse' length, in microseconds.",
+					minVal=100, maxVal=10000),
+			)
+		)
 
 class Chip_27c16(Chip_27cXXX):
 	def __init__(self):
@@ -116,15 +332,7 @@ class Chip_27c16(Chip_27cXXX):
 			chipPinVPP = 23,
 			chipPinGND = 14)
 
-ChipDescription(Chip_27c16,
-	bitfile = "_27cxxxdip28",
-	chipID = "27c16",
-	runtimeID = (12, 1),
-	chipType = ChipDescription.TYPE_EPROM,
-	chipVendors = "Various",
-	description = "27c16 EPROM",
-	packages = ( ("DIP28", ""), )
-)
+ChipDescription_27cXXX(Chip_27c16, "27c16")
 
 class Chip_27c32(Chip_27cXXX):
 	def __init__(self):
@@ -134,15 +342,7 @@ class Chip_27c32(Chip_27cXXX):
 			chipPinVPP = 22,
 			chipPinGND = 14)
 
-ChipDescription(Chip_27c32,
-	bitfile = "_27cxxxdip28",
-	chipID = "27c32",
-	runtimeID = (12, 1),
-	chipType = ChipDescription.TYPE_EPROM,
-	chipVendors = "Various",
-	description = "27c32 EPROM",
-	packages = ( ("DIP28", ""), )
-)
+ChipDescription_27cXXX(Chip_27c32, "27c32")
 
 class Chip_27c64(Chip_27cXXX):
 	def __init__(self):
@@ -152,15 +352,7 @@ class Chip_27c64(Chip_27cXXX):
 			chipPinVPP = 1,
 			chipPinGND = 14)
 
-ChipDescription(Chip_27c64,
-	bitfile = "_27cxxxdip28",
-	chipID = "27c64",
-	runtimeID = (12, 1),
-	chipType = ChipDescription.TYPE_EPROM,
-	chipVendors = "Various",
-	description = "27c64 EPROM",
-	packages = ( ("DIP28", ""), )
-)
+ChipDescription_27cXXX(Chip_27c64, "27c64")
 
 class Chip_27c128(Chip_27cXXX):
 	def __init__(self):
@@ -170,15 +362,7 @@ class Chip_27c128(Chip_27cXXX):
 			chipPinVPP = 1,
 			chipPinGND = 14)
 
-ChipDescription(Chip_27c128,
-	bitfile = "_27cxxxdip28",
-	chipID = "27c128",
-	runtimeID = (12, 1),
-	chipType = ChipDescription.TYPE_EPROM,
-	chipVendors = "Various",
-	description = "27c128 EPROM",
-	packages = ( ("DIP28", ""), )
-)
+ChipDescription_27cXXX(Chip_27c128, "27c128")
 
 class Chip_27c256(Chip_27cXXX):
 	def __init__(self):
@@ -188,15 +372,7 @@ class Chip_27c256(Chip_27cXXX):
 			chipPinVPP = 1,
 			chipPinGND = 14)
 
-ChipDescription(Chip_27c256,
-	bitfile = "_27cxxxdip28",
-	chipID = "27c256",
-	runtimeID = (12, 1),
-	chipType = ChipDescription.TYPE_EPROM,
-	chipVendors = "Various",
-	description = "27c256 EPROM",
-	packages = ( ("DIP28", ""), )
-)
+ChipDescription_27cXXX(Chip_27c256, "27c256")
 
 class Chip_27c512(Chip_27cXXX):
 	def __init__(self):
@@ -206,12 +382,4 @@ class Chip_27c512(Chip_27cXXX):
 			chipPinVPP = 22,
 			chipPinGND = 14)
 
-ChipDescription(Chip_27c512,
-	bitfile = "_27cxxxdip28",
-	chipID = "27c512",
-	runtimeID = (12, 1),
-	chipType = ChipDescription.TYPE_EPROM,
-	chipVendors = "Various",
-	description = "27c512 EPROM",
-	packages = ( ("DIP28", ""), )
-)
+ChipDescription_27cXXX(Chip_27c512, "27c512")
