@@ -82,7 +82,7 @@ class Chip:
 				raise TOPException("'%s' is not a valid chip option "
 					"for chip ID '%s'" %\
 					(acopt.name, chipDescription.chipID))
-			acopt.detectAndVerifyType(copt.optType)
+			acopt.detectAndVerifyType(copt)
 		instance.assignedChipOptions = assignedChipOptions
 		instance.generateVoltageLayouts()
 		return instance
@@ -259,7 +259,9 @@ class BitDescription:
 
 class ChipOption(object):
 	TYPE_UNKNOWN	= "unknown"
-	TYPE_BOOL	= "boolean"
+	TYPE_BOOL	= "bool"
+	TYPE_INT	= "int"
+	TYPE_FLOAT	= "float"
 
 	def __init__(self, optType, name, description=""):
 		self.optType = optType
@@ -267,34 +269,77 @@ class ChipOption(object):
 		self.description = description
 
 	def __repr__(self):
-		return self.name
+		desc = " / " + self.description if self.description else ""
+		return "%s (%s%s)" % (self.name, self.optType, desc)
+
+	def castValue(self, string):
+		return None
 
 class ChipOptionBool(ChipOption):
 	def __init__(self, name, description=""):
 		ChipOption.__init__(self, ChipOption.TYPE_BOOL,
 				    name, description)
 
-	def __repr__(self):
-		desc = " / " + self.description if self.description else ""
-		return "%s (boolean%s)" % (self.name, desc)
+	def castValue(self, string):
+		return str2bool(string)
+
+class ChipOptionInt(ChipOption):
+	def __init__(self, name, description="", minVal=None, maxVal=None):
+		ChipOption.__init__(self, ChipOption.TYPE_INT,
+				    name, description)
+		self.minVal = int(minVal) if minVal is not None else None
+		self.maxVal = int(maxVal) if minVal is not None else None
+
+	def __limitError(self, value):
+		raise TOPException("%s: Value exceeds limits: %d <= %d <= %d" %\
+			(self.name, self.minVal, value, self.maxVal))
+
+	def castValue(self, string):
+		try:
+			value = int(string)
+		except (ValueError), e:
+			return None
+		if (self.minVal is not None and value < self.minVal) or\
+		   (self.maxVal is not None and value > self.maxVal):
+			self.__limitError(value)
+		return value
+
+class ChipOptionFloat(ChipOption):
+	def __init__(self, name, description="", minVal=None, maxVal=None):
+		ChipOption.__init__(self, ChipOption.TYPE_FLOAT,
+				    name, description)
+		self.minVal = float(minVal) if minVal is not None else None
+		self.maxVal = float(maxVal) if minVal is not None else None
+
+	def __limitError(self, value):
+		raise TOPException("%s: Value exceeds limits: %f <= %f <= %f" %\
+			(self.name, self.minVal, value, self.maxVal))
+
+	def castValue(self, string):
+		try:
+			value = float(string)
+		except (ValueError), e:
+			return None
+		if (self.minVal is not None and value < self.minVal) or\
+		   (self.maxVal is not None and value > self.maxVal):
+			self.__limitError(value)
+		return value
 
 class AssignedChipOption(ChipOption):
 	def __init__(self, name, value):
 		ChipOption.__init__(self, ChipOption.TYPE_UNKNOWN, name)
 		self.value = value
 
-	def detectAndVerifyType(self, expectType):
-		assert(expectType != self.TYPE_UNKNOWN)
+	def detectAndVerifyType(self, baseOption):
+		assert(baseOption.optType != self.TYPE_UNKNOWN)
 		if self.optType != self.TYPE_UNKNOWN:
 			return
-		value = None
-		if expectType == self.TYPE_BOOL:
-			value = str2bool(self.value)
+		value = baseOption.castValue(self.value)
 		if value is None:
 			raise TOPException("Chip option '%s' type mismatch. "
 				"Must be '%s'." %\
-				(self.name, expectType))
-		self.optType = expectType
+				(self.name, baseOption.optType))
+		self.optType = baseOption.optType
 		self.value = value
 
 class ChipDescription:
