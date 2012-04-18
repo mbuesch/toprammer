@@ -4,7 +4,7 @@
 #
 #    Qt-based graphical user interface
 #
-#    Copyright (c) 2010-2011 Michael Buesch <m@bues.ch>
+#    Copyright (c) 2010-2012 Michael Buesch <m@bues.ch>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -28,15 +28,15 @@ import time
 import cgi
 import ConfigParser
 try:
-	from PyQt4.QtCore import *
-	from PyQt4.QtGui import *
+	from PySide.QtCore import *
+	from PySide.QtGui import *
 except (ImportError), e:
-	print "Failed to import PyQt4 modules: %s" % str(e)
-	print "Please install PyQt4. On Debian Linux run: aptitude install python-qt4"
+	print "Failed to import PySide modules: %s" % str(e)
+	print "Please install PySide. On Debian Linux run: aptitude install python-pyside"
 	sys.exit(1)
 
 
-EVENT_HWTHREAD		= QEvent.User + 0
+EVENT_HWTHREAD		= QEvent.Type(QEvent.User + 0)
 
 
 def stringRemoveChars(string, chars):
@@ -240,7 +240,7 @@ class UnitestDialog(QDialog):
 		group = QGroupBox("GND layout", self)
 		group.setLayout(QGridLayout())
 		self.gndLayout = QComboBox(self)
-		self.gndLayout.addItem("Not connected", QVariant(0))
+		self.gndLayout.addItem("Not connected", 0)
 		for (layId, layMask) in self.param_gndLayouts:
 			if not layMask:
 				continue
@@ -248,7 +248,7 @@ class UnitestDialog(QDialog):
 			for i in range(0, self.param_nrZifPins):
 				if layMask & (1 << i):
 					descr += str(i + 1) + " "
-			self.gndLayout.addItem(descr, QVariant(layId))
+			self.gndLayout.addItem(descr, layId)
 		group.layout().addWidget(self.gndLayout, 0, 0)
 		self.layout().addWidget(group, 1, 1)
 
@@ -261,7 +261,7 @@ class UnitestDialog(QDialog):
 		self.vccVoltage.setSingleStep(0.1)
 		group.layout().addWidget(self.vccVoltage, 0, 0)
 		self.vccLayout = QComboBox(self)
-		self.vccLayout.addItem("Not connected", QVariant(0))
+		self.vccLayout.addItem("Not connected", 0)
 		for (layId, layMask) in self.param_vccLayouts:
 			if not layMask:
 				continue
@@ -269,7 +269,7 @@ class UnitestDialog(QDialog):
 			for i in range(0, self.param_nrZifPins):
 				if layMask & (1 << i):
 					descr += str(i + 1) + " "
-			self.vccLayout.addItem(descr, QVariant(layId))
+			self.vccLayout.addItem(descr, layId)
 		group.layout().addWidget(self.vccLayout, 1, 0)
 		self.layout().addWidget(group, 2, 1)
 
@@ -290,9 +290,9 @@ class UnitestDialog(QDialog):
 		group = QGroupBox("Oscillator", self)
 		group.setLayout(QGridLayout())
 		self.oscPin = QComboBox(self)
-		self.oscPin.addItem("Disabled", QVariant(0))
+		self.oscPin.addItem("Disabled", 0)
 		for i in range(0, self.zifWidget.nrPins):
-			self.oscPin.addItem("On pin %d" % (i + 1), QVariant(1 << i))
+			self.oscPin.addItem("On pin %d" % (i + 1), (1 << i))
 		group.layout().addWidget(self.oscPin, 0, 0)
 		self.oscDiv = QSpinBox(self)
 		self.oscDiv.setPrefix("Divider ")
@@ -378,13 +378,13 @@ class UnitestDialog(QDialog):
 						   (pType, self.param_topType))
 
 			layout = p.getint(sect, "gndLayout")
-			idx = self.gndLayout.findData(QVariant(layout))
+			idx = self.gndLayout.findData(layout)
 			if idx < 0:
 				raise TOPException("Invalid GND layout")
 			self.gndLayout.setCurrentIndex(idx)
 
 			layout = p.getint(sect, "vccLayout")
-			idx = self.vccLayout.findData(QVariant(layout))
+			idx = self.vccLayout.findData(layout)
 			if idx < 0:
 				raise TOPException("Invalid VCC layout")
 			self.vccLayout.setCurrentIndex(idx)
@@ -415,7 +415,7 @@ class UnitestDialog(QDialog):
 			self.oscDiv.setValue(div)
 
 			mask = int(p.get(sect, "oscillatorMask"), 16)
-			idx = self.oscPin.findData(QVariant(mask))
+			idx = self.oscPin.findData(mask)
 			if idx < 0:
 				raise TOPException("Invalid oscillator mask")
 			self.oscPin.setCurrentIndex(idx)
@@ -446,9 +446,9 @@ class UnitestDialog(QDialog):
 			fd.write("fileVersion=%d\r\n" % 1)
 			fd.write("programmerType=%s\r\n" % self.param_topType)
 			idx = self.gndLayout.currentIndex()
-			fd.write("gndLayout=%d\r\n" % self.gndLayout.itemData(idx).toPyObject())
+			fd.write("gndLayout=%d\r\n" % self.gndLayout.itemData(idx))
 			idx = self.vccLayout.currentIndex()
-			fd.write("vccLayout=%d\r\n" % self.vccLayout.itemData(idx).toPyObject())
+			fd.write("vccLayout=%d\r\n" % self.vccLayout.itemData(idx))
 			fd.write("vccVoltage=%f\r\n" % self.vccVoltage.value())
 			vppLayouts = ""
 			for layId in self.vppLayouts.keys():
@@ -463,7 +463,7 @@ class UnitestDialog(QDialog):
 			fd.write("inputPollEnabled=%d\r\n" % int(self.inputPollEn.checkState() == Qt.Checked))
 			fd.write("inputPollInterval=%f\r\n" % self.inputPollInterval.value())
 			idx = self.oscPin.currentIndex()
-			fd.write("oscillatorMask=%X\r\n" % self.oscPin.itemData(idx).toPyObject())
+			fd.write("oscillatorMask=%X\r\n" % self.oscPin.itemData(idx))
 			fd.write("oscillatorDiv=%d\r\n" % self.oscDiv.value())
 			fd.write("zifOutEnMask=%X\r\n" % self.zifWidget.getOutEnMask())
 			fd.write("zifOutMask=%X\r\n" % self.zifWidget.getOutMask())
@@ -501,11 +501,11 @@ class UnitestDialog(QDialog):
 		blockedPins = []
 		# GND
 		idx = self.gndLayout.currentIndex()
-		lay = self.gndLayout.itemData(idx).toPyObject()
+		lay = self.gndLayout.itemData(idx)
 		blockedPins.extend(self.queryTop("top.gnd.ID2pinlist(...)", (lay, )))
 		# VCC
 		idx = self.vccLayout.currentIndex()
-		lay = self.vccLayout.itemData(idx).toPyObject()
+		lay = self.vccLayout.itemData(idx)
 		blockedPins.extend(self.queryTop("top.vcc.ID2pinlist(...)", (lay, )))
 		# VPP
 		for key in self.vppLayouts.keys():
@@ -513,7 +513,7 @@ class UnitestDialog(QDialog):
 				blockedPins.extend(self.queryTop("top.vpp.ID2pinlist(...)", (key, )))
 		# OSC
 		idx = self.oscPin.currentIndex()
-		mask = self.oscPin.itemData(idx).toPyObject()
+		mask = self.oscPin.itemData(idx)
 		for i in range(0, self.zifWidget.nrPins):
 			if mask & (1 << i):
 				blockedPins.append(i + 1)
@@ -521,7 +521,7 @@ class UnitestDialog(QDialog):
 
 	def gndLayoutChanged(self, unused=None):
 		idx = self.gndLayout.currentIndex()
-		selLayout = self.gndLayout.itemData(idx).toPyObject()
+		selLayout = self.gndLayout.itemData(idx)
 		try:
 			self.queryTop("top.getChip().setGND(...)", (selLayout, ))
 		except (TOPException), e:
@@ -534,7 +534,7 @@ class UnitestDialog(QDialog):
 	def vccLayoutChanged(self, unused=None):
 		selVoltage = self.vccVoltage.value()
 		idx = self.vccLayout.currentIndex()
-		selLayout = self.vccLayout.itemData(idx).toPyObject()
+		selLayout = self.vccLayout.itemData(idx)
 		try:
 			self.queryTop("top.getChip().setVCC(...)", (selVoltage, selLayout))
 		except (TOPException), e:
@@ -597,7 +597,7 @@ class UnitestDialog(QDialog):
 			div = self.oscDiv.value()
 			self.queryTop("top.getChip().setOscDivider(...)", (div, ))
 			idx = self.oscPin.currentIndex()
-			mask = self.oscPin.itemData(idx).toPyObject()
+			mask = self.oscPin.itemData(idx)
 			self.queryTop("top.getChip().setOscMask(...)", (mask, ))
 		except (TOPException), e:
 			QMessageBox.critical(self, "TOP communication failed",
@@ -1777,7 +1777,7 @@ class ChipSelectDialog(QDialog):
 		item = self.chipList.currentItem()
 		if not item:
 			return None
-		chipDescription = item.data(Qt.UserRole).toPyObject()
+		chipDescription = item.data(Qt.UserRole)
 		return chipDescription
 
 class StatusBar(QStatusBar):
@@ -2014,14 +2014,14 @@ class ProgrammerSelectDialog(QDialog):
 		for (toptype, busNr, devNr) in TOP.findDevices():
 			text = "%s  (usb:%03d:%03d)" % (toptype, busNr, devNr)
 			item = QListWidgetItem(text, self.deviceList)
-			item.setData(Qt.UserRole, QVariant( (busNr, devNr) ))
+			item.setData(Qt.UserRole, (busNr, devNr))
 		self.deviceList.setCurrentRow(0)
 
 	def getUSBIDs(self):
 		item = self.deviceList.currentItem()
 		if not item:
 			return (None, None)
-		return item.data(Qt.UserRole).toPyObject()
+		return item.data(Qt.UserRole)
 
 	def selectionChanged(self, unused):
 		if self.deviceList.currentItem():
@@ -2221,13 +2221,11 @@ class MainWindow(QMainWindow):
 				"The buffer is read-only." %\
 				bufWidget.getName())
 			return
-		selectedFilter = QString()
-		fn = QFileDialog.getOpenFileName(self,
+		(fn, selectedFilter) = QFileDialog.getOpenFileName(self,
 			"%s - open file" % bufWidget.getName(),
-			QString(),
+			"",
 			"Intel hex file (*.hex *.ihex);;"
-			"Binary file (*)",
-			selectedFilter)
+			"Binary file (*)")
 		if not fn:
 			return
 		extensions = str(selectedFilter).split("(")[1].\
@@ -2261,20 +2259,18 @@ class MainWindow(QMainWindow):
 		data = bufWidget.getRawData()
 		if not data:
 			return
-		selectedFilter = QString()
-		fn = QFileDialog.getSaveFileName(self,
+		(fn, selectedFilter) = QFileDialog.getSaveFileName(self,
 			"%s - save file" % bufWidget.getName(),
-			QString(),
+			"",
 			"Intel hex file (*.hex);;"
-			"Binary file (*)",
-			selectedFilter)
+			"Binary file (*)")
 		if not fn:
 			return
 		extensions = str(selectedFilter).split("(")[1].\
 				 split(")")[0].replace("*", "").strip().split()
 		if not extensions:
 			extensions = [ "" ]
-		if not fn.endsWith(extensions[0]):
+		if not fn.endswith(extensions[0]):
 			fn += extensions[0]
 		if ".hex" in extensions or ".ihex" in extensions:
 			data = IO_ihex().fromBinary(data)
