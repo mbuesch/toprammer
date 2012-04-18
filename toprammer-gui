@@ -56,6 +56,16 @@ def getIconPath(name):
 def getIcon(name):
 	return QIcon(getIconPath(name))
 
+class Wrapper(object):
+	def __init__(self, obj):
+		self.obj = obj
+
+	def __eq__(self, other):
+		return self.obj == other.obj
+
+	def __ne__(self, other):
+		return self.obj != other.obj
+
 class ZifWidget(QGroupBox):
 	def __init__(self, unitest, nrZifPins):
 		QGroupBox.__init__(self, "ZIF socket", unitest)
@@ -109,7 +119,7 @@ class ZifWidget(QGroupBox):
 			if self.pinOuten[i].checkState() != Qt.Checked and\
 			   i + 1 not in self.blockedPins:
 				state = Qt.Unchecked
-				if inputMask & (1 << i):
+				if inputMask & bit(i):
 					state = Qt.Checked
 				self.ignoreOutChange = True
 				self.pins[i].setCheckState(state)
@@ -166,16 +176,16 @@ class ZifWidget(QGroupBox):
 		outEnMask = 0
 		for i in range(0, self.nrPins):
 			if self.pinOuten[i].checkState() == Qt.Checked:
-				outEnMask |= (1 << i)
+				outEnMask |= bit(i)
 		return outEnMask
 
 	def setOutEnMask(self, mask):
 		for i in range(0, self.nrPins):
-			if mask & (1 << i):
+			if mask & bit(i):
 				self.pinOuten[i].setCheckState(Qt.Checked)
 			else:
 				self.pinOuten[i].setCheckState(Qt.Unchecked)
-			mask &= ~(1 << i)
+			mask &= ~bit(i)
 		if mask:
 			raise TOPException("ZIF out-en mask has too many bits set")
 
@@ -183,16 +193,16 @@ class ZifWidget(QGroupBox):
 		outMask = 0
 		for i in range(0, self.nrPins):
 			if self.pins[i].checkState() == Qt.Checked:
-				outMask |= (1 << i)
+				outMask |= bit(i)
 		return outMask
 
 	def setOutMask(self, mask):
 		for i in range(0, self.nrPins):
-			if mask & (1 << i):
+			if mask & bit(i):
 				self.pins[i].setCheckState(Qt.Checked)
 			else:
 				self.pins[i].setCheckState(Qt.Unchecked)
-			mask &= ~(1 << i)
+			mask &= ~bit(i)
 		if mask:
 			raise TOPException("ZIF out mask has too many bits set")
 
@@ -246,7 +256,7 @@ class UnitestDialog(QDialog):
 				continue
 			descr = "GND on pin "
 			for i in range(0, self.param_nrZifPins):
-				if layMask & (1 << i):
+				if layMask & bit(i):
 					descr += str(i + 1) + " "
 			self.gndLayout.addItem(descr, layId)
 		group.layout().addWidget(self.gndLayout, 0, 0)
@@ -267,7 +277,7 @@ class UnitestDialog(QDialog):
 				continue
 			descr = "VCC on pin "
 			for i in range(0, self.param_nrZifPins):
-				if layMask & (1 << i):
+				if layMask & bit(i):
 					descr += str(i + 1) + " "
 			self.vccLayout.addItem(descr, layId)
 		group.layout().addWidget(self.vccLayout, 1, 0)
@@ -290,9 +300,10 @@ class UnitestDialog(QDialog):
 		group = QGroupBox("Oscillator", self)
 		group.setLayout(QGridLayout())
 		self.oscPin = QComboBox(self)
-		self.oscPin.addItem("Disabled", 0)
+		self.oscPin.addItem("Disabled", Wrapper(0))
 		for i in range(0, self.zifWidget.nrPins):
-			self.oscPin.addItem("On pin %d" % (i + 1), (1 << i))
+			self.oscPin.addItem("On pin %d" % (i + 1),
+					    Wrapper(bit(i)))
 		group.layout().addWidget(self.oscPin, 0, 0)
 		self.oscDiv = QSpinBox(self)
 		self.oscDiv.setPrefix("Divider ")
@@ -320,7 +331,7 @@ class UnitestDialog(QDialog):
 			if not layMask:
 				continue
 			for i in range(0, self.param_nrZifPins):
-				if layMask & (1 << i):
+				if layMask & bit(i):
 					descr = str(i + 1) + " "
 			self.vppLayouts[layId] = QCheckBox(descr, self)
 			self.connect(self.vppLayouts[layId], SIGNAL("stateChanged(int)"),
@@ -415,7 +426,7 @@ class UnitestDialog(QDialog):
 			self.oscDiv.setValue(div)
 
 			mask = int(p.get(sect, "oscillatorMask"), 16)
-			idx = self.oscPin.findData(mask)
+			idx = self.oscPin.findData(Wrapper(mask))
 			if idx < 0:
 				raise TOPException("Invalid oscillator mask")
 			self.oscPin.setCurrentIndex(idx)
@@ -463,7 +474,7 @@ class UnitestDialog(QDialog):
 			fd.write("inputPollEnabled=%d\r\n" % int(self.inputPollEn.checkState() == Qt.Checked))
 			fd.write("inputPollInterval=%f\r\n" % self.inputPollInterval.value())
 			idx = self.oscPin.currentIndex()
-			fd.write("oscillatorMask=%X\r\n" % self.oscPin.itemData(idx))
+			fd.write("oscillatorMask=%X\r\n" % self.oscPin.itemData(idx).obj)
 			fd.write("oscillatorDiv=%d\r\n" % self.oscDiv.value())
 			fd.write("zifOutEnMask=%X\r\n" % self.zifWidget.getOutEnMask())
 			fd.write("zifOutMask=%X\r\n" % self.zifWidget.getOutMask())
@@ -513,9 +524,9 @@ class UnitestDialog(QDialog):
 				blockedPins.extend(self.queryTop("top.vpp.ID2pinlist(...)", (key, )))
 		# OSC
 		idx = self.oscPin.currentIndex()
-		mask = self.oscPin.itemData(idx)
+		mask = self.oscPin.itemData(idx).obj
 		for i in range(0, self.zifWidget.nrPins):
-			if mask & (1 << i):
+			if mask & bit(i):
 				blockedPins.append(i + 1)
 		self.zifWidget.setBlockedPins(blockedPins)
 
@@ -597,7 +608,7 @@ class UnitestDialog(QDialog):
 			div = self.oscDiv.value()
 			self.queryTop("top.getChip().setOscDivider(...)", (div, ))
 			idx = self.oscPin.currentIndex()
-			mask = self.oscPin.itemData(idx)
+			mask = self.oscPin.itemData(idx).obj
 			self.queryTop("top.getChip().setOscMask(...)", (mask, ))
 		except (TOPException), e:
 			QMessageBox.critical(self, "TOP communication failed",
@@ -1486,7 +1497,7 @@ class BitBufferWidget(BufferWidget):
 			if desc:
 				desc = " (%s)" % desc
 			checkbox = QCheckBox("bit %d%s" % (i, desc), self.bitsArea)
-			if byte2int(image[i // 8]) & (1 << (i % 8)):
+			if byte2int(image[i // 8]) & bit(i % 8):
 				checkbox.setCheckState(Qt.Checked)
 			self.bitsArea.layout().addWidget(checkbox, 1 + i, 0, 1, 2)
 			self.connect(checkbox, SIGNAL("stateChanged(int)"),
@@ -1504,7 +1515,7 @@ class BitBufferWidget(BufferWidget):
 		i = 0
 		for checkbox in self.checkboxes:
 			if checkbox.checkState() == Qt.Checked:
-				tmp |= (1 << i)
+				tmp |= bit(i)
 			i += 1
 			if i == 8:
 				self.image += chr(tmp)

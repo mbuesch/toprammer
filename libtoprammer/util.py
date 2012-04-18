@@ -84,6 +84,9 @@ def genRandomBlob(size):
 		   range(0, size))
 	return b"".join(blob)
 
+def bit(bitNr):
+	return 1 << bitNr
+
 def nrBitsSet(integer):
 	count = 0
 	while integer:
