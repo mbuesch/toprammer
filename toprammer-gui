@@ -2366,9 +2366,12 @@ class MainWindow(QMainWindow):
 		return self.runOperation(self.OP_VERIFY, HwThread.TASK_READALL)
 
 	def guiUpdateEnable(self):
-		enable = not self.guiDisable and not self.taskRunning and not self.autorun.isRunning()
+		enable = not self.guiDisable and\
+			 not self.taskRunning and\
+			 not self.autorun.isRunning()
 		self.menuBar().setEnabled(enable)
 		self.topToolBar.setEnabled(enable)
+		self.rightToolBar.setEnabled(enable)
 		self.autorun.setEnabled(enable)
 		self.bufferTab.setEnabled(enable)
 
