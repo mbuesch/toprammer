@@ -81,12 +81,12 @@ def usage():
 	print " auto                    Autodetect. (input only)"
 	print " bin                     Raw binary data"
 	print " ihex                    Intel hex"
-	print " hex                     Human readable hex"
+	print " ahex                    Hex with ASCII dump"
 
 IO_handlers = {
 	"bin"	: IO_binary,
 	"ihex"	: IO_ihex,
-	"hex"	: IO_hex,
+	"ahex"	: IO_ahex,
 }
 
 def fileOut(filename, format, data):
@@ -97,23 +97,16 @@ def fileOut(filename, format, data):
 	else:
 		file(filename, "w+b").write(data)
 
-def fileIn(filename, format):
+def fileIn(filename, fmtString):
 	if filename == "-":
 		data = sys.stdin.read()
 	else:
 		data = file(filename, "rb").read()
-	if format == "auto":
-		if IO_ihex().autodetect(data):
-			format = "ihex"
-		elif IO_hex().autodetect(data):
-			format = "hex"
-		elif IO_binary().autodetect(data):
-			format = "bin"
-		else:
-			assert(0)
-	handler = IO_handlers[format]()
-	data = handler.toBinary(data)
-	return data
+	if fmtString == "auto":
+		handler = IO_autodetect(data)()
+	else:
+		handler = IO_handlers[fmtString]()
+	return handler.toBinary(data)
 
 def main(argv):
 	opt_verbose = 1

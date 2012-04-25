@@ -2235,8 +2235,10 @@ class MainWindow(QMainWindow):
 		(fn, selectedFilter) = QFileDialog.getOpenFileName(self,
 			"%s - open file" % bufWidget.getName(),
 			"",
-			"Intel hex file (*.hex *.ihex);;"
-			"Binary file (*)")
+			"Autodetect file format (*);;"
+			"Intel hex file (*.ihex *.hex);;"
+			"Hex file with ASCII dump (*.ahex);;"
+			"Binary file (*.bin)")
 		if not fn:
 			return
 		extensions = str(selectedFilter).split("(")[1].\
@@ -2249,10 +2251,15 @@ class MainWindow(QMainWindow):
 				(str(fn), str(e.strerror)))
 			return
 		try:
-			if ".hex" in extensions or ".ihex" in extensions:
+			if ".bin" in extensions:
+				data = IO_binary().toBinary(data) # no-op
+			elif ".ihex" in extensions:
 				data = IO_ihex().toBinary(data)
-			elif not extensions:
-				data = IO_binary().toBinary(data)
+			elif ".ahex" in extensions:
+				data = IO_ahex().toBinary(data)
+			elif not extensions: # auto
+				handler = IO_autodetect(data)()
+				data = handler.toBinary(data)
 			else:
 				assert(0)
 		except (TOPException), e:
@@ -2273,7 +2280,8 @@ class MainWindow(QMainWindow):
 		(fn, selectedFilter) = QFileDialog.getSaveFileName(self,
 			"%s - save file" % bufWidget.getName(),
 			"",
-			"Intel hex file (*.hex);;"
+			"Intel hex file (*.ihex *.hex);;"
+			"Hex file with ASCII dump (*.ahex);;"
 			"Binary file (*)")
 		if not fn:
 			return
@@ -2281,10 +2289,13 @@ class MainWindow(QMainWindow):
 				 split(")")[0].replace("*", "").strip().split()
 		if not extensions:
 			extensions = [ "" ]
-		if not fn.endswith(extensions[0]):
-			fn += extensions[0]
-		if ".hex" in extensions or ".ihex" in extensions:
+		if not '.' in fn or\
+		   not '.' + fn.split('.')[-1] in extensions:
+			fn += extensions[0] # Default ext
+		if ".ihex" in extensions:
 			data = IO_ihex().fromBinary(data)
+		elif ".ahex" in extensions:
+			data = IO_ahex().fromBinary(data)
 		elif not extensions[0]:
 			data = IO_binary().fromBinary(data)
 		else:

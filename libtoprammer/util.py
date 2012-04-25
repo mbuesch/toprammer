@@ -140,7 +140,7 @@ def generateHexdump(mem):
 def dumpMem(mem):
 	sys.stdout.write(generateHexdump(mem))
 
-class IO_ihex:
+class IO_ihex(object):
 	TYPE_DATA = 0
 	TYPE_EOF  = 1
 	TYPE_ESAR = 2
@@ -236,7 +236,7 @@ class IO_ihex:
 		ihex.append(":00000001FF\n")
 		return "".join(ihex)
 
-class IO_hex:
+class IO_ahex(object):
 	def autodetect(self, data):
 		try:
 			self.toBinary(data)
@@ -250,7 +250,7 @@ class IO_hex:
 	def fromBinary(self, data):
 		return generateHexdump(data)
 
-class IO_binary:
+class IO_binary(object):
 	def autodetect(self, data):
 		return True
 
@@ -259,3 +259,13 @@ class IO_binary:
 
 	def fromBinary(self, data):
 		return data
+
+def IO_autodetect(data):
+	"Returns an IO_... object for the data."
+	if IO_ihex().autodetect(data):
+		return IO_ihex
+	elif IO_ahex().autodetect(data):
+		return IO_ahex
+	elif IO_binary().autodetect(data):
+		return IO_binary
+	assert(0) # Can't reach, because binary will always match.
