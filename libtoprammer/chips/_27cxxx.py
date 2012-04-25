@@ -163,7 +163,7 @@ class Chip_27cXXX(Chip):
 		for retry in range(0, nrRetries):
 			# Program
 			self.progressMeterInit("Writing EPROM", len(image))
-			self.__setFlags(prog_en=1, ce=0, oe=1)
+			self.__setFlags(data_en=1, prog_en=1, ce=0, oe=1)
 			self.applyVPP(True)
 			for addr in range(0, len(image)):
 				self.progressMeter(addr)
@@ -177,7 +177,7 @@ class Chip_27cXXX(Chip):
 						immediateVerify, overprogramPulse,
 						progpulseUsec)
 			self.applyVPP(False)
-			self.__setFlags(prog_en=0, ce=0, oe=0)
+			self.__setFlags(data_en=0, prog_en=0, ce=0, oe=0)
 			self.progressMeterFinish()
 			if immediateVerify:
 				break
@@ -219,9 +219,9 @@ class Chip_27cXXX(Chip):
 			# Immediate verify
 			if not self.readWithVPP[self.chipType]:
 				self.applyVPP(False)
-			self.__setFlags(prog_en=0, ce=0, oe=0)
+			self.__setFlags(data_en=0, prog_en=0, ce=0, oe=0)
 			readData = self.__readByte(addr)
-			self.__setFlags(prog_en=1, ce=0, oe=1)
+			self.__setFlags(data_en=1, prog_en=1, ce=0, oe=1)
 			if not self.readWithVPP[self.chipType]:
 				self.applyVPP(True)
 			if readData == data:
