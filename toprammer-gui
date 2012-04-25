@@ -451,7 +451,7 @@ class UnitestDialog(QDialog):
 
 	def __saveFile(self, filename):
 		try:
-			fd = file(filename, "w+b")
+			fd = open(filename, "w+b")
 
 			fd.write("[TOPRAMMER-UNITEST-SETTINGS]\r\n")
 			fd.write("fileVersion=%d\r\n" % 1)
@@ -2244,7 +2244,7 @@ class MainWindow(QMainWindow):
 		extensions = str(selectedFilter).split("(")[1].\
 				 split(")")[0].replace("*", "").strip().split()
 		try:
-			data = file(fn, "rb").read()
+			data = open(fn, "rb").read()
 		except (IOError), e:
 			QMessageBox.critical(self, "Failed to read file",
 				"Failed to read %s:\n%s" %\
@@ -2301,7 +2301,7 @@ class MainWindow(QMainWindow):
 		else:
 			assert(0)
 		try:
-			file(fn, "wb").write(data)
+			open(fn, "wb").write(data)
 		except (IOError), e:
 			QMessageBox.critical(self, "Failed to write file",
 				"Failed to write %s:\n%s" %\

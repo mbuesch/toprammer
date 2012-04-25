@@ -196,7 +196,7 @@ def main(argv):
 		usage()
 		return 1
 
-	fd = file(argv[1])
+	fd = open(argv[1])
 	parseDumpFile(fd)
 
 	return 0

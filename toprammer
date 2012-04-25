@@ -89,19 +89,19 @@ IO_handlers = {
 	"ahex"	: IO_ahex,
 }
 
-def fileOut(filename, format, data):
-	handler = IO_handlers[format]()
+def fileOut(filename, fmtString, data):
+	handler = IO_handlers[fmtString]()
 	data = handler.fromBinary(data)
 	if filename == "-":
 		sys.stdout.write(data)
 	else:
-		file(filename, "w+b").write(data)
+		open(filename, "w+b").write(data)
 
 def fileIn(filename, fmtString):
 	if filename == "-":
 		data = sys.stdin.read()
 	else:
-		data = file(filename, "rb").read()
+		data = open(filename, "rb").read()
 	if fmtString == "auto":
 		handler = IO_autodetect(data)()
 	else:
