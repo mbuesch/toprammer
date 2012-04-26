@@ -685,12 +685,9 @@ class HwThread(QThread):
 			self.mutex.unlock()
 			self.wait()
 
-	def setDevice(self, busNr=None, devNr=None):
+	def setDevice(self, devIdentifier=None):
 		assert(self.top is None and self.task is None)
-		busDev = None
-		if busNr is not None and devNr is not None:
-			busDev = (busNr, devNr)
-		self.param_busDev = busDev
+		self.param_devIdentifier = devIdentifier
 
 	def setTopParameters(self, verbose=2, forceLevel=0,
 			     usebroken=True, forceBitfileUpload=False):
@@ -792,7 +789,7 @@ class HwThread(QThread):
 		if not self.top:
 			# Initialize Hardware access
 			self.__blockCancellation()
-			self.top = TOP(busDev = self.param_busDev,
+			self.top = TOP(devIdentifier = self.param_devIdentifier,
 				       verbose = self.param_verbose,
 				       forceLevel = self.param_forceLevel,
 				       usebroken = self.param_usebroken,
@@ -2022,16 +2019,17 @@ class ProgrammerSelectDialog(QDialog):
 
 	def rescan(self):
 		self.deviceList.clear()
-		for (toptype, busNr, devNr) in TOP.findDevices():
-			text = "%s  (usb:%03d:%03d)" % (toptype, busNr, devNr)
+		for foundDev in TOP.findDevices():
+			text = "%s  (%s)" % (foundDev.toptype,
+					     foundDev.devIdentifier)
 			item = QListWidgetItem(text, self.deviceList)
-			item.setData(Qt.UserRole, (busNr, devNr))
+			item.setData(Qt.UserRole, foundDev.devIdentifier)
 		self.deviceList.setCurrentRow(0)
 
-	def getUSBIDs(self):
+	def getIdentifier(self):
 		item = self.deviceList.currentItem()
 		if not item:
-			return (None, None)
+			return None
 		return item.data(Qt.UserRole)
 
 	def selectionChanged(self, unused):
@@ -2186,9 +2184,9 @@ class MainWindow(QMainWindow):
 		dlg = ProgrammerSelectDialog(self)
 		if dlg.exec_() != QDialog.Accepted:
 			return
-		(busNr, devNr) = dlg.getUSBIDs()
+		devIdentifier = dlg.getIdentifier()
 		self.runOperationSync(HwThread.TASK_SHUTDOWN)
-		self.hwThread.setDevice(busNr, devNr)
+		self.hwThread.setDevice(devIdentifier)
 		if self.currentChipDescription:
 			self.runOperation(self.OP_INITCHIP, HwThread.TASK_INITCHIP,
 					  self.currentChipDescription.chipID)
