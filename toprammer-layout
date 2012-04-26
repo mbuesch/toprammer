@@ -28,6 +28,13 @@ import getopt
 import sys
 
 
+class FakeTOP(object):
+	def __init__(self, topType):
+		self.topType = topType
+
+	def getProgrammerType(self):
+		return self.topType
+
 def usage():
 	print "Toprammer ZIF socket layout generator v%s" % VERSION
 	print ""
@@ -97,7 +104,10 @@ def main(argv):
 
 		generator = None
 		try:
-			(unused, chip) = ChipDescription.findOne(programmer, package, allowBroken=True)
+			chipDesc = ChipDescription.findOne(
+				package, allowBroken=True)
+			chip = chipDesc.chipImplClass.createInstance(
+				FakeTOP(programmer), chipDesc)
 		except (TOPException), e:
 			chip = None
 			if vccPin is None or gndPin is None:
