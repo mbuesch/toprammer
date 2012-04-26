@@ -214,10 +214,10 @@ def main(argv):
 	if opt_action != "print-list" and not opt_chipID:
 		print "-c|--chip-id is mandatory!"
 		return 1
-	if not opt_informat in ("auto", "bin", "ihex", "hex"):
+	if not opt_informat in ("auto", "bin", "ihex", "ahex"):
 		print "Invalid -I|--in-format"
 		return 1
-	if not opt_outformat in ("bin", "ihex", "hex"):
+	if not opt_outformat in ("bin", "ihex", "ahex"):
 		print "Invalid -O|--out-format"
 		return 1
 
