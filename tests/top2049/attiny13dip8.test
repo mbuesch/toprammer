@@ -26,7 +26,7 @@ test_run()
 
 	# Check fuses
 	testfuses="6AFF"
-	echo "0x0000: $testfuses" | toprammer -I hex --write-fuse -
+	echo "0x0000: $testfuses" | toprammer -I ahex --write-fuse -
 	toprammer --read-fuse "$tmpfile"
 	compare_file_to_hex "$tmpfile" "$testfuses" || die "fuses mismatch"
 
