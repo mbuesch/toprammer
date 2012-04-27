@@ -30,10 +30,10 @@
 
 /** BOTTOMHALF_BEGIN - Begin bottom-half module
  * @NAME: The bitfile name
- * @TYPE: The type number (16 bit)
- * @SUBTYPE: The subtype number (8 bit)
+ * @ID_MAJOR: Major runtime ID (16 bit). Allocated in file 'RUNTIME_IDS'.
+ * @ID_MINOR: Minor runtime ID (8 bit)
  */
-`define BOTTOMHALF_BEGIN(NAME, TYPE, SUBTYPE)				\
+`define BOTTOMHALF_BEGIN(NAME, ID_MAJOR, ID_MINOR)			\
 	module NAME(__data, __ale, __write, __read, __osc, zif);	\
 		inout [7:0] __data;					\
 		input __ale;						\
@@ -42,8 +42,8 @@
 		input __osc;						\
 		inout [48:1] zif;					\
 									\
-		parameter __type = TYPE;				\
-		parameter __subtype = SUBTYPE;				\
+		parameter __id_major = ID_MAJOR;			\
+		parameter __id_minor = ID_MINOR;			\
 									\
 		reg [7:0] __addr_latch;					\
 		reg [7:0] out_data;					\
@@ -139,9 +139,9 @@
 
 /** DATAREAD_END - End "read" section. */
 `define DATAREAD_END							\
-		8'hFD: out_data <= __type;				\
-		8'hFE: out_data <= __type >> 8;				\
-		8'hFF: out_data <= __subtype;				\
+		8'hFD: out_data <= __id_major;				\
+		8'hFE: out_data <= __id_major >> 8;			\
+		8'hFF: out_data <= __id_minor;				\
 		endcase							\
 	end /* always */
 
