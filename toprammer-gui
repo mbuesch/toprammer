@@ -1607,11 +1607,26 @@ class BufferTabWidget(QTabWidget):
 					      (ramImage, self.ramBuffer)):
 			if image is None:
 				continue
-			if bufferWidget.getRawData() != image:
+			bufImage = bufferWidget.getRawData()
+			if len(bufImage) > len(image):
 				self.mainWindow.console.showMessage(
-					"Chip verify of %s FAILED!\n" % bufferWidget.getName(),
+					"Chip verify of %s FAILED! "
+					"Buffer data is larger than "
+					"chip memory.\n" %\
+					bufferWidget.getName(),
 					bold=True)
 				fail = True
+				continue
+			nrPadding = len(image) - len(bufImage)
+			paddedBufImage = bufImage + b'\xFF' * nrPadding
+			if paddedBufImage != image:
+				self.mainWindow.console.showMessage(
+					"Chip verify of %s FAILED! "
+					"Image data mismatch.\n" %\
+					bufferWidget.getName(),
+					bold=True)
+				fail = True
+				continue
 		if fail:
 			self.mainWindow.console.setStatus(Console.STAT_ERROR)
 		else:
