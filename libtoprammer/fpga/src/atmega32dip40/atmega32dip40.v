@@ -4,7 +4,7 @@
  *   Atmel Mega32 DIP40
  *   FPGA bottomhalf implementation
  *
- *   Copyright (c) 2010-2011 Michael Buesch <m@bues.ch>
+ *   Copyright (c) 2010-2012 Michael Buesch <m@bues.ch>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,22 +21,9 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-/* The runtime ID and revision. */
-`define RUNTIME_ID	16'h0004
-`define RUNTIME_REV	16'h01
+`include "common.vh"
 
-module atmega32dip40(data, ale, write, read, zif);
-	inout [7:0] data;
-	input ale;
-	input write;
-	input read;
-	inout [48:1] zif;
-
-	reg [7:0] address;
-	reg [7:0] read_data;
-	wire read_oe;
-
-	/* Signals to/from the DUT */
+`BOTTOMHALF_BEGIN(atmega32dip40, 4, 1)
 	reg dut_oe, dut_wr, dut_xtal, dut_pagel;
 	reg dut_bs1, dut_bs2;
 	reg dut_xa0, dut_xa1;
@@ -46,14 +33,7 @@ module atmega32dip40(data, ale, write, read, zif);
 	reg dut_vcc_en;
 	reg dut_vcc;
 
-	/* Constant lo/hi */
-	wire low, high;
-	assign low = 0;
-	assign high = 1;
-
 	initial begin
-		address <= 0;
-		read_data <= 0;
 		dut_oe <= 0;
 		dut_wr <= 0;
 		dut_xtal <= 0;
@@ -69,84 +49,72 @@ module atmega32dip40(data, ale, write, read, zif);
 		dut_vcc <= 0;
 	end
 
-	always @(negedge ale) begin
-		address <= data;
-	end
+	`ASYNCPROC_BEGIN
+		/* Nothing to do. */
+	`ASYNCPROC_END
 
-	always @(posedge write) begin
-		case (address)
-		8'h10: begin
+	`DATAWRITE_BEGIN
+		`ADDR(0): begin
 			/* Data write */
-			dut_data <= data;
+			dut_data <= in_data;
 		end
-		8'h11: begin /* VCC/VPP control */
-			dut_vpp_en <= data[0];
-			dut_vpp <= data[1];
-			dut_vcc_en <= data[2];
-			dut_vcc <= data[3];
+		`ADDR(1): begin /* VCC/VPP control */
+			dut_vpp_en <= in_data[0];
+			dut_vpp <= in_data[1];
+			dut_vcc_en <= in_data[2];
+			dut_vcc <= in_data[3];
 		end
-		8'h12: begin
+		`ADDR(2): begin
 			/* Control pin access */
-			case (data[6:0])
+			case (in_data[6:0])
 			1: begin
 				/* Unused */
 			end
 			2: begin
-				dut_oe <= data[7];
+				dut_oe <= in_data[7];
 			end
 			3: begin
-				dut_wr <= data[7];
+				dut_wr <= in_data[7];
 			end
 			4: begin
-				dut_bs1 <= data[7];
+				dut_bs1 <= in_data[7];
 			end
 			5: begin
-				dut_xa0 <= data[7];
+				dut_xa0 <= in_data[7];
 			end
 			6: begin
-				dut_xa1 <= data[7];
+				dut_xa1 <= in_data[7];
 			end
 			7: begin
-				dut_xtal <= data[7];
+				dut_xtal <= in_data[7];
 			end
 			8: begin
 				/* Unused */
 			end
 			9: begin
-				dut_pagel <= data[7];
+				dut_pagel <= in_data[7];
 			end
 			10: begin
-				dut_bs2 <= data[7];
+				dut_bs2 <= in_data[7];
 			end
 			endcase
 		end
-		endcase
-	end
+	`DATAWRITE_END
 
-	always @(negedge read) begin
-		case (address)
-		8'h10: begin
+	`DATAREAD_BEGIN
+		`ADDR(0): begin
 			/* Data read */
-			read_data <= zif[32:25];
+			out_data <= zif[32:25];
 		end
-		8'h12: begin
+		`ADDR(2): begin
 			/* Status read */
-			read_data[0] <= zif[39];	/* RDY */
-			read_data[7:1] <= 0;
+			out_data[0] <= zif[39];	/* RDY */
+			out_data[7:1] <= 0;
 		end
+	`DATAREAD_END
 
-		8'hFD: read_data <= `RUNTIME_ID & 16'hFF;
-		8'hFE: read_data <= (`RUNTIME_ID >> 8) & 16'hFF;
-		8'hFF: read_data <= `RUNTIME_REV;
-		endcase
-	end
-
-	assign read_oe = !read && address[4];
-
-	bufif0(zif[1], low, low);
-	bufif0(zif[2], low, low);
-	bufif0(zif[3], low, low);
-	bufif0(zif[4], low, low);
+	`ZIF_UNUSED(1)	`ZIF_UNUSED(2)	`ZIF_UNUSED(3)
+	`ZIF_UNUSED(4)
 	bufif0(zif[5], dut_pagel, low);		/* PD7, PAGEL */
 	bufif0(zif[6], low, high);		/* PC0 */
 	bufif0(zif[7], low, high);		/* PC1 */
@@ -187,17 +155,6 @@ module atmega32dip40(data, ale, write, read, zif);
 	bufif0(zif[42], dut_bs1, low);		/* PD4, BS1 */
 	bufif0(zif[43], dut_xa0, low);		/* PD5, XA0 */
 	bufif0(zif[44], dut_xa1, low);		/* PD6, XA1 */
-	bufif0(zif[45], low, low);
-	bufif0(zif[46], low, low);
-	bufif0(zif[47], low, low);
-	bufif0(zif[48], low, low);
-
-	bufif1(data[0], read_data[0], read_oe);
-	bufif1(data[1], read_data[1], read_oe);
-	bufif1(data[2], read_data[2], read_oe);
-	bufif1(data[3], read_data[3], read_oe);
-	bufif1(data[4], read_data[4], read_oe);
-	bufif1(data[5], read_data[5], read_oe);
-	bufif1(data[6], read_data[6], read_oe);
-	bufif1(data[7], read_data[7], read_oe);
-endmodule
+	`ZIF_UNUSED(45)	`ZIF_UNUSED(46)	`ZIF_UNUSED(47)
+	`ZIF_UNUSED(48)
+`BOTTOMHALF_END
