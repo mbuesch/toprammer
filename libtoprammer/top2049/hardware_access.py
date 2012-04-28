@@ -50,7 +50,7 @@ class HardwareAccess(HardwareAccessUSB):
 	def hardwareInit(self):
 		self.queueCommand(b"\x0D")
 		if self.readBufferReg(4) != b"\x69\x0C\x02\x00":
-			self.printWarning("Init: Unexpected status (a)")
+			print("Init: Unexpected status (a)")
 
 		self.setVPPVoltage(0)
 		self.setVPPVoltage(0)
@@ -66,7 +66,7 @@ class HardwareAccess(HardwareAccessUSB):
 		self.delay(0.01)
 		self.queueCommand(b"\x0E\x25\x00\x00")
 		if self.readBufferReg(4) != b"\x6C\x68\x00\x00":
-			self.printWarning("Init: Unexpected status (b)")
+			print("Init: Unexpected status (b)")
 		self.enableZifPullups(False)
 		self.flushCommands()
 
@@ -113,11 +113,13 @@ class HardwareAccess(HardwareAccessUSB):
 		if address == self.makeFPGAAddr(0): # Fast tracked
 			self.queueCommand(int2byte(0x10) + int2byte(byte))
 			return
-		self.queueCommand(int2byte(0x0A) + int2byte(address) + int2byte(byte))
+		self.queueCommand(int2byte(0x0A) + int2byte(address) +\
+				  int2byte(byte))
 
 	def loadGNDLayout(self, layout):
 		# Load the GND configuration into the H/L shiftregisters.
-		cmd = int2byte(0x0E) + int2byte(0x16) + int2byte(layout) + int2byte(0)
+		cmd = int2byte(0x0E) + int2byte(0x16) +\
+		      int2byte(layout) + int2byte(0)
 		self.queueCommand(cmd)
 		self.delay(0.01)
 		self.flushCommands(0.15)
@@ -125,13 +127,15 @@ class HardwareAccess(HardwareAccessUSB):
 	def setVPPVoltage(self, voltage):
 		# Set the VPP voltage. voltage is a floating point voltage number.
 		centivolt = int(voltage * 10)
-		cmd = int2byte(0x0E) + int2byte(0x12) + int2byte(centivolt) + int2byte(0)
+		cmd = int2byte(0x0E) + int2byte(0x12) +\
+		      int2byte(centivolt) + int2byte(0)
 		self.queueCommand(cmd)
 		self.delay(0.01)
 
 	def loadVPPLayout(self, layout):
 		# Load the VPP configuration into the shift registers.
-		cmd = int2byte(0x0E) + int2byte(0x14) + int2byte(layout) + int2byte(0)
+		cmd = int2byte(0x0E) + int2byte(0x14) +\
+		      int2byte(layout) + int2byte(0)
 		self.queueCommand(cmd)
 		self.delay(0.01)
 		self.flushCommands(0.15)
@@ -139,23 +143,24 @@ class HardwareAccess(HardwareAccessUSB):
 	def setVCCVoltage(self, voltage):
 		# Set the VCC voltage.
 		centivolt = int(voltage * 10)
-		cmd = int2byte(0x0E) + int2byte(0x13) + int2byte(centivolt) + int2byte(0)
+		cmd = int2byte(0x0E) + int2byte(0x13) +\
+		      int2byte(centivolt) + int2byte(0)
 		self.queueCommand(cmd)
 		self.delay(0.01)
 
 	def loadVCCLayout(self, layout):
 		# Load the VCC configuration into the shift registers.
-		cmd = int2byte(0x0E) + int2byte(0x15) + int2byte(layout) + int2byte(0)
+		cmd = int2byte(0x0E) + int2byte(0x15) +\
+		      int2byte(layout) + int2byte(0)
 		self.queueCommand(cmd)
 		self.delay(0.01)
 		self.flushCommands(0.15)
 
 	def enableZifPullups(self, enable):
 		# Enable the ZIF socket signal pullups.
-		param = 0
-		if enable:
-			param = 1
-		cmd = int2byte(0x0E) + int2byte(0x28) + int2byte(param) + int2byte(0)
+		param = 1 if enable else 0
+		cmd = int2byte(0x0E) + int2byte(0x28) +\
+		      int2byte(param) + int2byte(0)
 		self.queueCommand(cmd)
 
 	def __delay_4usec(self):
