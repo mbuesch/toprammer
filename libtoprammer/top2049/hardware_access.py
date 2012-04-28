@@ -38,16 +38,20 @@ class HardwareAccess(HardwareAccessUSB):
 			doRawDump = doRawDump)
 
 	def getOscillatorHz(self):
+		"Get the 'OSC' frequency."
 		return 24000000
 
 	def getBufferRegSize(self):
+		"Get the buffer register size, in bytes."
 		return 64
 
 	def readBufferReg(self, nrBytes):
+		"Reads and returns the buffer register from hardware."
 		self.queueCommand(int2byte(0x07))
 		return self.receive(self.getBufferRegSize())[:nrBytes]
 
 	def hardwareInit(self):
+		"Initialize the hardware."
 		self.queueCommand(b"\x0D")
 		if self.readBufferReg(4) != b"\x69\x0C\x02\x00":
 			print("Init: Unexpected status (a)")
@@ -71,17 +75,21 @@ class HardwareAccess(HardwareAccessUSB):
 		self.flushCommands()
 
 	def readVersionString(self):
-		"""Returns the device ID and versioning string."""
+		"Returns the device ID and versioning string."
 		self.queueCommand(b"\x0E\x11\x00\x00")
 		data = self.readBufferReg(16)
 		return data.strip()
 
-	def FPGAMaxConfigChunkSize(self):
-		"""Maximum config chunk size."""
+	def getFPGAType(self):
+		"Get the FPGA architecture."
+		return "xc2s15"
+
+	def getFPGAMaxConfigChunkSize(self):
+		"Maximum config chunk size."
 		return 60
 
 	def FPGAInitiateConfig(self):
-		"""Initiate a configuration sequence on the FPGA."""
+		"Initiate a configuration sequence on the FPGA."
 		self.queueCommand(b"\x0E\x21\x00\x00")
 		stat = byte2int(self.readBufferReg(1))
 		expected = 0x01
@@ -90,9 +98,9 @@ class HardwareAccess(HardwareAccessUSB):
 				"config sequence (got 0x%02X, expected 0x%02X)" %\
 				(stat, expected))
 
-	def FPGAUploadConfig(self, data):
-		"""Upload configuration data into the FPGA."""
-		assert(len(data) <= self.FPGAMaxConfigChunkSize())
+	def FPGAUploadConfig(self, offset, data):
+		"Upload configuration data into the FPGA."
+		assert(len(data) <= self.getFPGAMaxConfigChunkSize())
 		cmd = b"\x0E\x22\x00\x00" + data
 		cmd += b"\x00" * (64 - len(cmd)) # padding
 		self.queueCommand(cmd)
@@ -102,6 +110,7 @@ class HardwareAccess(HardwareAccessUSB):
 		return address | (1 << self.ADDR_OK_BIT)
 
 	def FPGARead(self, address):
+		"Do an FPGA read at 'address'. Data is put into buffer reg."
 		address = self.makeFPGAAddr(address)
 		if address == self.makeFPGAAddr(0): # Fast tracked
 			self.queueCommand(int2byte(0x01))
@@ -109,6 +118,7 @@ class HardwareAccess(HardwareAccessUSB):
 		self.queueCommand(int2byte(0x0B) + int2byte(address))
 
 	def FPGAWrite(self, address, byte):
+		"Write 'byte' to FPGA at 'address'."
 		address = self.makeFPGAAddr(address)
 		if address == self.makeFPGAAddr(0): # Fast tracked
 			self.queueCommand(int2byte(0x10) + int2byte(byte))
@@ -117,7 +127,7 @@ class HardwareAccess(HardwareAccessUSB):
 				  int2byte(byte))
 
 	def loadGNDLayout(self, layout):
-		# Load the GND configuration into the H/L shiftregisters.
+		"Load the GND configuration into the H/L shiftregisters."
 		cmd = int2byte(0x0E) + int2byte(0x16) +\
 		      int2byte(layout) + int2byte(0)
 		self.queueCommand(cmd)
@@ -125,7 +135,7 @@ class HardwareAccess(HardwareAccessUSB):
 		self.flushCommands(0.15)
 
 	def setVPPVoltage(self, voltage):
-		# Set the VPP voltage. voltage is a floating point voltage number.
+		"Set the VPP voltage. voltage is a floating point voltage number."
 		centivolt = int(voltage * 10)
 		cmd = int2byte(0x0E) + int2byte(0x12) +\
 		      int2byte(centivolt) + int2byte(0)
@@ -133,7 +143,7 @@ class HardwareAccess(HardwareAccessUSB):
 		self.delay(0.01)
 
 	def loadVPPLayout(self, layout):
-		# Load the VPP configuration into the shift registers.
+		"Load the VPP configuration into the shift registers."
 		cmd = int2byte(0x0E) + int2byte(0x14) +\
 		      int2byte(layout) + int2byte(0)
 		self.queueCommand(cmd)
@@ -141,7 +151,7 @@ class HardwareAccess(HardwareAccessUSB):
 		self.flushCommands(0.15)
 
 	def setVCCVoltage(self, voltage):
-		# Set the VCC voltage.
+		"Set the VCC voltage."
 		centivolt = int(voltage * 10)
 		cmd = int2byte(0x0E) + int2byte(0x13) +\
 		      int2byte(centivolt) + int2byte(0)
@@ -149,7 +159,7 @@ class HardwareAccess(HardwareAccessUSB):
 		self.delay(0.01)
 
 	def loadVCCLayout(self, layout):
-		# Load the VCC configuration into the shift registers.
+		"Load the VCC configuration into the shift registers."
 		cmd = int2byte(0x0E) + int2byte(0x15) +\
 		      int2byte(layout) + int2byte(0)
 		self.queueCommand(cmd)
@@ -157,7 +167,7 @@ class HardwareAccess(HardwareAccessUSB):
 		self.flushCommands(0.15)
 
 	def enableZifPullups(self, enable):
-		# Enable the ZIF socket signal pullups.
+		"Enable the ZIF socket signal pullups."
 		param = 1 if enable else 0
 		cmd = int2byte(0x0E) + int2byte(0x28) +\
 		      int2byte(param) + int2byte(0)
@@ -170,6 +180,7 @@ class HardwareAccess(HardwareAccessUSB):
 		self.queueCommand(int2byte(0x1B))
 
 	def delay(self, seconds):
+		"Perform an on-device or host delay."
 		if seconds >= 0.5:
 			# Perform long delays on the host
 			self.flushCommands(seconds)

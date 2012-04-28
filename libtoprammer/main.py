@@ -252,9 +252,10 @@ class TOP(object):
 
 		self.hw.FPGAInitiateConfig()
 		data = self.bitfile.getPayload()
-		chunksz = self.hw.FPGAMaxConfigChunkSize()
+		chunksz = self.hw.getFPGAMaxConfigChunkSize()
+		chunksz = chunksz if chunksz > 0 else len(data)
 		for i in range(0, len(data), chunksz):
-			self.hw.FPGAUploadConfig(data[i : i + chunksz])
+			self.hw.FPGAUploadConfig(i, data[i : i + chunksz])
 		self.flushCommands()
 
 		if requiredID and requiredRevision:
@@ -382,7 +383,7 @@ class TOP(object):
 
 	def hostDelay(self, seconds):
 		"""Flush all commands and delay the host computer for 'seconds'"""
-		self.hw.flushCommands(seconds)
+		self.flushCommands(seconds)
 
 	def getOscillatorHz(self):
 		"""Returns the FPGA oscillator frequency, in Hz.
@@ -468,5 +469,6 @@ class TOP(object):
 		"""Enable the ZIF socket signal pullups."""
 		self.hw.enableZifPullups(enable)
 
-	def flushCommands(self):
-		self.hw.flushCommands()
+	def flushCommands(self, sleepSeconds=0):
+		"""Flush command queue and optionally sleep for 'sleepSeconds'."""
+		self.hw.flushCommands(sleepSeconds)
