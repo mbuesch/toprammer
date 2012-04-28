@@ -426,10 +426,12 @@ class UnitestDialog(QDialog):
 			self.oscDiv.setValue(div)
 
 			mask = int(p.get(sect, "oscillatorMask"), 16)
-			idx = self.oscPin.findData(Wrapper(mask))
-			if idx < 0:
+			for i in range(0, self.oscPin.count()):
+				if self.oscPin.itemData(i).obj == mask:
+					break
+			else:
 				raise TOPException("Invalid oscillator mask")
-			self.oscPin.setCurrentIndex(idx)
+			self.oscPin.setCurrentIndex(i)
 
 			mask = int(p.get(sect, "zifOutEnMask"), 16)
 			self.zifWidget.setOutEnMask(mask)
@@ -442,9 +444,10 @@ class UnitestDialog(QDialog):
 					     "Failed to load settings: %s" % str(e))
 
 	def loadSettings(self):
-		fn = str(QFileDialog.getOpenFileName(self, "Load settings", "",
-						     "Toprammer-unitest settings (*.tus);;"
-						     "All files (*)"))
+		(fn, selFltr) = QFileDialog.getOpenFileName(
+			self, "Load settings", "",
+			"Toprammer-unitest settings (*.tus);;"
+			"All files (*)")
 		if not fn:
 			return
 		self.__loadFile(fn)
@@ -483,8 +486,9 @@ class UnitestDialog(QDialog):
 					     "Failed to write settings to file: %s" % str(e))
 
 	def saveSettings(self):
-		fn = str(QFileDialog.getSaveFileName(self, "Save settings", "",
-						     "Toprammer-unitest settings (*.tus)"))
+		(fn, selFltr) = QFileDialog.getSaveFileName(
+			self, "Save settings", "",
+			"Toprammer-unitest settings (*.tus)")
 		if not fn:
 			return
 		if not fn.endswith(".tus"):
