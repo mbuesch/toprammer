@@ -233,7 +233,7 @@ class UnitestDialog(QDialog):
 		self.param_vppLayouts = self.queryTop("top.vpp.supportedLayouts()")
 		self.param_minVppVolt = self.queryTop("top.vpp.minVoltage()")
 		self.param_maxVppVolt = self.queryTop("top.vpp.maxVoltage()")
-		self.param_oscFreq = self.queryTop("top.getChip().getOscFreq()")
+		self.param_oscFreq = self.queryTop("top.getOscillatorHz()")
 
 		assert(self.param_nrZifPins % 2 == 0)
 		self.param_vppLayouts.sort(key=lambda (layId, layMask): layMask)

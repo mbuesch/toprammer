@@ -387,7 +387,7 @@ class TOP(object):
 	def getOscillatorHz(self):
 		"""Returns the FPGA oscillator frequency, in Hz.
 		The oscillator is connected to the FPGA clk pin."""
-		self.hw.getOscillatorHz()
+		return self.hw.getOscillatorHz()
 
 	def getBufferRegSize(self):
 		"""Returns the size (in bytes) of the buffer register."""
