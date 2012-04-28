@@ -53,7 +53,7 @@ class LayoutGenerator:
 		vppPins may either be one pin number or a list of pin numbers or None."""
 		self.vccPin = vccPin
 		if vppPins is None:
-			self.vppPins = None
+			self.vppPins = [ ]
 		else:
 			try:
 				self.vppPins = list(vppPins)
@@ -92,7 +92,7 @@ class LayoutGenerator:
 					(1 << (zifVccPin - 1)))
 
 		# Find a (possibly cumulative) VPP layout
-		if self.vppPins is None:
+		if not self.vppPins:
 			self.result_VPP = None
 		else:
 			zifVppMask = 0
@@ -241,10 +241,9 @@ class LayoutGeneratorDIP(LayoutGenerator):
 			raise TOPException("Invalid DIP package")
 		if self.vccPin < 1 or self.vccPin > self.nrPins:
 			raise TOPException("Invalid VCC pin number for the selected package")
-		if self.vppPins is not None:
-			for vppPin in self.vppPins:
-				if vppPin < 1 or vppPin > self.nrPins:
-					raise TOPException("Invalid VPP pin number for the selected package")
+		for vppPin in self.vppPins:
+			if vppPin < 1 or vppPin > self.nrPins:
+				raise TOPException("Invalid VPP pin number for the selected package")
 		if self.gndPin < 1 or self.gndPin > self.nrPins:
 			raise TOPException("Invalid GND pin number for the selected package")
 
@@ -271,26 +270,56 @@ class LayoutGeneratorDIP(LayoutGenerator):
 				return dipPin + offset
 
 	def zifLayoutAsciiArt(self):
-		ret =  "T     ZIF socket\n"
-		ret += "^--o==============o\n"
+		def line(prefix, content, postfix):
+			return "%3s  %s  %3s\n" % (prefix, content, postfix)
+
+		zifGnd = self.getZifPinForPackagePin(self.gndPin)
+		zifVcc = self.getZifPinForPackagePin(self.vccPin)
+		zifVpp = [ self.getZifPinForPackagePin(p) \
+			   for p in self.vppPins ]
+
+		ret =  line("", "T     ZIF socket", "")
+		ret += line("", "^--o==============o", "")
 		for zp in range(1, self.zifPins // 2 + 1):
+			prefix, postfix = "", ""
+			if zp == zifGnd:
+				prefix = "GND"
+			if self.zifPins - zp + 1 == zifGnd:
+				postfix = "GND"
+			if zp == zifVcc:
+				prefix = "VCC"
+			if self.zifPins - zp + 1 == zifVcc:
+				postfix = "VCC"
+			if zp in zifVpp:
+				prefix = "VPP"
+			if self.zifPins - zp + 1 in zifVpp:
+				postfix = "VPP"
+
 			if zp < self.result_offset + 1 or \
 			   zp > self.result_offset + self.nrPins // 2:
-				ret += "%2d |----- || -----| %2d\n" %\
-					(zp, self.zifPins + 1 - zp)
+				ret += line(prefix,
+					"%2d |----- || -----| %2d" %\
+					(zp, self.zifPins + 1 - zp),
+					postfix)
 			else:
 				if zp == self.result_offset + 1 and \
 				   not self.result_upsideDown:
-					ret += "%2d |-- 1##..##o --| %2d\n" %\
-						(zp, self.zifPins + 1 - zp)
+					ret += line(prefix,
+						"%2d |-- 1##..##o --| %2d" %\
+						(zp, self.zifPins + 1 - zp),
+						postfix)
 				elif zp == self.result_offset + self.nrPins // 2 and \
 				     self.result_upsideDown:
-					ret += "%2d |-- o##''##1 --| %2d\n" %\
-						(zp, self.zifPins + 1 - zp)
+					ret += line(prefix,
+						"%2d |-- o##''##1 --| %2d" %\
+						(zp, self.zifPins + 1 - zp),
+						postfix)
 				else:
-					ret += "%2d |-- o######o --| %2d\n" %\
-						(zp, self.zifPins + 1 - zp)
-		ret += "   o==============o"
+					ret += line(prefix,
+						"%2d |-- o######o --| %2d" %\
+						(zp, self.zifPins + 1 - zp),
+						postfix)
+		ret += line("", "   o==============o", "")
 		return ret
 
 def createLayoutGenerator(package):
