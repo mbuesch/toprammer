@@ -50,6 +50,9 @@
 		wire [7:0] in_data;					\
 		assign in_data = __data;				\
 									\
+		wire __ale_signal;					\
+		IBUFG __ale_ibufg(.I(__ale), .O(__ale_signal));		\
+									\
 		/* constant low/high signals */				\
 		wire low, high;						\
 		assign low = 0;						\
@@ -76,7 +79,7 @@
 			__cmd_state <= 0;				\
 		end							\
 									\
-		always @(negedge __ale) begin				\
+		always @(negedge __ale_signal) begin			\
 			__addr_latch <= __data;				\
 		end							\
 									\
