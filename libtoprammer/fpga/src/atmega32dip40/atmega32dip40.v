@@ -49,9 +49,7 @@
 		dut_vcc <= 0;
 	end
 
-	`ASYNCPROC_BEGIN
-		/* Nothing to do. */
-	`ASYNCPROC_END
+	`ASYNCPROC_NONE
 
 	`DATAWRITE_BEGIN
 		`ADDR(0): begin

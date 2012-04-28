@@ -30,9 +30,7 @@
 	reg dut_oe;
 	reg dut_we;
 
-	`ASYNCPROC_BEGIN
-		/* Nothing to do */
-	`ASYNCPROC_END
+	`ASYNCPROC_NONE
 
 	`DATAWRITE_BEGIN
 		`ADDR(0): begin /* Bulk write */
