@@ -1326,6 +1326,7 @@ class InfoBufferWidget(BufferWidget):
 		font = self.zifLayout.font()
 		font.setFixedPitch(True)
 		font.setFamily("monospace")
+		font.setPointSize(7)
 		self.zifLayout.setFont(font)
 		self.layout().addWidget(self.zifLayout, 0, 0, 5, 1)
 
