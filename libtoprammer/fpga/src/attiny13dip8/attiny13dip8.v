@@ -4,7 +4,7 @@
  *   Atmel Tiny13 DIP8
  *   FPGA bottomhalf implementation
  *
- *   Copyright (c) 2010 Michael Buesch <m@bues.ch>
+ *   Copyright (c) 2010-2012 Michael Buesch <m@bues.ch>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,29 +21,12 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-/* The runtime ID and revision. */
-`define RUNTIME_ID	16'h0001
-`define RUNTIME_REV	16'h01
+`include "common.vh"
 
-module attiny13dip8(data, ale, write, read, osc_in, zif);
-	inout [7:0] data;
-	input ale;
-	input write;
-	input read;
-	input osc_in; /* 24MHz oscillator */
-	inout [48:1] zif;
-
-	/* Interface to the microcontroller */
-	wire read_oe;		/* Read output-enable */
-	reg [7:0] address;	/* Cached address value */
-	reg [7:0] read_data;	/* Cached read data */
-
-	/* Programmer context */
-	reg [1:0] prog_busy;
-	reg [7:0] prog_command;
-	reg [7:0] prog_state;
+`BOTTOMHALF_BEGIN(attiny13dip8, 1, 1)
 	reg [7:0] prog_count;
 	`define CMD_SENDINSTR	1
+
 	reg dut_sdi;
 	reg dut_sii;
 	reg dut_sci_manual;
@@ -58,14 +41,7 @@ module attiny13dip8(data, ale, write, read, osc_in, zif);
 	reg [10:0] sii_buf;
 	reg [10:0] sdo_buf;
 
-	wire low, high;		/* Constant lo/hi */
-	assign low = 0;
-	assign high = 1;
-
 	initial begin
-		prog_busy <= 0;
-		prog_command <= 0;
-		prog_state <= 0;
 		prog_count <= 0;
 		dut_sdi <= 0;
 		dut_sii <= 0;
@@ -80,165 +56,98 @@ module attiny13dip8(data, ale, write, read, osc_in, zif);
 		sdo_buf <= 0;
 	end
 
-	/* The delay counter. Based on the 24MHz input clock. */
-	reg [15:0] delay_count;
-	wire osc;
-	IBUF osc_ibuf(.I(osc_in), .O(osc));
-
-	`define DELAY_1US	delay_count <= 24 - 1
-
-	always @(posedge osc) begin
-		if (delay_count == 0 && prog_busy[0] != prog_busy[1]) begin
-			case (prog_command)
-			`CMD_SENDINSTR: begin
-				case (prog_state)
-				0: begin
-					dut_sdi <= sdi_buf[10 - prog_count];
-					dut_sii <= sii_buf[10 - prog_count];
-					prog_state <= 1;
-					`DELAY_1US;
+	`ASYNCPROC_BEGIN
+		if (`CMD_IS(`CMD_SENDINSTR)) begin
+			case (`CMD_STATE)
+			0: begin
+				dut_sdi <= sdi_buf[10 - prog_count];
+				dut_sii <= sii_buf[10 - prog_count];
+				`CMD_STATE_SET(1)
+				`UDELAY(1)
+			end
+			1: begin
+				dut_sci_auto <= 1;	/* CLK hi */
+				`CMD_STATE_SET(2)
+				`UDELAY(1)
+			end
+			2: begin
+				sdo_buf[10 - prog_count] <= zif[`DUT_SDO];
+				prog_count <= prog_count + 1;
+				`CMD_STATE_SET(3)
+				`UDELAY(1)
+			end
+			3: begin
+				dut_sci_auto <= 0;	/* CLK lo */
+				`UDELAY(1)
+				if (prog_count == 11) begin
+					`CMD_FINISH
+					prog_count <= 0;
+				end else begin
+					`CMD_STATE_SET(0)
 				end
-				1: begin
-					dut_sci_auto <= 1;	/* CLK hi */
-					prog_state <= 2;
-					`DELAY_1US;
-				end
-				2: begin
-					sdo_buf[10 - prog_count] <= zif[`DUT_SDO];
-					prog_count <= prog_count + 1;
-					prog_state <= 3;
-					`DELAY_1US;
-				end
-				3: begin
-					dut_sci_auto <= 0;	/* CLK lo */
-					`DELAY_1US;
-					if (prog_count == 11) begin
-						prog_state <= 0;
-						prog_count <= 0;
-						prog_busy[1] <= prog_busy[0]; /* done */
-					end else begin
-						prog_state <= 0;
-					end
-				end
-				endcase
 			end
 			endcase
-		end else begin
-			if (delay_count != 0) begin
-				delay_count <= delay_count - 1;
-			end
 		end
-	end
+	`ASYNCPROC_END
 
-	always @(posedge write) begin
-		case (address)
-		8'h10: begin /* Unused */
+	`DATAWRITE_BEGIN
+		`ADDR(2): begin /* Run command */
+			`CMD_RUN(in_data)
 		end
-		8'h12: begin /* Run command */
-			prog_command <= data;
-			prog_busy[0] <= ~prog_busy[1];
-		end
-		8'h13: begin /* Load SDI sequence */
+		`ADDR(3): begin /* Load SDI sequence */
 			sdi_buf[1:0] <= 0;
-			sdi_buf[9:2] <= data;
+			sdi_buf[9:2] <= in_data;
 			sdi_buf[10] <= 0;
 		end
-		8'h14: begin /* Load SII sequence */
+		`ADDR(4): begin /* Load SII sequence */
 			sii_buf[1:0] <= 0;
-			sii_buf[9:2] <= data;
+			sii_buf[9:2] <= in_data;
 			sii_buf[10] <= 0;
 		end
-		8'h15: begin /* Set signals manually */
-			dut_sci_manual <= data[0];	/* SCI */
-			dut_sdo_driven <= data[1];	/* SDO drive-enable */
-			dut_sdo_value <= data[2];	/* SDO drive-value */
-			dut_rst_driven <= data[3];	/* RESET drive-enable */
-			dut_rst_value <= data[4];	/* RESET drive-value */
+		`ADDR(5): begin /* Set signals manually */
+			dut_sci_manual <= in_data[0];	/* SCI */
+			dut_sdo_driven <= in_data[1];	/* SDO drive-enable */
+			dut_sdo_value <= in_data[2];	/* SDO drive-value */
+			dut_rst_driven <= in_data[3];	/* RESET drive-enable */
+			dut_rst_value <= in_data[4];	/* RESET drive-value */
 		end
-		endcase
-	end
+	`DATAWRITE_END
 
-	always @(negedge read) begin
-		case (address)
-		8'h10: begin /* Get SDO sequence high (bits 3-10) */
-			read_data[7:0] <= sdo_buf[10:3];
+	`DATAREAD_BEGIN
+		`ADDR(0): begin /* Get SDO sequence high (bits 3-10) */
+			out_data[7:0] <= sdo_buf[10:3];
 		end
-		8'h12: begin /* Read status */
-			read_data[0] <= (prog_busy[0] != prog_busy[1]);	/* busy */
-			read_data[1] <= zif[`DUT_SDO];			/* Raw SDO pin access */
+		`ADDR(2): begin /* Read status */
+			out_data[0] <= `CMD_IS_RUNNING;	/* busy */
+			out_data[1] <= zif[`DUT_SDO];	/* Raw SDO pin access */
 		end
-		8'h13: begin /* Get SDO sequence low (bits 0-7) */
-			read_data[7:0] <= sdo_buf[7:0];
+		`ADDR(3): begin /* Get SDO sequence low (bits 0-7) */
+			out_data[7:0] <= sdo_buf[7:0];
 		end
+	`DATAREAD_END
 
-		8'hFD: read_data <= `RUNTIME_ID & 16'hFF;
-		8'hFE: read_data <= (`RUNTIME_ID >> 8) & 16'hFF;
-		8'hFF: read_data <= `RUNTIME_REV;
-		endcase
-	end
+	assign dut_sci = `CMD_IS_RUNNING ? dut_sci_auto : dut_sci_manual;
 
-	always @(negedge ale) begin
-		address <= data;
-	end
-
-	assign dut_sci = (prog_busy[0] == prog_busy[1]) ? dut_sci_manual : dut_sci_auto;
-	assign read_oe = !read && address[4];
-
-	bufif0(zif[1], low, low);
-	bufif0(zif[2], low, low);
-	bufif0(zif[3], low, low);
-	bufif0(zif[4], low, low);
-	bufif0(zif[5], low, low);
-	bufif0(zif[6], low, low);
-	bufif0(zif[7], low, low);
-	bufif0(zif[8], low, low);
-	bufif0(zif[9], low, low);
-	bufif0(zif[10], low, low);
-	bufif0(zif[11], low, low);
-	bufif0(zif[12], low, low);
-	bufif0(zif[13], low, low);
-	bufif0(zif[14], low, low);
+	`ZIF_UNUSED(1)	`ZIF_UNUSED(2)	`ZIF_UNUSED(3)
+	`ZIF_UNUSED(4)	`ZIF_UNUSED(5)	`ZIF_UNUSED(6)
+	`ZIF_UNUSED(7)	`ZIF_UNUSED(8)	`ZIF_UNUSED(9)
+	`ZIF_UNUSED(10)	`ZIF_UNUSED(11)	`ZIF_UNUSED(12)
+	`ZIF_UNUSED(13)	`ZIF_UNUSED(14)
 	bufif0(zif[15], dut_rst_value, !dut_rst_driven);	/* RESET */
 	bufif0(zif[16], dut_sci, low);				/* SCI */
 	bufif0(zif[17], low, high);				/* PB4 */
 	bufif0(zif[18], low, low);				/* GND */
-	bufif0(zif[19], low, low);
-	bufif0(zif[20], low, low);
-	bufif0(zif[21], low, low);
-	bufif0(zif[22], low, low);
-	bufif0(zif[23], low, low);
-	bufif0(zif[24], low, low);
-	bufif0(zif[25], low, low);
-	bufif0(zif[26], low, low);
-	bufif0(zif[27], low, low);
-	bufif0(zif[28], low, low);
-	bufif0(zif[29], low, low);
-	bufif0(zif[30], low, low);
+	`ZIF_UNUSED(19)	`ZIF_UNUSED(20)	`ZIF_UNUSED(21)
+	`ZIF_UNUSED(22)	`ZIF_UNUSED(23)	`ZIF_UNUSED(24)
+	`ZIF_UNUSED(25)	`ZIF_UNUSED(26)	`ZIF_UNUSED(27)
+	`ZIF_UNUSED(28)	`ZIF_UNUSED(29)	`ZIF_UNUSED(30)
 	bufif0(zif[31], dut_sdi, low);				/* SDI */
 	bufif0(zif[32], dut_sii, low);				/* SII */
 	bufif0(zif[33], dut_sdo_value, !dut_sdo_driven);	/* SDO */
 	bufif0(zif[34], high, low);				/* VCC */
-	bufif0(zif[35], low, low);
-	bufif0(zif[36], low, low);
-	bufif0(zif[37], low, low);
-	bufif0(zif[38], low, low);
-	bufif0(zif[39], low, low);
-	bufif0(zif[40], low, low);
-	bufif0(zif[41], low, low);
-	bufif0(zif[42], low, low);
-	bufif0(zif[43], low, low);
-	bufif0(zif[44], low, low);
-	bufif0(zif[45], low, low);
-	bufif0(zif[46], low, low);
-	bufif0(zif[47], low, low);
-	bufif0(zif[48], low, low);
-
-	bufif1(data[0], read_data[0], read_oe);
-	bufif1(data[1], read_data[1], read_oe);
-	bufif1(data[2], read_data[2], read_oe);
-	bufif1(data[3], read_data[3], read_oe);
-	bufif1(data[4], read_data[4], read_oe);
-	bufif1(data[5], read_data[5], read_oe);
-	bufif1(data[6], read_data[6], read_oe);
-	bufif1(data[7], read_data[7], read_oe);
-endmodule
+	`ZIF_UNUSED(35)	`ZIF_UNUSED(36)	`ZIF_UNUSED(37)
+	`ZIF_UNUSED(38)	`ZIF_UNUSED(39)	`ZIF_UNUSED(40)
+	`ZIF_UNUSED(41)	`ZIF_UNUSED(42)	`ZIF_UNUSED(43)
+	`ZIF_UNUSED(44)	`ZIF_UNUSED(45)	`ZIF_UNUSED(46)
+	`ZIF_UNUSED(47)	`ZIF_UNUSED(48)
+`BOTTOMHALF_END
