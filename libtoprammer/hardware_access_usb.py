@@ -38,6 +38,8 @@ class FoundUSBDev(object):
 class HardwareAccessUSB(CommandQueue):
 	"Lowlevel USB hardware access"
 
+	TIMEOUT_MSEC = 2000
+
 	@classmethod
 	def scan(cls, checkCallback):
 		"Scan for devices. Returns a list of FoundUSBDev()."
@@ -110,7 +112,8 @@ class HardwareAccessUSB(CommandQueue):
 			if self.doRawDump:
 				print("Sending command:")
 				dumpMem(data)
-			self.usbh.bulkWrite(self.bulkOut.address, data)
+			self.usbh.bulkWrite(self.bulkOut.address, data,
+					    self.TIMEOUT_MSEC)
 		except (usb.USBError), e:
 			raise TOPException("USB bulk write error: " + str(e))
 
@@ -120,8 +123,9 @@ class HardwareAccessUSB(CommandQueue):
 		self.flushCommands()
 		try:
 			ep = self.bulkIn.address
-			data = b"".join(map(lambda b: int2byte(b),
-					    self.usbh.bulkRead(ep, size)))
+			data = b"".join([ int2byte(b) for b in
+					  self.usbh.bulkRead(ep, size,
+						self.TIMEOUT_MSEC) ])
 			if len(data) != size:
 				raise TOPException("USB bulk read error: Could not read the " +\
 					"requested number of bytes (req %d, got %d)" % (size, len(data)))
