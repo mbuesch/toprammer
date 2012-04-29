@@ -25,13 +25,15 @@
 `define RUNTIME_ID	16'h000B
 `define RUNTIME_REV	16'h01
 
-module i2c_module(clock, scl, sda,
+module i2c_module(clock, scl, sda_out, sda_out_en, sda_in,
 		  write_byte, read_byte, read_mode,
 		  do_start, expect_ack, do_stop,
 		  finished);
 	input clock;
 	output scl;
-	inout sda;
+	output sda_out;
+	output sda_out_en;
+	input sda_in;
 	input [7:0] write_byte;
 	output [7:0] read_byte;
 	input read_mode;
@@ -48,9 +50,9 @@ module i2c_module(clock, scl, sda,
 
 	reg sda_out;
 	reg sda_out_en;
-	reg scl_out;
-	reg [7:0] read_byte_out;
-	reg finished_out;
+	reg scl;
+	reg [7:0] read_byte;
+	reg finished;
 
 	initial begin
 		start_state <= 0;
@@ -61,20 +63,20 @@ module i2c_module(clock, scl, sda,
 
 		sda_out <= 0;
 		sda_out_en <= 0;
-		scl_out <= 0;
-		read_byte_out <= 0;
-		finished_out <= 0;
+		scl <= 0;
+		read_byte <= 0;
+		finished <= 0;
 	end
 
 	always @(posedge clock) begin
 		if (do_start && start_state != 3) begin
 			/* Send start condition */
-			finished_out <= 0;
+			finished <= 0;
 			sda_out_en <= 1;
 			case (start_state)
 			0: begin
 				/* Start SCL high */
-				scl_out <= 1;
+				scl <= 1;
 				sda_out <= 1;
 				start_state <= 1;
 			end
@@ -85,27 +87,27 @@ module i2c_module(clock, scl, sda,
 			end
 			2: begin
 				/* Start SCL low */
-				scl_out <= 0;
+				scl <= 0;
 				start_state <= 3;
 			end
 			endcase
 		end else if (data_state != 3) begin
 			/* Data transfer */
-			finished_out <= 0;
+			finished <= 0;
 			if (read_mode) begin	/* Read */
 				sda_out_en <= 0;
 				sda_out <= 0;
 				case (data_state)
 				0: begin
-					scl_out <= 1;
+					scl <= 1;
 					data_state <= 1;
 				end
 				1: begin
-					read_byte_out[7 - bit_index] <= sda;
+					read_byte[7 - bit_index] <= sda_in;
 					data_state <= 2;
 				end
 				2: begin
-					scl_out <= 0;
+					scl <= 0;
 					if (bit_index == 7) begin
 						/* Done reading byte */
 						bit_index <= 0;
@@ -121,15 +123,15 @@ module i2c_module(clock, scl, sda,
 				case (data_state)
 				0: begin
 					sda_out <= write_byte[7 - bit_index];
-					scl_out <= 0;
+					scl <= 0;
 					data_state <= 1;
 				end
 				1: begin
-					scl_out <= 1;
+					scl <= 1;
 					data_state <= 2;
 				end
 				2: begin
-					scl_out <= 0;
+					scl <= 0;
 					if (bit_index == 7) begin
 						/* Done writing byte */
 						bit_index <= 0;
@@ -143,16 +145,16 @@ module i2c_module(clock, scl, sda,
 			end
 		end else if (expect_ack && ack_state != 2) begin
 			/* Wait for ACK from chip */
-			finished_out <= 0;
+			finished <= 0;
 			sda_out_en <= 0;
 			case (ack_state)
 			0: begin
-				scl_out <= 1;
+				scl <= 1;
 				ack_state <= 1;
 			end
 			1: begin
-				scl_out <= 0;
-				if (sda == 0) begin
+				scl <= 0;
+				if (sda_in == 0) begin
 					/* Got it */
 					ack_state <= 2;
 				end else begin
@@ -162,11 +164,11 @@ module i2c_module(clock, scl, sda,
 			endcase
 		end else if (do_stop && stop_state != 3) begin
 			/* Send stop condition */
-			finished_out <= 0;
+			finished <= 0;
 			sda_out_en <= 1;
 			case (stop_state)
 			0: begin
-				scl_out <= 1;
+				scl <= 1;
 				sda_out <= 0;
 				stop_state <= 1;
 			end
@@ -185,15 +187,9 @@ module i2c_module(clock, scl, sda,
 			ack_state <= 0;
 			stop_state <= 0;
 
-			finished_out <= 1;
+			finished <= 1;
 		end
 	end
-
-	bufif1(sda, sda_out, sda_out_en);
-	bufif1(scl, scl_out, 1);
-
-	assign read_byte = read_byte_out;
-	assign finished = finished_out;
 endmodule
 
 module m24c16dip8(data, ale_in, write, read, osc_in, zif);
@@ -235,8 +231,10 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 	reg chip_e2;		/* E2 */
 	reg chip_e2_en;		/* E2 enable */
 	reg chip_wc;		/* /WC */
+	wire chip_scl;		/* I2C SCL */
+	wire chip_sda_out;	/* I2C SDA out */
+	wire chip_sda_out_en;	/* I2C SDA out enable */
 	parameter ZIF_SDA	= 25;
-	parameter ZIF_SCL	= 26;
 
 	wire low, high;		/* Constant lo/hi */
 	assign low = 0;
@@ -253,10 +251,20 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 	wire i2c_finished;
 	reg [1:0] i2c_running;
 
-	i2c_module i2c(.clock(i2c_clock), .scl(zif[ZIF_SCL]), .sda(zif[ZIF_SDA]),
-		       .write_byte(i2c_write_byte), .read_byte(i2c_read_byte), .read_mode(i2c_read),
-		       .do_start(i2c_do_start), .expect_ack(i2c_expect_ack), .do_stop(i2c_do_stop),
-		       .finished(i2c_finished));
+	i2c_module i2c(
+		.clock(i2c_clock),
+		.scl(chip_scl),
+		.sda_out(chip_sda_out),
+		.sda_out_en(chip_sda_out_en),
+		.sda_in(zif[ZIF_SDA]),
+		.write_byte(i2c_write_byte),
+		.read_byte(i2c_read_byte),
+		.read_mode(i2c_read),
+		.do_start(i2c_do_start),
+		.expect_ack(i2c_expect_ack),
+		.do_stop(i2c_do_stop),
+		.finished(i2c_finished)
+	);
 
 	/* Cached data from byte read operation */
 	reg [7:0] fetched_data;
@@ -466,14 +474,14 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 	bufif0(zif[18], low, low);
 	bufif0(zif[19], low, low);
 	bufif0(zif[20], low, low);
-	bufif0(zif[21], chip_e0, !chip_e0_en);		/* E0 */
-	bufif0(zif[22], chip_e1, !chip_e1_en);		/* E1 */
-	bufif0(zif[23], chip_e2, !chip_e2_en);		/* E2 */
-	bufif0(zif[24], low, low);			/* VSS */
-/*	bufif0(zif[25], low, high);	*/		/* SDA; driven by i2c module. */
-/*	bufif0(zif[26], low, high);	*/		/* SCL; driven by i2c module. */
-	bufif0(zif[27], chip_wc, low);			/* /WC */
-	bufif0(zif[28], high, low);			/* VCC */
+	bufif0(zif[21], chip_e0, !chip_e0_en);			/* E0 */
+	bufif0(zif[22], chip_e1, !chip_e1_en);			/* E1 */
+	bufif0(zif[23], chip_e2, !chip_e2_en);			/* E2 */
+	bufif0(zif[24], low, low);				/* VSS */
+	bufif0(zif[25], chip_sda_out, !chip_sda_out_en);	/* SDA */
+	bufif0(zif[26], chip_scl, low);				/* SCL */
+	bufif0(zif[27], chip_wc, low);				/* /WC */
+	bufif0(zif[28], high, low);				/* VCC */
 	bufif0(zif[29], low, low);
 	bufif0(zif[30], low, low);
 	bufif0(zif[31], low, low);
