@@ -105,9 +105,7 @@
 /** ASYNCPROC_END - End asynchronous section. */
 `define ASYNCPROC_END							\
 		end else begin						\
-			if (__delay_count != 0) begin			\
-				__delay_count <= __delay_count - 1;	\
-			end						\
+			__delay_count <= __delay_count - 1;		\
 		end /* if */						\
 	end /* always */
 
