@@ -106,14 +106,14 @@ class Chip_m24cXXdip8_common(Chip):
 		self.progressMeterFinish()
 
 	def __readData(self):
-		self.top.cmdFPGARead(0x10)
+		self.top.cmdFPGARead(0)
 
 	def __setData(self, dataByte):
-		self.top.cmdFPGAWrite(0x12, dataByte & 0xFF)
+		self.top.cmdFPGAWrite(2, dataByte & 0xFF)
 
 	def __setAddress(self, address, writeMode):
 		# Address base
-		self.top.cmdFPGAWrite(0x11, address & 0xFF)
+		self.top.cmdFPGAWrite(1, address & 0xFF)
 		# Address extension
 		sizeMask = self.eepromSize - 1
 		assert(sizeMask & ~0x7FF == 0)
@@ -148,7 +148,7 @@ class Chip_m24cXXdip8_common(Chip):
 					      WC=WC)
 
 	def __runCommand(self, command, busyWait=False):
-		self.top.cmdFPGAWrite(0x10, command & 0xFF)
+		self.top.cmdFPGAWrite(0, command & 0xFF)
 		if busyWait:
 			self.__busyWait()
 		else:
@@ -168,7 +168,7 @@ class Chip_m24cXXdip8_common(Chip):
 		self.throwError("Timeout in busywait.")
 
 	def __getStatusFlags(self):
-		self.top.cmdFPGARead(0x11)
+		self.top.cmdFPGARead(1)
 		stat = self.top.cmdReadBufferReg8()
 		busy0 = bool(stat & 0x01)
 		busy1 = bool(stat & 0x02)
@@ -190,7 +190,7 @@ class Chip_m24cXXdip8_common(Chip):
 			value |= (1 << 5)
 		if WC:
 			value |= (1 << 6)
-		self.top.cmdFPGAWrite(0x13, value)
+		self.top.cmdFPGAWrite(3, value)
 
 class Chip_m24c01dip8(Chip_m24cXXdip8_common):
 	def __init__(self):
