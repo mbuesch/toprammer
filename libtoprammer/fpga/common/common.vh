@@ -162,18 +162,22 @@
 	__cmd <= (NR);							\
 	__cmd_running[0] <= ~__cmd_running[1];
 
-/** CMD_IS_RUNNING - Returns a boolean whether a command is running. */
-`define CMD_IS_RUNNING							\
-	(__cmd_running[0] != __cmd_running[1])
+/** CMD_RUNFLG_SYNC - Returns the synchronous run flag. */
+`define CMD_RUNFLG_SYNC		__cmd_running[0]
 
-/** CMD_IS_RUNNING - Returns a boolean whether a certain command is running.
+/** CMD_RUNFLG_ASYNC - Returns the asynchronous run flag. */
+`define CMD_RUNFLG_ASYNC	__cmd_running[1]
+
+/** CMD_IS_RUNNING - Returns a boolean whether a command is running. */
+`define CMD_IS_RUNNING		(`CMD_RUNFLG_SYNC ^ `CMD_RUNFLG_ASYNC)
+
+/** CMD_NR - Returns the current command number. */
+`define CMD_NR			__cmd
+
+/** CMD_IS - Returns a boolean whether a certain command is running.
  * @NR: The command number to check.
  */
-`define CMD_IS(NR)							\
-	(`CMD_IS_RUNNING && __cmd == (NR))
-
-/** CMD_NR - Returns the command number. */
-`define CMD_NR	__cmd
+`define CMD_IS(NR)		(`CMD_IS_RUNNING && `CMD_NR == (NR))
 
 /** CMD_FINISH - Finishes a command. */
 `define CMD_FINISH							\
