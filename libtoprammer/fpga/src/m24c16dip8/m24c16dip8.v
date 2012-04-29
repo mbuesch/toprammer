@@ -191,15 +191,9 @@ module i2c_module(clock, scl, sda,
 
 	bufif1(sda, sda_out, sda_out_en);
 	bufif1(scl, scl_out, 1);
-	bufif1(read_byte[0], read_byte_out[0], 1);
-	bufif1(read_byte[1], read_byte_out[1], 1);
-	bufif1(read_byte[2], read_byte_out[2], 1);
-	bufif1(read_byte[3], read_byte_out[3], 1);
-	bufif1(read_byte[4], read_byte_out[4], 1);
-	bufif1(read_byte[5], read_byte_out[5], 1);
-	bufif1(read_byte[6], read_byte_out[6], 1);
-	bufif1(read_byte[7], read_byte_out[7], 1);
-	bufif1(finished, finished_out, 1);
+
+	assign read_byte = read_byte_out;
+	assign finished = finished_out;
 endmodule
 
 module m24c16dip8(data, ale_in, write, read, osc_in, zif);
