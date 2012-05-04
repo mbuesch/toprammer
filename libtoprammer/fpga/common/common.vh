@@ -86,14 +86,14 @@
 		wire __data_oe;						\
 		assign __data_oe = !__read && __addr_latch[`ADDR_OK_BIT]; \
 									\
-		bufif1(__data[0], out_data[0], __data_oe);		\
-		bufif1(__data[1], out_data[1], __data_oe);		\
-		bufif1(__data[2], out_data[2], __data_oe);		\
-		bufif1(__data[3], out_data[3], __data_oe);		\
-		bufif1(__data[4], out_data[4], __data_oe);		\
-		bufif1(__data[5], out_data[5], __data_oe);		\
-		bufif1(__data[6], out_data[6], __data_oe);		\
-		bufif1(__data[7], out_data[7], __data_oe);		\
+		bufif0(__data[0], out_data[0], !__data_oe);		\
+		bufif0(__data[1], out_data[1], !__data_oe);		\
+		bufif0(__data[2], out_data[2], !__data_oe);		\
+		bufif0(__data[3], out_data[3], !__data_oe);		\
+		bufif0(__data[4], out_data[4], !__data_oe);		\
+		bufif0(__data[5], out_data[5], !__data_oe);		\
+		bufif0(__data[6], out_data[6], !__data_oe);		\
+		bufif0(__data[7], out_data[7], !__data_oe);		\
 	endmodule
 
 /** ASYNCPROC_BEGIN - Begin asynchronous OSC-based processing section. */
