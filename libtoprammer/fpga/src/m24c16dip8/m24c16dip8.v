@@ -42,10 +42,10 @@ module i2c_module(clock, scl, sda_out, sda_out_en, sda_in,
 	input do_stop;
 	output finished;
 
-	reg [7:0] start_state;
-	reg [7:0] data_state;
-	reg [7:0] ack_state;
-	reg [7:0] stop_state;
+	reg [1:0] start_state;
+	reg [1:0] data_state;
+	reg [1:0] ack_state;
+	reg [1:0] stop_state;
 	reg [2:0] bit_index;
 
 	reg sda_out;
@@ -59,7 +59,7 @@ module i2c_module(clock, scl, sda_out, sda_out_en, sda_in,
 		data_state <= 0;
 		ack_state <= 0;
 		stop_state <= 0;
-		bit_index <= 0;
+		bit_index <= 7;
 
 		sda_out <= 0;
 		sda_out_en <= 0;
@@ -103,17 +103,17 @@ module i2c_module(clock, scl, sda_out, sda_out_en, sda_in,
 					data_state <= 1;
 				end
 				1: begin
-					read_byte[7 - bit_index] <= sda_in;
+					read_byte[bit_index] <= sda_in;
 					data_state <= 2;
 				end
 				2: begin
 					scl <= 0;
-					if (bit_index == 7) begin
+					if (bit_index == 0) begin
 						/* Done reading byte */
-						bit_index <= 0;
+						bit_index <= 7;
 						data_state <= 3;
 					end else begin
-						bit_index <= bit_index + 1;
+						bit_index <= bit_index - 1;
 						data_state <= 0;
 					end
 				end
@@ -122,7 +122,7 @@ module i2c_module(clock, scl, sda_out, sda_out_en, sda_in,
 				sda_out_en <= 1;
 				case (data_state)
 				0: begin
-					sda_out <= write_byte[7 - bit_index];
+					sda_out <= write_byte[bit_index];
 					scl <= 0;
 					data_state <= 1;
 				end
@@ -132,12 +132,12 @@ module i2c_module(clock, scl, sda_out, sda_out_en, sda_in,
 				end
 				2: begin
 					scl <= 0;
-					if (bit_index == 7) begin
+					if (bit_index == 0) begin
 						/* Done writing byte */
-						bit_index <= 0;
+						bit_index <= 7;
 						data_state <= 3;
 					end else begin
-						bit_index <= bit_index + 1;
+						bit_index <= bit_index - 1;
 						data_state <= 0;
 					end
 				end
