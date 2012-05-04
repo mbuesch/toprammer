@@ -162,7 +162,7 @@ module i2c_module(clock, scl, sda_out, sda_out_en, sda_in,
 				end
 			end
 			endcase
-		end else if (do_stop && stop_state != 3) begin
+		end else if (do_stop && stop_state != 2) begin
 			/* Send stop condition */
 			finished <= 0;
 			sda_out_en <= 1;
@@ -175,9 +175,6 @@ module i2c_module(clock, scl, sda_out, sda_out_en, sda_in,
 			1: begin
 				sda_out <= 1;
 				stop_state <= 2;
-			end
-			2: begin
-				stop_state <= 3;
 			end
 			endcase
 		end else begin
