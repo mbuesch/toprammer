@@ -48,6 +48,7 @@ class Chip_m24cXXdip8_common(Chip):
 		self.top.cmdEnableZifPullups(True)
 
 		self.currentAddrExt = None
+		self.currentWriteMode = None
 
 	def erase(self):
 		self.writeEEPROM("\xFF" * self.eepromSize)
@@ -118,8 +119,10 @@ class Chip_m24cXXdip8_common(Chip):
 		sizeMask = self.eepromSize - 1
 		assert(sizeMask & ~0x7FF == 0)
 		addrExt = address & 0x700 & sizeMask
-		if self.currentAddrExt != addrExt:
+		if self.currentAddrExt != addrExt or\
+		   self.currentWriteMode != writeMode:
 			self.currentAddrExt = addrExt
+			self.currentWriteMode = writeMode
 			if sizeMask & 0x0100:
 				E0 = addrExt & 0x0100
 				E0_en = 0
