@@ -20,7 +20,7 @@ run
 -verilog2001 YES
 -fsm_extract YES
 -fsm_encoding Auto
--safe_implementation No
+-safe_implementation Yes
 -fsm_style lut
 -ram_extract Yes
 -ram_style distributed
