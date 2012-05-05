@@ -65,8 +65,8 @@
 									\
 		/* Command state */					\
 		reg [1:0] __cmd_running;				\
-		reg [3:0] __cmd;					\
-		reg [3:0] __cmd_state;
+		reg [7:0] __cmd;					\
+		reg [7:0] __cmd_state;
 
 /** BOTTOMHALF_END - End bottom-half module */
 `define BOTTOMHALF_END							\
