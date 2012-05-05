@@ -92,14 +92,15 @@ class Chip_m24cXXdip8_common(Chip):
 		prevAddr = None
 		for addr in range(0, len(image)):
 			self.progressMeter(addr)
-			self.__setData(byte2int(image[addr]))
 			if prevAddr is None or (prevAddr & 0xFFF0) != (addr & 0xFFF0):
 				self.__setAddress(addr, writeMode=True)
 				self.__runCommand(self.CMD_DEVSEL_WRITE, busyWait=True)
 				self.__runCommand(self.CMD_SETADDR, busyWait=True)
+				self.__setData(byte2int(image[addr]))
 				self.__runCommand(self.CMD_DATA_WRITE, busyWait=True)
 				prevAddr = addr
 			else:
+				self.__setData(byte2int(image[addr]))
 				if (addr & 0xF) == 0xF:
 					self.__runCommand(self.CMD_DATA_WRITE_STOP, busyWait=True)
 				else:
@@ -110,11 +111,11 @@ class Chip_m24cXXdip8_common(Chip):
 		self.top.cmdFPGARead(0)
 
 	def __setData(self, dataByte):
-		self.top.cmdFPGAWrite(2, dataByte & 0xFF)
+		self.top.cmdFPGAWrite(1, dataByte & 0xFF)
 
 	def __setAddress(self, address, writeMode):
 		# Address base
-		self.top.cmdFPGAWrite(1, address & 0xFF)
+		self.__setData(address)
 		# Address extension
 		sizeMask = self.eepromSize - 1
 		assert(sizeMask & ~0x7FF == 0)
@@ -193,7 +194,7 @@ class Chip_m24cXXdip8_common(Chip):
 			value |= (1 << 5)
 		if WC:
 			value |= (1 << 6)
-		self.top.cmdFPGAWrite(3, value)
+		self.top.cmdFPGAWrite(2, value)
 
 class Chip_m24c01dip8(Chip_m24cXXdip8_common):
 	def __init__(self):

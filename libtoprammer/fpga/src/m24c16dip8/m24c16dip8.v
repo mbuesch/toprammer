@@ -206,7 +206,6 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 	reg [1:0] cmd_busy;	/* bit0 != bit1 >= busy */
 	reg [3:0] command;
 	reg [7:0] data_buffer;
-	reg [7:0] addr_buffer;
 
 	`define IS_BUSY		(cmd_busy[0] != cmd_busy[1])	/* Is running command? */
 	`define SET_FINISHED	cmd_busy[1] <= cmd_busy[0]	/* Set command-finished */
@@ -281,7 +280,6 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 		cmd_busy <= 0;
 		command <= 0;
 		data_buffer <= 0;
-		addr_buffer <= 0;
 
 		chip_e0 <= 0;
 		chip_e0_en <= 0;
@@ -351,7 +349,7 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 					i2c_running <= 1;
 				end
 				CMD_SETADDR: begin
-					i2c_write_byte <= addr_buffer;
+					i2c_write_byte <= data_buffer;
 					i2c_clock <= 0;
 					i2c_read <= 0;
 					i2c_do_start <= 0;
@@ -408,13 +406,10 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 			command <= data;
 			cmd_busy[0] <= ~cmd_busy[1];
 		end
-		8'h11: begin /* Write to addr buffer */
-			addr_buffer[7:0] <= data[7:0];
-		end
-		8'h12: begin /* Write to data buffer */
+		8'h11: begin /* Write to data buffer */
 			data_buffer[7:0] <= data[7:0];
 		end
-		8'h13: begin /* Set control pins */
+		8'h12: begin /* Set control pins */
 			chip_e0 <= data[0];
 			chip_e0_en <= data[1];
 			chip_e1 <= data[2];
