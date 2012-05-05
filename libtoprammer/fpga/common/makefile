@@ -28,7 +28,7 @@ BITGEN_OPTS	:= -w -g DebugBitstream:No -g Binary:no \
 		   -g Security:None -g DonePipe:No -g DriveDone:No
 
 XST_OPT_MODE	?= Speed
-XST_OPT_LEVEL	?= 1
+XST_OPT_LEVEL	?= 2
 XST_EXTRA	?=
 
 SRCS		?= $(NAME).v
