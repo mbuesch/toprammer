@@ -262,9 +262,6 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 		.finished(i2c_finished)
 	);
 
-	/* Cached data from byte read operation */
-	reg [7:0] fetched_data;
-
 	/* The delay counter. Based on the 24MHz input clock. */
 	reg [15:0] delay_count;
 	wire osc;
@@ -296,8 +293,6 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 		i2c_expect_ack <= 0;
 		i2c_do_stop <= 0;
 		i2c_running <= 0;
-
-		fetched_data <= 0;
 	end
 
 	always @(posedge osc) begin
@@ -305,9 +300,6 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 			if (i2c_running) begin
 				if (i2c_finished && i2c_running == 2) begin
 					i2c_running <= 0;
-					if (i2c_read) begin
-						fetched_data <= i2c_read_byte;
-					end
 					`SET_FINISHED;
 				end else begin
 					i2c_running <= 2;
@@ -424,7 +416,7 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 	always @(negedge read) begin
 		case (address)
 		8'h10: begin /* Read data buffer */
-			read_data <= fetched_data;
+			read_data <= i2c_read_byte;
 		end
 		8'h11: begin /* Status read */
 			read_data[0] <= cmd_busy[0];
