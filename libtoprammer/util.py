@@ -162,6 +162,7 @@ class IO_ihex(object):
 		try:
 			lines = ihexData.splitlines()
 			hiAddr = 0
+			segment = 0
 			for line in lines:
 				line = line.strip()
 				if len(line) == 0:
@@ -175,6 +176,9 @@ class IO_ihex(object):
 					raise TOPException("Invalid IHEX format (count error)")
 				addr = (int(line[3:5], 16) << 8) | int(line[5:7], 16)
 				addr |= hiAddr << 16
+				addr += segment * 16
+				if hiAddr and segment:
+					print("WARNING: IHEX has ESAR and ELAR record")
 				type = int(line[7:9], 16)
 				checksum = 0
 				for i in range(1, len(line), 2):
@@ -187,6 +191,11 @@ class IO_ihex(object):
 
 				if type == self.TYPE_EOF:
 					break
+				if type == self.TYPE_ESAR:
+					if count != 2:
+						raise TOPException("Invalid IHEX format (inval ESAR)")
+					segment = (int(line[9:11], 16) << 8) | int(line[11:13], 16)
+					continue
 				if type == self.TYPE_ELAR:
 					if count != 2:
 						raise TOPException("Invalid IHEX format (inval ELAR)")
