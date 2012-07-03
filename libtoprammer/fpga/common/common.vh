@@ -143,7 +143,8 @@
 `define DATAREAD_END							\
 		8'hFD: out_data <= __id_major;				\
 		8'hFE: out_data <= __id_major >> 8;			\
-		default: out_data <= __id_minor;			\
+		8'hFF: out_data <= __id_minor;				\
+		default: out_data <= 0;					\
 		endcase							\
 	end /* always */
 
