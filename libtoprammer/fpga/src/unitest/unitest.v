@@ -44,10 +44,10 @@
 	`DATAWRITE_BEGIN
 		/* osc_divider is rightshifted by one and thus divided by two,
 		 * because the oscillator always additionally divides by two. */
-		`ADDR(8'h02):	osc_divider[6:0] <= in_data >> 1;
-		`ADDR(8'h03):	osc_divider[14:7] <= in_data;
-		`ADDR(8'h04):	osc_divider[22:15] <= in_data;
-		`ADDR(8'h05):	osc_divider[23] <= in_data[0];
+		`ADDR(8'h00):	osc_divider[6:0] <= in_data >> 1;
+		`ADDR(8'h01):	osc_divider[14:7] <= in_data;
+		`ADDR(8'h02):	osc_divider[22:15] <= in_data;
+		`ADDR(8'h03):	osc_divider[23] <= in_data[0];
 
 		`ADDR(8'h20):	zif_osc_en[7:0] <= in_data;
 		`ADDR(8'h21):	zif_osc_en[15:8] <= in_data;
@@ -72,12 +72,12 @@
 	`DATAWRITE_END
 
 	`DATAREAD_BEGIN
-		`ADDR(8'h20):	out_data <= zif[8:1];
-		`ADDR(8'h21):	out_data <= zif[16:9];
-		`ADDR(8'h22):	out_data <= zif[24:17];
-		`ADDR(8'h23):	out_data <= zif[32:25];
-		`ADDR(8'h24):	out_data <= zif[40:33];
-		`ADDR(8'h25):	out_data <= zif[48:41];
+		`ADDR(8'h60):	out_data <= zif[8:1];
+		`ADDR(8'h61):	out_data <= zif[16:9];
+		`ADDR(8'h62):	out_data <= zif[24:17];
+		`ADDR(8'h63):	out_data <= zif[32:25];
+		`ADDR(8'h64):	out_data <= zif[40:33];
+		`ADDR(8'h65):	out_data <= zif[48:41];
 	`DATAREAD_END
 
 	bufif1(zif[1], zif_output[0] | (zif_osc & zif_osc_en[0]), zif_output_en[0]);

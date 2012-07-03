@@ -103,12 +103,12 @@ class Chip_Unitest(Chip):
 		mask &= ~self.vccMask
 		mask &= ~self.vppMask
 		mask |= self.oscMask
-		self.top.cmdFPGAWrite(0x50, mask & 0xFF)
-		self.top.cmdFPGAWrite(0x51, (mask >> 8) & 0xFF)
-		self.top.cmdFPGAWrite(0x52, (mask >> 16) & 0xFF)
-		self.top.cmdFPGAWrite(0x53, (mask >> 24) & 0xFF)
-		self.top.cmdFPGAWrite(0x54, (mask >> 32) & 0xFF)
-		self.top.cmdFPGAWrite(0x55, (mask >> 40) & 0xFF)
+		self.top.cmdFPGAWrite(0x40, mask & 0xFF)
+		self.top.cmdFPGAWrite(0x41, (mask >> 8) & 0xFF)
+		self.top.cmdFPGAWrite(0x42, (mask >> 16) & 0xFF)
+		self.top.cmdFPGAWrite(0x43, (mask >> 24) & 0xFF)
+		self.top.cmdFPGAWrite(0x44, (mask >> 32) & 0xFF)
+		self.top.cmdFPGAWrite(0x45, (mask >> 40) & 0xFF)
 		self.top.flushCommands()
 
 	def setOutputEnableMask(self, mask):
@@ -118,12 +118,12 @@ class Chip_Unitest(Chip):
 	def __updateOut(self):
 		mask = self.desiredOutMask
 		mask &= ~self.oscMask
-		self.top.cmdFPGAWrite(0x70, mask & 0xFF)
-		self.top.cmdFPGAWrite(0x71, (mask >> 8) & 0xFF)
-		self.top.cmdFPGAWrite(0x72, (mask >> 16) & 0xFF)
-		self.top.cmdFPGAWrite(0x73, (mask >> 24) & 0xFF)
-		self.top.cmdFPGAWrite(0x74, (mask >> 32) & 0xFF)
-		self.top.cmdFPGAWrite(0x75, (mask >> 40) & 0xFF)
+		self.top.cmdFPGAWrite(0x60, mask & 0xFF)
+		self.top.cmdFPGAWrite(0x61, (mask >> 8) & 0xFF)
+		self.top.cmdFPGAWrite(0x62, (mask >> 16) & 0xFF)
+		self.top.cmdFPGAWrite(0x63, (mask >> 24) & 0xFF)
+		self.top.cmdFPGAWrite(0x64, (mask >> 32) & 0xFF)
+		self.top.cmdFPGAWrite(0x65, (mask >> 40) & 0xFF)
 		self.top.flushCommands()
 
 	def setOutputs(self, mask):
@@ -131,30 +131,30 @@ class Chip_Unitest(Chip):
 		self.__updateOut()
 
 	def getInputs(self):
-		self.top.cmdFPGARead(0x30)
-		self.top.cmdFPGARead(0x31)
-		self.top.cmdFPGARead(0x32)
-		self.top.cmdFPGARead(0x33)
-		self.top.cmdFPGARead(0x34)
-		self.top.cmdFPGARead(0x35)
+		self.top.cmdFPGARead(0x60)
+		self.top.cmdFPGARead(0x61)
+		self.top.cmdFPGARead(0x62)
+		self.top.cmdFPGARead(0x63)
+		self.top.cmdFPGARead(0x64)
+		self.top.cmdFPGARead(0x65)
 		inputs = self.top.cmdReadBufferReg48()
 		return inputs
 
 	def setOscDivider(self, div):
-		self.top.cmdFPGAWrite(0x12, div & 0xFF)
-		self.top.cmdFPGAWrite(0x13, (div >> 8) & 0xFF)
-		self.top.cmdFPGAWrite(0x14, (div >> 16) & 0xFF)
-		self.top.cmdFPGAWrite(0x15, (div >> 24) & 0xFF)
+		self.top.cmdFPGAWrite(0x00, div & 0xFF)
+		self.top.cmdFPGAWrite(0x01, (div >> 8) & 0xFF)
+		self.top.cmdFPGAWrite(0x02, (div >> 16) & 0xFF)
+		self.top.cmdFPGAWrite(0x03, (div >> 24) & 0xFF)
 		self.top.flushCommands()
 
 	def setOscMask(self, mask):
 		self.oscMask = mask
-		self.top.cmdFPGAWrite(0x30, mask & 0xFF)
-		self.top.cmdFPGAWrite(0x31, (mask >> 8) & 0xFF)
-		self.top.cmdFPGAWrite(0x32, (mask >> 16) & 0xFF)
-		self.top.cmdFPGAWrite(0x33, (mask >> 24) & 0xFF)
-		self.top.cmdFPGAWrite(0x34, (mask >> 32) & 0xFF)
-		self.top.cmdFPGAWrite(0x35, (mask >> 40) & 0xFF)
+		self.top.cmdFPGAWrite(0x20, mask & 0xFF)
+		self.top.cmdFPGAWrite(0x21, (mask >> 8) & 0xFF)
+		self.top.cmdFPGAWrite(0x22, (mask >> 16) & 0xFF)
+		self.top.cmdFPGAWrite(0x23, (mask >> 24) & 0xFF)
+		self.top.cmdFPGAWrite(0x24, (mask >> 32) & 0xFF)
+		self.top.cmdFPGAWrite(0x25, (mask >> 40) & 0xFF)
 		self.__updateOutEn()
 		self.__updateOut()
 		self.top.flushCommands()
