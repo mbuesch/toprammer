@@ -66,6 +66,53 @@ class Wrapper(object):
 	def __ne__(self, other):
 		return self.obj != other.obj
 
+class ZifPinButton(QWidget):
+	TEXT_RIGHT	= 0
+	TEXT_LEFT	= 1
+
+	stateChanged = Signal(bool)
+
+	class Label(QLabel):
+		clicked = Signal()
+
+		def __init__(self, text, parent=None):
+			QLabel.__init__(self, text, parent)
+
+		def mousePressEvent(self, event):
+			self.clicked.emit()
+
+	def __init__(self, text, textPos=TEXT_RIGHT, parent=None):
+		QWidget.__init__(self, parent)
+		self.setLayout(QHBoxLayout(self))
+		self.layout().setContentsMargins(QMargins())
+
+		self.checkbox = QCheckBox(self)
+		self.checkbox.stateChanged.connect(self.__cbStateChanged)
+
+		self.label = self.Label(text, self)
+		self.label.clicked.connect(self.toggle)
+
+		if textPos == self.TEXT_RIGHT:
+			self.label.setAlignment(Qt.AlignLeft)
+			self.layout().addWidget(self.checkbox)
+			self.layout().addWidget(self.label)
+		else:
+			self.label.setAlignment(Qt.AlignRight)
+			self.layout().addWidget(self.label)
+			self.layout().addWidget(self.checkbox)
+
+	def __cbStateChanged(self, newState):
+		self.stateChanged.emit(newState == Qt.Checked)
+
+	def state(self):
+		return self.checkbox.checkState() == Qt.Checked
+
+	def setState(self, en):
+		self.checkbox.setCheckState(Qt.Checked if en else Qt.Unchecked)
+
+	def toggle(self):
+		self.setState(not self.state())
+
 class ZifWidget(QGroupBox):
 	def __init__(self, unitest, nrZifPins):
 		QGroupBox.__init__(self, "ZIF socket", unitest)
@@ -78,9 +125,10 @@ class ZifWidget(QGroupBox):
 		self.blockedPins = []
 		self.ignoreOutChange = False
 
-		label = QLabel(self)
+		label = QLabel("ZIF\nsocket", self)
 		label.setFrameStyle(QFrame.Panel | QFrame.Sunken)
 		label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+		label.setMinimumWidth(80)
 		self.layout().addWidget(label, 0, 2, self.nrPins // 2, 1)
 
 		self.pins = [ None ] * self.nrPins
@@ -88,20 +136,20 @@ class ZifWidget(QGroupBox):
 		for i in range(0, self.nrPins // 2):
 			left = i + 1
 			right = self.nrPins - i
-			self.pins[left - 1] = QCheckBox(str(left), self)
-			self.connect(self.pins[left - 1], SIGNAL("stateChanged(int)"),
-				     self.__outChanged)
-			self.pinOuten[left - 1] = QCheckBox("out", self)
-			self.connect(self.pinOuten[left - 1], SIGNAL("stateChanged(int)"),
-				     self.__outEnChanged)
+			self.pins[left - 1] = ZifPinButton(str(left),
+						ZifPinButton.TEXT_LEFT, self)
+			self.pins[left - 1].stateChanged.connect(self.__outChanged)
+			self.pinOuten[left - 1] = ZifPinButton("out",
+						ZifPinButton.TEXT_LEFT, self)
+			self.pinOuten[left - 1].stateChanged.connect(self.__outEnChanged)
 			self.layout().addWidget(self.pinOuten[left - 1], left - 1, 0)
 			self.layout().addWidget(self.pins[left - 1], left - 1, 1)
-			self.pins[right - 1] = QCheckBox(str(right), self)
-			self.connect(self.pins[right - 1], SIGNAL("stateChanged(int)"),
-				     self.__outChanged)
-			self.pinOuten[right - 1] = QCheckBox("out", self)
-			self.connect(self.pinOuten[right - 1], SIGNAL("stateChanged(int)"),
-				     self.__outEnChanged)
+			self.pins[right - 1] = ZifPinButton(str(right),
+						ZifPinButton.TEXT_RIGHT, self)
+			self.pins[right - 1].stateChanged.connect(self.__outChanged)
+			self.pinOuten[right - 1] = ZifPinButton("out",
+						ZifPinButton.TEXT_RIGHT, self)
+			self.pinOuten[right - 1].stateChanged.connect(self.__outEnChanged)
 			self.layout().addWidget(self.pins[right - 1], self.nrPins - right, 3)
 			self.layout().addWidget(self.pinOuten[right - 1], self.nrPins - right, 4)
 		self.__outEnChanged()
@@ -116,13 +164,13 @@ class ZifWidget(QGroupBox):
 				str(e))
 			return False
 		for i in range(0, self.nrPins):
-			if self.pinOuten[i].checkState() != Qt.Checked and\
+			if not self.pinOuten[i].state() and\
 			   i + 1 not in self.blockedPins:
-				state = Qt.Unchecked
+				state = False
 				if inputMask & bit(i):
-					state = Qt.Checked
+					state = True
 				self.ignoreOutChange = True
-				self.pins[i].setCheckState(state)
+				self.pins[i].setState(state)
 				self.ignoreOutChange = False
 		return True
 
@@ -130,17 +178,17 @@ class ZifWidget(QGroupBox):
 		for i in range(0, self.nrPins):
 			if i + 1 in self.blockedPins:
 				self.pins[i].setEnabled(False)
-				self.pins[i].setCheckState(Qt.Unchecked)
+				self.pins[i].setState(False)
 				self.pinOuten[i].setEnabled(False)
-				self.pinOuten[i].setCheckState(Qt.Unchecked)
+				self.pinOuten[i].setState(False)
 			else:
 				self.pinOuten[i].setEnabled(True)
-				if self.pinOuten[i].checkState() == Qt.Checked:
+				if self.pinOuten[i].state():
 					self.pins[i].setEnabled(True)
 				else:
 					self.pins[i].setEnabled(False)
 
-	def __outEnChanged(self):
+	def __outEnChanged(self, unused=False):
 		self.__updateInOutStates()
 		outEnMask = self.getOutEnMask()
 		try:
@@ -153,7 +201,7 @@ class ZifWidget(QGroupBox):
 			return
 		self.readInputs()
 
-	def __outChanged(self):
+	def __outChanged(self, unused=False):
 		if self.ignoreOutChange:
 			return
 		outMask = self.getOutMask()
@@ -175,16 +223,16 @@ class ZifWidget(QGroupBox):
 	def getOutEnMask(self):
 		outEnMask = 0
 		for i in range(0, self.nrPins):
-			if self.pinOuten[i].checkState() == Qt.Checked:
+			if self.pinOuten[i].state():
 				outEnMask |= bit(i)
 		return outEnMask
 
 	def setOutEnMask(self, mask):
 		for i in range(0, self.nrPins):
 			if mask & bit(i):
-				self.pinOuten[i].setCheckState(Qt.Checked)
+				self.pinOuten[i].setState(True)
 			else:
-				self.pinOuten[i].setCheckState(Qt.Unchecked)
+				self.pinOuten[i].setState(False)
 			mask &= ~bit(i)
 		if mask:
 			raise TOPException("ZIF out-en mask has too many bits set")
@@ -192,16 +240,16 @@ class ZifWidget(QGroupBox):
 	def getOutMask(self):
 		outMask = 0
 		for i in range(0, self.nrPins):
-			if self.pins[i].checkState() == Qt.Checked:
+			if self.pins[i].state():
 				outMask |= bit(i)
 		return outMask
 
 	def setOutMask(self, mask):
 		for i in range(0, self.nrPins):
 			if mask & bit(i):
-				self.pins[i].setCheckState(Qt.Checked)
+				self.pins[i].setState(True)
 			else:
-				self.pins[i].setCheckState(Qt.Unchecked)
+				self.pins[i].setState(False)
 			mask &= ~bit(i)
 		if mask:
 			raise TOPException("ZIF out mask has too many bits set")
