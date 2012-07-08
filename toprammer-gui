@@ -2217,9 +2217,17 @@ class MainWindow(QMainWindow):
 
 	def closeEvent(self, e):
 		if self.taskRunning:
-			QMessageBox.critical(self, "Task running",
-				"A hardware access task is running. Wait for it "
-				"to finish before closing the application.")
+			res = QMessageBox.critical(self, "Task running",
+				"A hardware access task is running.\n\n"
+				"'Cancel' the close request and continue, or\n"
+				"'Abort' the task an quit the application?",
+				QMessageBox.Cancel | QMessageBox.Abort,
+				QMessageBox.Cancel)
+			if res == QMessageBox.Abort:
+				e.accept()
+				# Force quit
+				QApplication.exit(1)
+				return
 			e.ignore()
 			return
 		self.operation = self.OP_SHUTDOWN
