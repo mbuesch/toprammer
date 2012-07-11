@@ -98,16 +98,10 @@ class TOP(object):
 			top = self,
 			chipDescription = descriptor,
 			assignedChipOptions = assignedChipOptions)
-		# Find the bitfile for the chip.
-		bitfile = bitfileFind(descriptor.bitfile)
-		if not bitfile:
+		ok = self.configureFPGA(descriptor.bitfile, descriptor.runtimeID)
+		if not ok:
 			self.chip = None
 			raise TOPException("Did not find BIT-file for chip implementation %s" % chipID)
-		# Open and parse the bitfile.
-		self.bitfile = Bitfile()
-		self.bitfile.parseFile(bitfile)
-		# Initialize the hardware.
-		self.__bitfileUpload(descriptor.runtimeID)
 
 	def shutdownChip(self):
 		if self.chip:
@@ -266,6 +260,21 @@ class TOP(object):
 					"but the read ID or revision is invalid. "
 					"(Got 0x%04X/0x%02X, but expected 0x%04X/0x%02X)" %\
 					(gotID, gotRev, requiredID, requiredRevision))
+
+	def configureFPGA(self, bitfileName, runtimeIDs):
+		"""Upload and configure the FPGA.
+		bitfileName -> The name of the bitfile to upload
+		runtimeIDs -> bottom-half ID tuple: (majorID, minorID)"""
+		# Get the bitfile path.
+		bitfilePath = bitfileFind(bitfileName)
+		if not bitfilePath:
+			return False
+		# Open and parse the bitfile.
+		self.bitfile = Bitfile()
+		self.bitfile.parseFile(bitfilePath)
+		# Initialize the hardware.
+		self.__bitfileUpload(runtimeIDs)
+		return True
 
 	def readSignature(self):
 		"""Reads the chip signature and returns it."""

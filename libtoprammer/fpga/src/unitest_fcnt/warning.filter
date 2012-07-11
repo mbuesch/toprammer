@@ -1,0 +1,4 @@
+WARNING:Place:333
+Signal\s<__delay_count>\sis\snever\sused\sor\sassigned
+Signal\s<low>\sis\sassigned\sbut\snever\sused
+Signal\s<high>\sis\sassigned\sbut\snever\sused

@@ -367,7 +367,7 @@ class ChipDescription:
 		     broken=False):
 		"""Chip implementation class description.
 		chipImplClass	=> The implementation class of the chip.
-		bitfile		=> The bitfile ID string of the chip.
+		bitfile		=> The name of the default bitfile loaded on initialization.
 		chipID		=> The chip-ID string. Will default to the bitfile ID string.
 		runtimeID	=> The runtime-ID is a tuple of two numbers that uniquely
 				   identifies a loaded FPGA configuration. The first number in the
