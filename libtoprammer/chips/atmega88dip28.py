@@ -45,3 +45,26 @@ ChipDescription(
 	description = "AtMega88",
 	packages = ( ("DIP28", ""), ),
 )
+
+class Chip_ATMega88paDIP28(Chip_ATMega_common):
+	def __init__(self):
+		Chip_ATMega_common.__init__(self,
+			chipPackage = "DIP28",
+			chipPinVCC = 7,
+			chipPinsVPP = 1,
+			chipPinGND = 8,
+			signature = "\x1E\x93\x0F",
+			flashPageSize = 32,
+			flashPages = 128,
+			eepromPageSize = 4,
+			eepromPages = 128)
+
+ChipDescription(
+	Chip_ATMega88paDIP28,
+	bitfile = "atmega8dip28",
+	chipID = "atmega88padip28",
+	runtimeID = (0x0003, 0x01),
+	chipVendors = "Atmel",
+	description = "AtMega88PA",
+	packages = ( ("DIP28", ""), ),
+)
