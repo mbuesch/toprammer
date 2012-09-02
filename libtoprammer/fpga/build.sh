@@ -112,6 +112,11 @@ warning_filter()
 	done
 }
 
+# Pull in the ISE settings and paths, if requested.
+[ -d "$XILINX_10_1_DIR" ] && \
+[ -r "$XILINX_10_1_DIR/ISE/settings32.sh" ] &&
+	. "$XILINX_10_1_DIR/ISE/settings32.sh"
+
 for src in $srcdir/*; do
 	[ -d "$src" ] || continue
 
