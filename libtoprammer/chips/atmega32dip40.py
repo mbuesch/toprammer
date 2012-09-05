@@ -34,7 +34,8 @@ class Chip_ATMega32DIP40(Chip_ATMega_common):
 			flashPageSize = 64,
 			flashPages = 256,
 			eepromPageSize = 4,
-			eepromPages = 256)
+			eepromPages = 256,
+			fuseBytes = 2)
 
 ChipDescription(
 	Chip_ATMega32DIP40,

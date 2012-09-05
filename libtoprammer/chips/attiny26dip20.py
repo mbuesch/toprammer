@@ -34,7 +34,8 @@ class Chip_ATTiny26DIP20(Chip_ATMega_common):
 			flashPageSize = 16,
 			flashPages = 64,
 			eepromPageSize = 4,
-			eepromPages = 32)
+			eepromPages = 32,
+			fuseBytes = 2)
 
 ChipDescription(
 	Chip_ATTiny26DIP20,

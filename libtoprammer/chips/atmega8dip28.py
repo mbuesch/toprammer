@@ -34,7 +34,8 @@ class Chip_ATMega8DIP28(Chip_ATMega_common):
 			flashPageSize = 32,
 			flashPages = 128,
 			eepromPageSize = 4,
-			eepromPages = 128)
+			eepromPages = 128,
+			fuseBytes = 2)
 
 fuseDesc = (
 	BitDescription(0, "CKSEL0"),

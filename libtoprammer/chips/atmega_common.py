@@ -39,7 +39,8 @@ class Chip_ATMega_common(Chip):
 		     chipPackage, chipPinVCC, chipPinsVPP, chipPinGND,
 		     signature,
 		     flashPageSize, flashPages,
-		     eepromPageSize, eepromPages
+		     eepromPageSize, eepromPages,
+		     fuseBytes
 		    ):
 		Chip.__init__(self,
 			      chipPackage = chipPackage,
@@ -51,6 +52,7 @@ class Chip_ATMega_common(Chip):
 		self.flashPages = flashPages		# Nr of flash pages
 		self.eepromPageSize = eepromPageSize	# EEPROM page size, in bytes
 		self.eepromPages = eepromPages		# Nr of EEPROM pages
+		self.fuseBytes = fuseBytes		# Nr of fuse bytes
 
 	def readSignature(self):
 		self.__enterPM()
@@ -227,7 +229,14 @@ class Chip_ATMega_common(Chip):
 		self.__readWordToStatusReg()
 		self.__setBS2(0)
 		data = self.top.cmdReadBufferReg()
-		fuses = data[0] + data[3]
+		if self.fuseBytes == 2:
+			# fuseLow, fuseHigh
+			fuses = data[0] + data[3]
+		elif self.fuseBytes == 3:
+			# fuseLow, fuseHigh, fuseExt
+			fuses = data[0] + data[3] + data[2]
+		else
+			assert(0)
 		lock = data[1]
 		return (fuses, lock)
 
