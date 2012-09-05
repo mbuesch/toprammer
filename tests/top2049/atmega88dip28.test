@@ -25,10 +25,10 @@ test_run()
 	compare_files "$testfile_512" "$tmpfile" || die "EEPROM mismatch"
 
 	# Check fuses
-#TODO	testfuses="E1D9"
-#	echo "0x0000: $testfuses" | toprammer -I ahex --write-fuse -
-#	toprammer --read-fuse "$tmpfile"
-#	compare_file_to_hex "$tmpfile" "$testfuses" || die "fuses mismatch"
+	local testfuses="62DFF9"
+	echo "0x0000: $testfuses" | toprammer -I ahex --write-fuse -
+	toprammer --read-fuse "$tmpfile"
+	compare_file_to_hex "$tmpfile" "$testfuses" || die "fuses mismatch"
 
 	# Check lockbits
 	toprammer --read-lock "$tmpfile"

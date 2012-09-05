@@ -164,22 +164,38 @@ class Chip_ATMega_common(Chip):
 		return fuse
 
 	def writeFuse(self, image):
-		if len(image) != 2:
+		if len(image) != self.fuseBytes:
 			self.throwError("Invalid Fuses image size %d (expected %d)" %\
-				(len(image), 2))
+				(len(image), self.fuseBytes))
 		self.__enterPM()
 
 		self.progressMeterInit("Writing Fuse bits", 0)
+
 		self.__loadCommand(self.CMD_WRITEFUSE)
 		self.__setBS2(0)
 		self.__loadDataLow(byte2int(image[0]))
+		self.__setBS1(0)
 		self.__pulseWR()
 		self.__waitForRDY()
+
 		self.__loadCommand(self.CMD_WRITEFUSE)
+		self.__setBS2(0)
 		self.__loadDataLow(byte2int(image[1]))
 		self.__setBS1(1)
 		self.__pulseWR()
 		self.__waitForRDY()
+
+		if len(image) >= 3:
+			self.__loadCommand(self.CMD_WRITEFUSE)
+			self.__setBS2(1)
+			self.__loadDataLow(byte2int(image[2]))
+			self.__setBS1(0)
+			self.__pulseWR()
+			self.__waitForRDY()
+
+		self.__setBS1(0)
+		self.__setBS2(0)
+
 		self.progressMeterFinish()
 
 	def readLockbits(self):
@@ -235,7 +251,7 @@ class Chip_ATMega_common(Chip):
 		elif self.fuseBytes == 3:
 			# fuseLow, fuseHigh, fuseExt
 			fuses = data[0] + data[3] + data[2]
-		else
+		else:
 			assert(0)
 		lock = data[1]
 		return (fuses, lock)
