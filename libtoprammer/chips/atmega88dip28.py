@@ -58,7 +58,8 @@ class Chip_ATMega88paDIP28(Chip_ATMega_common):
 			flashPageSize = 32,
 			flashPages = 128,
 			eepromPageSize = 4,
-			eepromPages = 128)
+			eepromPages = 128,
+			fuseBytes = 3)
 
 ChipDescription(
 	Chip_ATMega88paDIP28,
