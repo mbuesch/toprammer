@@ -57,4 +57,5 @@ ChipDescription(
 	chipVendors = "Microchip",
 	description = "PIC10F200, PIC10F204, PIC10F220",
 	packages = ( ("DIP8", ""), ),
+	maintainer = "Pavel Stemberk <stemberk@gmail.com>",
 )
