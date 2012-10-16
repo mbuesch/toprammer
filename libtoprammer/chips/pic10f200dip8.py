@@ -50,11 +50,11 @@ class Chip_Pic18F200dip8(Chip_Microchip_common):
         self.osccalBackupAddr = self.userIDLocationAddr + self.userIDLocationSize
 
 ChipDescription(
-    Chip_Pic18F200dip8,
-    bitfile = "pic10fXXXdip8",
-    chipID = "pic10f200dip8",
-    runtimeID = (0x0001, 0x01),
-    chipVendors = "Microchip",
-    description = "PIC10F200, PIC10F204, PIC10F220",
-    packages = ( ("DIP8", ""), ),
+	Chip_Pic18F200dip8,
+	bitfile = "pic10fXXXdip8",
+	chipID = "pic10f200dip8",
+	runtimeID = (0x000D, 0x01),
+	chipVendors = "Microchip",
+	description = "PIC10F200, PIC10F204, PIC10F220",
+	packages = ( ("DIP8", ""), ),
 )

@@ -50,10 +50,10 @@ class Chip_Pic18F202dip8(Chip_Microchip_common):
 
 ChipDescription(
 	Chip_Pic18F202dip8,
-	bitfile="pic10fXXXdip8",
+	bitfile = "pic10fXXXdip8",
 	chipID = "pic10f202dip8",
-	runtimeID=(0x0001, 0x01),
-	chipVendors="Microchip",
-	description="PIC10F202, PIC10F206, PIC10F222",
-	packages=(("DIP8", ""),),
+	runtimeID = (0x000D, 0x01),
+	chipVendors = "Microchip",
+	description = "PIC10F202, PIC10F206, PIC10F222",
+	packages = (("DIP8", ""),),
 )

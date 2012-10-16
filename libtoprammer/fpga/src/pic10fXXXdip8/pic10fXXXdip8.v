@@ -25,7 +25,7 @@
 
 `define DELAY42NSEC(D42NSEC)	__delay_count <= (D42NSEC) - 1;//41.666 ns wait cycle if D42NSEC = 1
 
-`BOTTOMHALF_BEGIN(pic10fXXXdip8, 1, 1)
+`BOTTOMHALF_BEGIN(pic10fXXXdip8, 13, 1)
 	/* Programmer context */
 	reg [7:0] prog_count;
 	`define CMD_SENDINSTR	1

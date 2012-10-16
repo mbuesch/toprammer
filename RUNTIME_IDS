@@ -19,6 +19,7 @@
 0x000A		=> hm62256dip28
 0x000B		=> m24c16dip8
 0x000C		=> 27cxxxdip28
+0x000D		=> pic10fXXXdip8
 0xFEFD		=> Reserved. Do not use.
 0xFFFF		=> Reserved. Do not use.
 
