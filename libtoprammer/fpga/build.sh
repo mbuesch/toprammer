@@ -112,46 +112,60 @@ warning_filter()
 	done
 }
 
+# $1=source_directory
+run_build()
+{
+	local source_dir="$1"
+
+	for src in "$source_dir"/*; do
+		[ -d "$src" ] || continue
+
+		[ -f "$src/Makefile" ] || {
+			# Recurse
+			run_build "$src"
+			continue
+		}
+
+		srcname="$(basename $src)"
+		logfile="$basedir/$srcname.build.log"
+
+		should_build "$srcname" || continue
+
+		echo "Building $srcname..."
+		rm -f "$logfile"
+		make -C "$src/" clean >/dev/null ||\
+			die "FAILED to clean $srcname."
+		errfile="$(mktemp)"
+		{
+			make -C "$src/" all 2>&1
+			echo "$?" >> "$errfile"
+		} | tee "$logfile" | warning_filter "$src" "$verbose"
+		errcode="$(cat "$errfile")"
+		rm -f "$errfile"
+		[ "$errcode" = "0" ] || {
+			[ $verbose -eq 0 ] && cat "$logfile"
+			die "FAILED to build $srcname."
+		}
+
+		new="$src/$srcname.bit"
+		old="$bindir/$srcname.bit"
+		if bitfile_is_equal "$old" "$new"; then
+			echo "Bitfile for target $srcname did not change"
+		else
+			cp -f "$new" "$old"
+		fi
+		make -C "$src/" clean > /dev/null ||\
+			die "FAILED to clean $srcname."
+		rm -f "$logfile"
+	done
+}
+
 # Pull in the ISE settings and paths, if requested.
 [ -d "$XILINX_10_1_DIR" ] && \
 [ -r "$XILINX_10_1_DIR/ISE/settings32.sh" ] &&
 	. "$XILINX_10_1_DIR/ISE/settings32.sh"
 
-for src in $srcdir/*; do
-	[ -d "$src" ] || continue
-
-	srcname="$(basename $src)"
-	logfile="$basedir/$srcname.build.log"
-
-	should_build "$srcname" || continue
-
-	echo "Building $srcname..."
-	rm -f "$logfile"
-	make -C "$src/" clean >/dev/null ||\
-		die "FAILED to clean $srcname."
-	errfile="$(mktemp)"
-	{
-		make -C "$src/" all 2>&1
-		echo "$?" >> "$errfile"
-	} | tee "$logfile" | warning_filter "$src" "$verbose"
-	errcode="$(cat "$errfile")"
-	rm -f "$errfile"
-	[ "$errcode" = "0" ] || {
-		[ $verbose -eq 0 ] && cat "$logfile"
-		die "FAILED to build $srcname."
-	}
-
-	new="$src/$srcname.bit"
-	old="$bindir/$srcname.bit"
-	if bitfile_is_equal "$old" "$new"; then
-		echo "Bitfile for target $srcname did not change"
-	else
-		cp -f "$new" "$old"
-	fi
-	make -C "$src/" clean > /dev/null ||\
-		die "FAILED to clean $srcname."
-	rm -f "$logfile"
-done
+run_build "$srcdir"
 echo "Successfully built all images."
 
 exit 0
