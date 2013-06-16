@@ -3,7 +3,7 @@ set -xsthdpdir __xst
 run
 -ifmt mixed
 -ofmt NGC
--vlgincdir ../../common
+-vlgincdir {../../../common ../../common ../}
 -p xc2s15-5-vq100
 -iuc NO
 -keep_hierarchy NO
