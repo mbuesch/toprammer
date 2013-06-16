@@ -40,6 +40,8 @@ class Chip:
 	SUPPORT_RAMREAD		= (1 << 10)
 	SUPPORT_RAMWRITE	= (1 << 11)
 	SUPPORT_TEST		= (1 << 12)
+	SUPPORT_UILREAD		= (1 << 13)
+	SUPPORT_UILWRITE	= (1 << 14)
 
 	@classmethod
 	def chipSupportsAttr(cls, methodName):
@@ -54,19 +56,22 @@ class Chip:
 		"Get the SUPPORT_... flags for this chip"
 		flags = 0
 		for (methodName, flag) in (
-				("erase",		Chip.SUPPORT_ERASE),
-				("readSignature",	Chip.SUPPORT_SIGREAD),
-				("readProgmem",		Chip.SUPPORT_PROGMEMREAD),
-				("writeProgmem",	Chip.SUPPORT_PROGMEMWRITE),
-				("readEEPROM",		Chip.SUPPORT_EEPROMREAD),
-				("writeEEPROM",		Chip.SUPPORT_EEPROMWRITE),
-				("readFuse",		Chip.SUPPORT_FUSEREAD),
-				("writeFuse",		Chip.SUPPORT_FUSEWRITE),
-				("readLockbits",	Chip.SUPPORT_LOCKREAD),
-				("writeLockbits",	Chip.SUPPORT_LOCKWRITE),
-				("readRAM",		Chip.SUPPORT_RAMREAD),
-				("writeRAM",		Chip.SUPPORT_RAMWRITE),
-				("test",		Chip.SUPPORT_TEST)):
+				("erase",		cls.SUPPORT_ERASE),
+				("readSignature",	cls.SUPPORT_SIGREAD),
+				("readProgmem",		cls.SUPPORT_PROGMEMREAD),
+				("writeProgmem",	cls.SUPPORT_PROGMEMWRITE),
+				("readEEPROM",		cls.SUPPORT_EEPROMREAD),
+				("writeEEPROM",		cls.SUPPORT_EEPROMWRITE),
+				("readFuse",		cls.SUPPORT_FUSEREAD),
+				("writeFuse",		cls.SUPPORT_FUSEWRITE),
+				("readLockbits",	cls.SUPPORT_LOCKREAD),
+				("writeLockbits",	cls.SUPPORT_LOCKWRITE),
+				("readRAM",		cls.SUPPORT_RAMREAD),
+				("writeRAM",		cls.SUPPORT_RAMWRITE),
+				("test",		cls.SUPPORT_TEST),
+				("readUserIdLocation",	cls.SUPPORT_UILREAD),
+				("writeUserIdLocation",		cls.SUPPORT_UILWRITE)):
+			
 			if cls.chipSupportsAttr(methodName):
 				flags |= flag
 		return flags
@@ -241,6 +246,14 @@ class Chip:
 	def writeRAM(self, image):
 		# Override me in the subclass, if required.
 		self.throwError("RAM writing not supported")
+		
+	def readUserIdLocation(self):
+		# Override me in the subclass, if required.
+		self.throwError("User ID Location reading not supported")
+
+	def writeUserIdLocation(self, image):
+		# Override me in the subclass, if required.
+		self.throwError("User ID Location writing not supported")		
 
 __registeredChips = []
 
@@ -497,6 +510,8 @@ class ChipDescription:
 				(Chip.SUPPORT_RAMREAD,		"RAM reading"),
 				(Chip.SUPPORT_RAMWRITE,		"RAM writing"),
 				(Chip.SUPPORT_TEST,		"Unit-testing"),
+				(Chip.SUPPORT_UILMREAD,		"User ID Location reading"),
+				(Chip.SUPPORT_UILWRITE,		"User ID Location writing"),
 			)
 			supportFlags = self.chipImplClass.getSupportFlags()
 			for (flag, description) in supportedFeatures:

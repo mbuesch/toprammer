@@ -856,9 +856,8 @@ class HwThread(QThread):
 			layoutGen = chip.getLayoutGenerator()
 			if layoutGen:
 				asciiArtLayout = layoutGen.zifLayoutAsciiArt()
-			chipSupportFlags = chip.getSupportFlags()
 			self.__unblockCancellation()
-			retval = (chipSupportFlags, asciiArtLayout)
+			retval = (chip, asciiArtLayout)
 		elif task == self.TASK_READALL:
 			self.top.checkChip()
 			supportFlags = self.top.getChip().getSupportFlags()
@@ -2128,7 +2127,7 @@ class MainWindow(QMainWindow):
 
 		self.guiDisable = 0
 		self.inputEventsBlocked = 0
-		self.chipSupportFlags = 0 # Chip.SUPPORT_... for the loaded chip
+		self.chip = None # Chip instance 
 		self.currentChipDescription = None
 		self.previousRawCommand = ""
 
@@ -2298,6 +2297,7 @@ class MainWindow(QMainWindow):
 
 	def loadBuffer(self):
 		bufWidget = self.bufferTab.getCurrentBuffer()
+		data = None
 		if not bufWidget:
 			return
 		if bufWidget.isReadOnly():
@@ -2318,7 +2318,7 @@ class MainWindow(QMainWindow):
 		extensions = str(selectedFilter).split("(")[1].\
 				 split(")")[0].replace("*", "").strip().split()
 		try:
-			data = open(fn, "rb").read()
+			dataIn = open(fn, "rb").read()
 		except (IOError), e:
 			QMessageBox.critical(self, "Failed to read file",
 				"Failed to read %s:\n%s" %\
@@ -2326,14 +2326,33 @@ class MainWindow(QMainWindow):
 			return
 		try:
 			if ".bin" in extensions:
-				data = IO_binary().toBinary(data) # no-op
-			elif ".ihex" in extensions:
-				data = IO_ihex().toBinary(data)
+				data = IO_binary().toBinary(dataIn) # no-op
 			elif ".ahex" in extensions:
-				data = IO_ahex().toBinary(data)
-			elif not extensions: # auto
-				handler = IO_autodetect(data)()
-				data = handler.toBinary(data)
+				data = IO_ahex().toBinary(dataIn)
+			elif (not extensions or ".ihex" in extensions): # auto
+				if ".ihex" in extensions:
+					handler = IO_ihex()
+				else:
+					handler = IO_autodetect(dataIn)()
+				#FIXME UGLY!
+				if(handler.__class__.__name__== "IO_ihex"):
+					if(bufWidget.__class__.__name__=='ImageBufferWidget' and hasattr(self.chip,'programMemoryByteAddressRange')):
+						for minMaxAddr in self.chip.programMemoryByteAddressRange:
+							print "trying %x, %x\n" % minMaxAddr
+							data = handler.toBinary(dataIn, minMaxAddr)
+							if(len(data)>0):
+								break
+					elif(bufWidget.__class__.__name__ =='BitBufferWidget' and hasattr(self.chip,'configWordByteAddressRange')):
+						for minMaxAddr in self.chip.configWordByteAddressRange:
+							print "trying %x, %x\n" % minMaxAddr
+							data = handler.toBinary(dataIn, minMaxAddr)
+							if(len(data)>0):
+								break
+							print "failed"
+					else:
+						data = handler.toBinary(dataIn)
+				else:
+					data = handler.toBinary(dataIn)
 			else:
 				assert(0)
 		except (TOPException), e:
@@ -2525,22 +2544,22 @@ class MainWindow(QMainWindow):
 		# Task succeed
 		if self.operation == self.OP_INITCHIP:
 			assert(task == HwThread.TASK_INITCHIP)
-			(self.chipSupportFlags, asciiArtLayout) = returnValue
-			self.bufferTab.setupBuffers(self.chipSupportFlags)
+			(self.chip, asciiArtLayout) = returnValue
+			self.bufferTab.setupBuffers(self.chip.getSupportFlags())
 			self.bufferTab.infoBuffer.clear()
 			self.bufferTab.infoBuffer.setupDescription(self.currentChipDescription)
 			self.bufferTab.infoBuffer.setChipLayout(asciiArtLayout)
-			self.autorun.setup(self.chipSupportFlags)
-			self.topToolBar.setup(self.chipSupportFlags)
-			self.rightToolBar.setup(self.chipSupportFlags)
-			self.setupRunMenu(self.chipSupportFlags)
+			self.autorun.setup(self.chip.getSupportFlags())
+			self.topToolBar.setup(self.chip.getSupportFlags())
+			self.rightToolBar.setup(self.chip.getSupportFlags())
+			self.setupRunMenu(self.chip.getSupportFlags())
 		elif self.operation == self.OP_SHUTDOWN:
 			pass # Nothing to do
 		elif self.operation == self.OP_READALL:
 			assert(task == HwThread.TASK_READALL)
 			(sigImage, progmemImage, eepromImage, fuseImage,
 			 lockbitsImage, ramImage) = returnValue
-			self.bufferTab.setupBuffers(self.chipSupportFlags)
+			self.bufferTab.setupBuffers(self.chip.getSupportFlags())
 			self.bufferTab.loadBuffers(progmemImage, eepromImage,
 						   fuseImage, lockbitsImage,
 						   ramImage)

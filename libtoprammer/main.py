@@ -384,6 +384,23 @@ class TOP(object):
 		self.chip.writeRAM(image)
 		self.flushCommands()
 		self.printDebug("Done writing the image.")
+		
+	def readUserIdLocation(self):
+		"""Reads the User ID Location and returns it."""
+		self.printDebug("Reading UIL from chip...")
+		self.checkChip()
+		image = self.chip.readUserIdLocation()
+		self.flushCommands()
+		self.printDebug("Done reading %d bytes." % len(image))
+		return image
+
+	def writeUserIdLocation(self, image):
+		"""Writes the User ID Location image to the chip."""
+		self.printDebug("Writing %d bytes to UIL of the chip..." % len(image))
+		self.checkChip()
+		self.chip.writeUserIdLocation(image)
+		self.flushCommands()
+		self.printDebug("Done writing the image.")		
 
 	def cmdDelay(self, seconds):
 		"""Send a delay request to the device. Note that this causes the

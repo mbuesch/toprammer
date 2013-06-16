@@ -58,6 +58,9 @@ def usage():
 	print " -r|--read-ram FILE      Read the RAM"
 	print " -R|--write-ram FILE     Write the RAM"
 	print ""
+	print " -a|--read-uil FILE      Read the User ID Location"
+	print " -A|--write-uil FILE     Write the User ID Location"
+	print ""
 	print "Other options:"
 	print " -t|--list               Print a list of supported chips and exit."
 	print "                         Use -V|--verbose to control the list verbosity (1-4)"
@@ -98,7 +101,7 @@ def fileOut(filename, fmtString, data):
 	else:
 		open(filename, "w+b").write(data)
 
-def fileIn(filename, fmtString):
+def fileIn(filename, fmtString, minMaxAddr=None):
 	if filename == "-":
 		data = sys.stdin.read()
 	else:
@@ -107,7 +110,10 @@ def fileIn(filename, fmtString):
 		handler = IO_autodetect(data)()
 	else:
 		handler = IO_handlers[fmtString]()
-	return handler.toBinary(data)
+	if(handler.__class__.__name__== "IO_ihex"):
+		return handler.toBinary(data, minMaxAddr)
+	else:
+		return handler.toBinary(data)
 
 def main(argv):
 	opt_verbose = 1
@@ -124,13 +130,14 @@ def main(argv):
 	opt_outformat = "bin"
 	try:
 		(opts, args) = getopt.getopt(sys.argv[1:],
-			"hc:d:V:Qs:xTp:P:e:E:f:F:o:Ul:L:r:R:BtI:O:C:",
+			"hc:d:V:Qs:xTp:P:e:E:f:F:o:Ul:L:r:R:BtI:O:C:a:A:",
 			[ "help", "chip-id=", "device=", "verbose=", "noqueue",
 			  "read-sig=", "erase", "test", "read-prog=", "write-prog=",
 			  "read-eeprom=", "write-eeprom=", "read-fuse=", "write-fuse=",
 			  "read-lock=", "write-lock=", "read-ram=", "write-ram=",
 			  "force=", "force-upload", "broken", "list",
-			  "in-format=", "out-format=", "chip-opt=", ])
+			  "in-format=", "out-format=", "chip-opt=",
+			  "read-uil=", "write-uil=" ])
 		for (o, v) in opts:
 			if o in ("-h", "--help"):
 				usage()
@@ -208,6 +215,12 @@ def main(argv):
 			if o in ("-R", "--write-ram"):
 				opt_action = "write-ram"
 				opt_file = v
+			if o in ("-a", "--read-uil"):
+				opt_action = "read-uil"
+				opt_file = v
+			if o in ("-A", "--write-uil"):
+				opt_action = "write-uil"
+				opt_file = v				
 	except (getopt.GetoptError, ValueError), e:
 		usage()
 		return 1
@@ -246,7 +259,15 @@ def main(argv):
 		elif opt_action == "read-prog":
 			fileOut(opt_file, opt_outformat, top.readProgmem())
 		elif opt_action == "write-prog":
-			top.writeProgmem(fileIn(opt_file, opt_informat))
+			if(hasattr(top.getChip(),'programMemoryByteAddressRange')): #FIXME UGLY!
+				for minMaxAddr in top.getChip().programMemoryByteAddressRange:
+					print "trying %x, %x\n" % minMaxAddr
+					image = fileIn(opt_file, opt_informat, minMaxAddr)
+					if(len(image)>0):
+						break
+			else:
+				image = fileIn(opt_file, opt_informat)
+			top.writeProgmem(image)
 		elif opt_action == "read-eeprom":
 			fileOut(opt_file, opt_outformat, top.readEEPROM())
 		elif opt_action == "write-eeprom":
@@ -254,7 +275,15 @@ def main(argv):
 		elif opt_action == "read-fuse":
 			fileOut(opt_file, opt_outformat, top.readFuse())
 		elif opt_action == "write-fuse":
-			top.writeFuse(fileIn(opt_file, opt_informat))
+			if(hasattr(top.getChip(),'configWordByteAddressRange')): #FIXME UGLY!
+				for minMaxAddr in top.getChip().configWordByteAddressRange:
+					print "trying %x, %x\n" % minMaxAddr
+					image = fileIn(opt_file, opt_informat, minMaxAddr)
+					if(len(image)>0):
+						break
+			else:
+				image = fileIn(opt_file, opt_informat)
+			top.writeFuse(image)
 		elif opt_action == "read-lock":
 			fileOut(opt_file, opt_outformat, top.readLockbits())
 		elif opt_action == "write-lock":
@@ -263,6 +292,10 @@ def main(argv):
 			fileOut(opt_file, opt_outformat, top.readRAM())
 		elif opt_action == "write-ram":
 			top.writeRAM(fileIn(opt_file, opt_informat))
+		elif opt_action == "read-uil":
+			fileOut(opt_file, opt_outformat, top.readUserIdLocation())
+		elif opt_action == "write-uil":
+			top.writeUserIdLocation(fileIn(opt_file, opt_informat))			
 		else:
 			print "No action specified"
 		top.shutdownChip()

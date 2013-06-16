@@ -155,10 +155,11 @@ class IO_ihex(object):
 			return False
 		return True
 
-	def toBinary(self, ihexData):
+	def toBinary(self, ihexData, minMaxAddr=None):
 		bin = []
 		checksumWarned = False
 		doublewriteWarned = False
+		addrBias = minMaxAddr[0] if minMaxAddr else 0
 		try:
 			lines = ihexData.splitlines()
 			hiAddr = 0
@@ -201,16 +202,20 @@ class IO_ihex(object):
 						raise TOPException("Invalid IHEX format (inval ELAR)")
 					hiAddr = (int(line[9:11], 16) << 8) | int(line[11:13], 16)
 					continue
+				if(minMaxAddr and addr < minMaxAddr[0]):
+					continue
+				if(minMaxAddr and addr > minMaxAddr[1]):
+					continue				
 				if type == self.TYPE_DATA:
-					if len(bin) < addr + count: # Reallocate
-						bin += [b'\xFF'] * (addr + count - len(bin))
+					if len(bin) < addr - addrBias + count: # Reallocate
+						bin += [b'\xFF'] * (addr - addrBias + count - len(bin))
 					for i in range(9, 9 + count * 2, 2):
 						byte = int2byte(int(line[i:i+2], 16))
-						if bin[(i - 9) / 2 + addr] != '\xFF' and \
+						if bin[(i - 9) / 2 + addr - addrBias] != '\xFF' and \
 						   not doublewriteWarned:
 							doublewriteWarned = True
 							print "Invalid IHEX format (Wrote twice to same location)"
-						bin[(i - 9) / 2 + addr] = byte
+						bin[(i - 9) / 2 + addr - addrBias] = byte
 					continue
 				raise TOPException("Invalid IHEX format (unsup type %d)" % type)
 		except ValueError:

@@ -22,7 +22,7 @@
 
 from libtoprammer.chip import *
 
-class Chip_Microchip_common(Chip):
+class Chip_Microchip01_common(Chip):
 	CMD_LOAD_DATA_FOR_PGM     = 0x02
 	CMD_READ_DATA_FROM_PGM    = 0x04
 	CMD_INCREMENT_ADDRESS     = 0x06
@@ -56,6 +56,7 @@ class Chip_Microchip_common(Chip):
 		self.eepromPages = eepromPages        # Nr of EEPROM pages
 		self.fuseBytes = fuseBytes        # Nr of fuse bytes
 		self.PC=0
+		self.isInPmMode=False
 
 
 	def readSignature(self):
@@ -65,15 +66,19 @@ class Chip_Microchip_common(Chip):
 		return signature
 	
 	def erase(self):
-		self.__erase()
+		if(hasattr(self,'osccalAddr')):
+			self.__erase()
+		else:
+			self.__erase(keepOSCCAL=False)
 
-	def __erase(self, keepConfigWord=False):
+	def __erase(self, keepConfigWord=False, keepOSCCAL=True, keepUserIDLocation=False):
 		OSCCAL = 0xfff
+		self.__enterPM()
 		if(keepConfigWord):
 			self.progressMeterInit("Reading ConfigWord for backup", 0)
 			CW = self.__getConfigWord()
 			self.progressMeterFinish()
-			self.__enterPM()
+		if(keepOSCCAL):
 			self.progressMeterInit("Reading OSCCAL)", 0)
 			self.__setPC(self.osccalAddr)
 			self.__sendReadFlashInstr()
@@ -82,22 +87,25 @@ class Chip_Microchip_common(Chip):
 			self.__readSDOBufferHigh()
 			OSCCAL=self.top.cmdReadBufferReg16()
 			self.progressMeterFinish()
-		if(OSCCAL == 0xfff):
-			self.progressMeterInit("OSCCAL value lost, restoring from backup location ...", 0)
-			self.__setPC(self.osccalBackupAddr-self.osccalAddr)
-			self.__sendReadFlashInstr()
-			self.top.cmdDelay(0.00005)
-			self.__readSDOBufferLow()
-			self.__readSDOBufferHigh()
-			OSCCAL=self.top.cmdReadBufferReg16()
-			self.progressMeterFinish()
-			#print ("osccal: %x\n" % OSCCAL)
+			if(OSCCAL == 0xfff):
+				self.progressMeterInit("OSCCAL value lost, restoring from backup location ...", 0)
+				self.__setPC(self.osccalBackupAddr-self.osccalAddr)
+				self.__sendReadFlashInstr()
+				self.top.cmdDelay(0.00005)
+				self.__readSDOBufferLow()
+				self.__readSDOBufferHigh()
+				OSCCAL=self.top.cmdReadBufferReg16()
+				self.progressMeterFinish()
+				#print ("osccal: %x\n" % OSCCAL)
+		#erase User ID Location and backup osccal Tooo
+		if(not keepUserIDLocation):
+			self.__setPC(self.userIDLocationAddr)
 		self.progressMeterInit("Erasing chip", 0)
 		self.__sendInstr(self.CMD_BULK_ERASE_PGM)
 		self.top.hostDelay(0.01) #Tera
 		self.progressMeterFinish()
-		#OSCCAL=0xC18
-		if(OSCCAL != 0xfff):
+		#OSCCAL=0xC12
+		if(keepOSCCAL and OSCCAL != 0xfff):
 			self.__enterPM()
 			self.progressMeterInit("Writing osccal,  value %x" % OSCCAL, 0)
 			self.__setPC(self.osccalAddr)
@@ -110,6 +118,7 @@ class Chip_Microchip_common(Chip):
 			self.progressMeterInit("Write read ConfigWord, value %x" % CW, 0)
 			self.__writeConfigWord(CW)
 			self.progressMeterFinish()
+		self.__exitPM()
 
 
 	def readProgmem(self):        
@@ -133,9 +142,11 @@ class Chip_Microchip_common(Chip):
 				bufferedBytes = 0
 		image += self.top.cmdReadBufferReg(bufferedBytes)
 		self.progressMeterFinish()
+		self.__exitPM()
 		return image
 
 	def writeProgmem(self, image):
+		self.__enterPM()
 		nrWords = self.flashPages * self.flashPageSize
 		if len(image) > nrWords * 2 or len(image) % 2 != 0:
 			self.throwError("Invalid flash image size %d (expected <=%d and word aligned)" %\
@@ -154,54 +165,113 @@ class Chip_Microchip_common(Chip):
 				self.__sendWriteFlashInstr()
 
 		self.progressMeterFinish()
+		self.__exitPM()
 
 	def readFuse(self):
+		self.__enterPM()
 		fuses = []
 		self.progressMeterInit("Reading fuses (configuration word)", 0)
-		CW = self.__getConfigWord() 
-		fuses.append(int2byte(CW & 0x00ff))
-		fuses.append(int2byte((CW >> 8) & 0x00ff))
+		for CW in self.__getConfigWord(): 
+			fuses.append(int2byte(CW & 0x00ff))
+			fuses.append(int2byte((CW >> 8) & 0x00ff))
 		self.progressMeterFinish()
+		self.__exitPM()
 		return b"".join(fuses)
-
-	def __getConfigWord(self):
+	
+	def readUserIdLocation(self):
 		self.__enterPM()
-		self.__setPC(self.configWordAddr)
-		self.__sendReadFlashInstr()
-		self.top.cmdDelay(0.00002)
-		self.__readSDOBufferLow()
-		self.__readSDOBufferHigh()
-		return self.top.cmdReadBufferReg16()
-
-	def writeFuse(self, image):
-		if len(image) != 2:
-			self.throwError("Invalid Fuses image size %d (expected %d)" %\
-				(len(image), 2))
-		self.progressMeterInit("Writing fuses", 0)
-		#print "image1:%x,,%x,,%x" % (byte2int(image[0]),byte2int(image[1]),byte2int(image[1])<<8)
-		self.__writeConfigWord((byte2int(image[1])<<8) | byte2int(image[0]))
-		self.progressMeterFinish()
-    
-	def __writeConfigWord(self, configWord16):
-		self.__enterPM()
-		self.__setPC(self.configWordAddr)
-		self.__sendInstr(self.CMD_LOAD_DATA_FOR_PGM)
-		self.__setSDI(configWord16)
-		self.top.hostDelay(0.00002)
-		self.__sendWriteFlashInstr()
-
-	def __readSignature(self):
-		self.__enterPM()
-		self.__incrementPC(self.userIDLocationAddr)
+		self.__setPC(self.userIDLocationAddr)
 		for i in range(0, self.userIDLocationSize):
 			self.__incrementPC(1)
 			self.__sendReadFlashInstr()
 			self.top.hostDelay(0.00002)
 			self.__readSDOBufferLow()
 			self.__readSDOBufferHigh()
+		self.__exitPM()
 		return self.top.cmdReadBufferReg()[0:2*self.userIDLocationSize-1]
+	
+	def writeUserIdLocation(self, image):
+		if len(image) > self.userIDLocationSize * 2 or len(image) % 2 != 0:
+			self.throwError("Invalid flash image size %d (expected <=%d and word aligned)" %\
+				(len(image), self.userIDLocationSize * 2))
+		self.__enterPM()
+		self.__setPC(self.userIDLocationAddr)
+		self.progressMeterInit("Writing User ID Location", len(image) // 2)
+		for word in range(0, len(image) // 2):
+			self.progressMeter(word)
+			#do not swap following two lines
+			self.__incrementPC(1)
+			self.__sendInstr(self.CMD_LOAD_DATA_FOR_PGM)
+			WD = (byte2int(image[word * 2 + 1])<<8) | byte2int(image[word * 2 + 0])
+			if(WD != 0xfff):
+				self.__setSDI(WD)
+				self.top.hostDelay(0.00002)
+				self.__sendWriteFlashInstr()
+		self.progressMeterFinish()
+		self.__exitPM()
+		
+	def __getConfigWordSize(self):
+		return self.fuseBytes // 2
 
+	def __getConfigWord(self):
+		self.__enterPM()
+		self.__setPC(self.configWordAddr)
+		retVal=[]
+		for i in range(0,self.__getConfigWordSize()):
+			self.__sendReadFlashInstr()
+			self.top.cmdDelay(0.00002)
+			self.__readSDOBufferLow()
+			self.__readSDOBufferHigh()
+			retVal.append(self.top.cmdReadBufferReg16())
+			self.__incrementPC(1)
+		return retVal
+
+	def writeFuse(self, image):
+		self.__enterPM()
+		if len(image) != 2*self.__getConfigWordSize():
+			self.throwError("Invalid Fuses image size %d (expected %d)" %\
+				(len(image), 2*self.__getConfigWordSize()))
+		self.progressMeterInit("Writing fuses", 0)
+		#print "image1:%x,,%x,,%x" % (byte2int(image[0]),byte2int(image[1]),byte2int(image[1])<<8)
+		CW=[]
+		for tBytes in zip(image[::2],image[1::2]):
+			CW.append((byte2int(image[1])<<8) | byte2int(image[0]))
+		self.__writeConfigWord(CW)
+		self.progressMeterFinish()
+		self.__exitPM()
+    
+	def __writeConfigWord(self, listConfigWord16):
+		self.__enterPM()
+		self.__setPC(self.configWordAddr)
+		for configWord16 in listConfigWord16:
+			self.__sendInstr(self.CMD_LOAD_DATA_FOR_PGM)
+			self.__setSDI(configWord16)
+			self.top.hostDelay(0.00002)
+			self.__sendWriteFlashInstr()
+			self.__incrementPC(1)
+
+	def __readSignature(self):
+		if(hasattr(self,'deviceIDAddr')):
+			idAddr = self.deviceIDAddr
+			idSize = 1
+		else:
+			idAddr = self.userIDLocationAddr
+			idSize = self.userIDLocationSize
+		self.__enterPM()
+		self.__incrementPC(idAddr)
+		for i in range(0, idSize):
+			self.__incrementPC(1)
+			self.__sendReadFlashInstr()
+			self.top.hostDelay(0.00002)
+			self.__readSDOBufferLow()
+			self.__readSDOBufferHigh()
+		self.__exitPM()
+		return self.top.cmdReadBufferReg()[0:2*idSize-1]
+		
 	def __enterPM(self):
+		if self.isInPmMode:
+			self.__setPC(self.logicalFlashSize - 1)
+			return
 		self.PC = self.logicalFlashSize - 1
 		"Enter HV programming mode. Vdd first entry mode"
 		self.applyVCC(False)
@@ -225,6 +295,7 @@ class Chip_Microchip_common(Chip):
 		#self.top.cmdEnableZifPullups(True)
 		
 		self.top.cmdDelay(0.000005) #least 5us is required to reach Vdd first entry PM
+		self.isInPmMode=True
 
 	def __checkSignature(self):
 		signature = self.__readSignature()
@@ -247,6 +318,7 @@ class Chip_Microchip_common(Chip):
 		self.applyGND(False)
 		self.top.hostDelay(0.000005)
 		self.applyVCC(False)
+		self.isInPmMode=False
 
 	def __sendReadFlashInstr(self):
 		'''
