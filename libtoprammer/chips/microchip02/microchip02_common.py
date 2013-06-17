@@ -106,9 +106,7 @@ class Chip_Microchip02_common(Chip):
 		self.progressMeterInit("Reading flash", nrWords)
 		bufferedBytes = 0
 		for word in range(0, nrWords):
-			self.__incrementPC(1)
 			self.__sendReadFlashInstr()
-			#self.__busyWait()
 			self.top.cmdDelay(0.00002) #20us wait - inconsistent data if skipped
 			self.__readSDOBufferLow()
 			bufferedBytes += 1
@@ -118,6 +116,7 @@ class Chip_Microchip02_common(Chip):
 				image += self.top.cmdReadBufferReg(bufferedBytes)
 				self.progressMeter(word)
 				bufferedBytes = 0
+			self.__incrementPC(1)
 		image += self.top.cmdReadBufferReg(bufferedBytes)
 		self.progressMeterFinish()
 		self.__exitPM()
@@ -133,8 +132,6 @@ class Chip_Microchip02_common(Chip):
 		self.progressMeterInit("Writing flash", len(image) // 2)
 		for wordAddr in range(0, len(image) // 2):
 			self.progressMeter(wordAddr)
-			#do not swap following two lines
-			self.__incrementPC(1)
 			self.__sendInstr(self.CMD_LOAD_DATA_FOR_PGM)
 			WD = (byte2int(image[wordAddr * 2 + 1])<<8) | byte2int(image[wordAddr * 2 + 0])
 			if(WD != 0xfff):
@@ -143,7 +140,7 @@ class Chip_Microchip02_common(Chip):
 				self.__loadCommand(self.PROGCMD_SENDDATA)		
 				self.top.hostDelay(0.000005)				
 				self.__sendWriteFlashInstr()
-
+			self.__incrementPC(1)
 		self.progressMeterFinish()
 		self.__exitPM()
 
