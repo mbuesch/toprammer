@@ -160,10 +160,15 @@ run_build()
 	done
 }
 
-# Pull in the ISE settings and paths, if requested.
-[ -d "$XILINX_10_1_DIR" ] && \
-[ -r "$XILINX_10_1_DIR/ISE/settings32.sh" ] &&
+# Pull in the ISE settings and paths.
+if [ -d "$XILINX_10_1_DIR" ] && \
+   [ -r "$XILINX_10_1_DIR/ISE/settings32.sh" ]; then
 	. "$XILINX_10_1_DIR/ISE/settings32.sh"
+elif [ -r "/opt/Xilinx/10.1/ISE/settings32.sh" ]; then
+	. "/opt/Xilinx/10.1/ISE/settings32.sh"
+else
+	die "Did not find Xilinx ISE webpack 10.1"
+fi
 
 run_build "$srcdir"
 echo "Successfully built all images."
