@@ -1,7 +1,7 @@
 /*
  *   TOP2049 Open Source programming suite
  *
- *   Microchip DIP18 implementation
+ *   Microchip DIP14 and DIP20 implementation
  *   FPGA bottomhalf implementation
  *
  *   Copyright (c) 2013 Pavel Stemberk <stemberk@gmail.com>
@@ -21,9 +21,9 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-`define DUT_SDIO	28
-`include "microchip01.vh"
-`ALL_WITHOUT_ZIF(microchip01dip18, 32'hDE04, 1)
+`define DUT_SDIO	17
+`include "microchip16.vh"
+`ALL_WITHOUT_ZIF(microchip16dip14dip20, 32'hDF01, 1)
 
     `ZIF_UNUSED(1)
     `ZIF_UNUSED(2)
@@ -39,26 +39,26 @@
     `ZIF_UNUSED(12)
     `ZIF_UNUSED(13)
     `ZIF_UNUSED(14)
-    `ZIF_UNUSED(15)
-    `ZIF_UNUSED(16)
-    `ZIF_UNUSED(17)
+    bufif0(zif[15], low, dut_vpp);                             /* VPP/Reset */ 
+    bufif0(zif[16], dut_sci, low);                             /* SCI - PGEC2 */
+    bufif0(zif[17], dut_sdio_value, !dut_sdio_driven);         /* SDO - PGED2 */
     `ZIF_UNUSED(18)
-    bufif0(zif[19], low, dut_vpp);                             /* VPP/Reset */
-    bufif0(zif[20], low, low);                                 /* GND */
+    `ZIF_UNUSED(19) 
+    `ZIF_UNUSED(20)
     `ZIF_UNUSED(21)
     `ZIF_UNUSED(22)
     `ZIF_UNUSED(23)
     `ZIF_UNUSED(24)
     `ZIF_UNUSED(25)
     `ZIF_UNUSED(26)
-    bufif0(zif[27], dut_sci, low);                             /* SCI */
-    bufif0(zif[28], dut_sdio_value, !dut_sdio_driven);         /* SDO */
-    bufif0(zif[29], high, low);                                /* VCC */
+    `ZIF_UNUSED(27)
+    `ZIF_UNUSED(28)
+    `ZIF_UNUSED(29)
     `ZIF_UNUSED(30) 
     `ZIF_UNUSED(31)
     `ZIF_UNUSED(32)
-    `ZIF_UNUSED(33)
-    `ZIF_UNUSED(34)
+    bufif0(zif[33], low, low);                                 /* GND */
+    bufif0(zif[34], high, low);                                /* VCC */
     `ZIF_UNUSED(35)
     `ZIF_UNUSED(36)
     `ZIF_UNUSED(37)
@@ -72,5 +72,6 @@
     `ZIF_UNUSED(45)
     `ZIF_UNUSED(46)
     `ZIF_UNUSED(47)
-    `ZIF_UNUSED(48)    
+    `ZIF_UNUSED(48) 
+    
 `BOTTOMHALF_END

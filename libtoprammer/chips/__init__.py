@@ -15,5 +15,5 @@ from m24cxxdip8 import *
 from m8cissp import *
 from unitest import *
 from w29ee011dip32 import *
-from microchip01 import *
-from microchip02 import *
+from microchip8 import *
+#from microchip16 import *
