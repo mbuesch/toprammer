@@ -26,27 +26,6 @@ import re
 import sys
 import os
 
-def clear():
-	inputFileName = '__init__.py'
-	tmpFileName = 'tmp'
-	fin = open(inputFileName)
-	ftmp = open(tmpFileName, 'w')
-	isToBeRemoved = False
-	for line in fin:
-		if isToBeRemoved:
-			matchObj = re.match('.*(pic\w+).*', line)
-			if matchObj:
-				print('removing file {}'.format(matchObj.group(1)))
-				os.remove('{}.py'.format(matchObj.group(1)))
-		else:
-			ftmp.write(line)
-			matchObj = re.match('#.*', line)
-			if matchObj:
-				isToBeRemoved = True
-	fin.close()
-	ftmp.close()
-	os.rename(tmpFileName, inputFileName)
-    
 def substitute(input, oldSocket, newSocket):
 	input = re.sub('(^\s*packages).*', lambda m:'{} = (("DIP10", ""), ),'.format(m.group(1)), input)
 	input = re.sub('(^\s*chipPackage).*', lambda m:'{} = "DIP10",'.format(m.group(1)), input)
@@ -89,7 +68,6 @@ def makeSip():
 	print ('{} - {}'.format(item[0], item[1]))	
 	
 def main(argv):
-	#clear()
 	makeSip()
 
 if __name__ == "__main__":
