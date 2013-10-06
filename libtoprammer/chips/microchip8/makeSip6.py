@@ -70,6 +70,9 @@ def makeSip():
 		if matchObj:
 			break
 		matchObj = re.match('.*(pic[0-9]+l?f\w+)(dip[0-9a]+).*', line)
+		if not matchObj:
+			print("{} did not match".format(line))
+			continue
 		print('matched {} - {}'.format(matchObj.group(1), matchObj.group(2)))
 		dMCU.setdefault(matchObj.group(1), matchObj.group(2))
 	fin.close()
