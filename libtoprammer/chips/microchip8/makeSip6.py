@@ -40,7 +40,7 @@ def clear():
 				os.remove('{}.py'.format(matchObj.group(1)))
 		else:
 			ftmp.write(line)
-			matchObj = re.match('#do not edit the text below this line.*', line)
+			matchObj = re.match('#.*', line)
 			if matchObj:
 				isToBeRemoved = True
 	fin.close()
@@ -86,8 +86,8 @@ def makeSip():
 	print ('{} - {}'.format(item[0], item[1]))	
 	
 def main(argv):
-	clear()
-	# makeSip()
+	#clear()
+	makeSip()
 
 if __name__ == "__main__":
-	xit(main(sys.argv))
+	exit(main(sys.argv))
