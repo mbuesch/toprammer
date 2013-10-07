@@ -193,7 +193,7 @@ class ZifWidget(QGroupBox):
 		outEnMask = self.getOutEnMask()
 		try:
 			self.unitest.queryTop("top.getChip().setOutputEnableMask(...)",
-					      (outEnMask, ))
+					      outEnMask)
 		except (TOPException), e:
 			QMessageBox.critical(self, "TOP communication failed",
 				"Failed to set output-enable states:\n" +\
@@ -207,7 +207,7 @@ class ZifWidget(QGroupBox):
 		outMask = self.getOutMask()
 		try:
 			self.unitest.queryTop("top.getChip().setOutputs(...)",
-					      (outMask, ))
+					      outMask)
 		except (TOPException), e:
 			QMessageBox.critical(self, "TOP communication failed",
 				"Failed to set output states:\n" +\
@@ -546,12 +546,11 @@ class UnitestDialog(QDialog):
 	def closeEvent(self, e):
 		self.inputPollTimer.stop()
 
-	def queryTop(self, funcname, parameters=[]):
+	def queryTop(self, funcname, *parameters):
 		self.blockInputPoll() # Avoid recursion
-		taskParams = [ funcname, ]
-		taskParams.extend(parameters)
 		(failed, returnValue) = self.mainWindow.runOperationSync(
-				HwThread.TASK_GENERICTOPCALL, taskParams)
+				HwThread.TASK_GENERICTOPCALL,
+				GenericTopCall(funcname, *parameters))
 		self.unblockInputPoll()
 		if failed:
 			raise TOPException("Failed to query TOP %s\n%s" % (funcname, str(returnValue)))
@@ -565,15 +564,15 @@ class UnitestDialog(QDialog):
 		# GND
 		idx = self.gndLayout.currentIndex()
 		lay = self.gndLayout.itemData(idx)
-		blockedPins.extend(self.queryTop("top.gnd.ID2pinlist(...)", (lay, )))
+		blockedPins.extend(self.queryTop("top.gnd.ID2pinlist(...)", lay))
 		# VCC
 		idx = self.vccLayout.currentIndex()
 		lay = self.vccLayout.itemData(idx)
-		blockedPins.extend(self.queryTop("top.vcc.ID2pinlist(...)", (lay, )))
+		blockedPins.extend(self.queryTop("top.vcc.ID2pinlist(...)", lay))
 		# VPP
 		for key in self.vppLayouts.keys():
 			if self.vppLayouts[key].checkState() == Qt.Checked:
-				blockedPins.extend(self.queryTop("top.vpp.ID2pinlist(...)", (key, )))
+				blockedPins.extend(self.queryTop("top.vpp.ID2pinlist(...)", key))
 		# OSC
 		idx = self.oscPin.currentIndex()
 		mask = self.oscPin.itemData(idx).obj
@@ -586,7 +585,7 @@ class UnitestDialog(QDialog):
 		idx = self.gndLayout.currentIndex()
 		selLayout = self.gndLayout.itemData(idx)
 		try:
-			self.queryTop("top.getChip().setGND(...)", (selLayout, ))
+			self.queryTop("top.getChip().setGND(...)", selLayout)
 		except (TOPException), e:
 			QMessageBox.critical(self, "TOP communication failed",
 				"Failed to set GND layout:\n" +\
@@ -599,7 +598,7 @@ class UnitestDialog(QDialog):
 		idx = self.vccLayout.currentIndex()
 		selLayout = self.vccLayout.itemData(idx)
 		try:
-			self.queryTop("top.getChip().setVCC(...)", (selVoltage, selLayout))
+			self.queryTop("top.getChip().setVCC(...)", selVoltage, selLayout)
 		except (TOPException), e:
 			QMessageBox.critical(self, "TOP communication failed",
 				"Failed to set VCC layout:\n" +\
@@ -614,7 +613,7 @@ class UnitestDialog(QDialog):
 			if self.vppLayouts[key].checkState() == Qt.Checked:
 				selLayouts.append(key)
 		try:
-			self.queryTop("top.getChip().setVPP(...)", (selVoltage, selLayouts))
+			self.queryTop("top.getChip().setVPP(...)", selVoltage, selLayouts)
 		except (TOPException), e:
 			QMessageBox.critical(self, "TOP communication failed",
 				"Failed to set VPP layout:\n" +\
@@ -658,10 +657,10 @@ class UnitestDialog(QDialog):
 	def oscChanged(self, unused=None):
 		try:
 			div = self.oscDiv.value()
-			self.queryTop("top.getChip().setOscDivider(...)", (div, ))
+			self.queryTop("top.getChip().setOscDivider(...)", div)
 			idx = self.oscPin.currentIndex()
 			mask = self.oscPin.itemData(idx).obj
-			self.queryTop("top.getChip().setOscMask(...)", (mask, ))
+			self.queryTop("top.getChip().setOscMask(...)", mask)
 		except (TOPException), e:
 			QMessageBox.critical(self, "TOP communication failed",
 				"Failed configure oscillator:\n" +\
@@ -697,6 +696,13 @@ class GuiUserInterface(AbstractUserInterface):
 
 	def debugMessage(self, message):
 		self.__consoleMessage(message)
+
+class GenericTopCall(object):
+	"One call to 'class Top'. Used by TASK_GENERICTOPCALL"
+
+	def __init__(self, methodName, *parameters):
+		self.methodName = methodName
+		self.parameters = parameters
 
 class HwThread(QThread):
 	TASK_SHUTDOWN		= 0
@@ -896,16 +902,34 @@ class HwThread(QThread):
 			retval = (sigImage, progmemImage, eepromImage, fuseImage,
 				  lockbitsImage, ramImage)
 		elif task == self.TASK_GENERICTOPCALL:
-			funcname = str(self.taskParameter[0]).strip()
-			if funcname.endswith(")"): # strip (...) suffix
-				funcname = funcname[:funcname.rfind("(")]
-			if funcname.startswith("top."):
-				funcname = funcname[4:]
-			params = self.taskParameter[1:]
-			paramList = []
-			for i in range(0, len(params)):
-				paramList.append("params[%d]" % i)
-			retval = eval("self.top.%s(%s)" % (funcname, ", ".join(paramList)))
+			# The parameter is one GenericTopCall
+			# or a list of calls.
+			topCallList = self.taskParameter
+			if not isinstance(topCallList, list) and\
+			   not isinstance(topCallList, tuple):
+				# It is only a single call. Make an iterable.
+				topCallList = (topCallList, )
+			# Iterate over the list of GenericTopCalls
+			resultList = []
+			for topCall in topCallList:
+				method = topCall.methodName.strip()
+				if method.endswith(")"): # strip (...) suffix
+					method = method[:method.rfind("(")]
+				if method.startswith("top."): # strip 'top.' prefix
+					method = method[4:]
+				paramList = []
+				for i in range(len(topCall.parameters)):
+					paramList.append("topCall.parameters[%d]" % i)
+				result = eval("self.top.%s(%s)" % (method, ", ".join(paramList)))
+				resultList.append(result)
+			# Return the result list as retval.
+			# If there is only one result (= there was only one call),
+			# just return the single result
+			assert(len(resultList) == len(topCallList))
+			if len(resultList) == 1:
+				retval = resultList[0]
+			else:
+				retval = resultList
 		else:
 			raise TOPException("INTERNAL ERROR: HwThread: unknown task")
 		return retval
@@ -2299,7 +2323,7 @@ class MainWindow(QMainWindow):
 		if len(command) == 0:
 			return
 		self.runOperation(self.OP_RAWCOMMAND, HwThread.TASK_GENERICTOPCALL,
-				  ("top.runCommandSync(...)", command))
+				  GenericTopCall("top.runCommandSync(...)", command))
 
 	def loadBuffer(self):
 		bufWidget = self.bufferTab.getCurrentBuffer()
@@ -2423,7 +2447,7 @@ class MainWindow(QMainWindow):
 
 	def eraseChip(self):
 		return self.runOperation(self.OP_ERASE, HwThread.TASK_GENERICTOPCALL,
-					 ("top.eraseChip()", ))
+					 GenericTopCall("top.eraseChip()"))
 
 	def writeChipProgmem(self):
 		bufferWidget = self.bufferTab.progmemBuffer
@@ -2433,7 +2457,7 @@ class MainWindow(QMainWindow):
 				"No program memory available")
 			return False
 		return self.runOperation(self.OP_WRITEPROG, HwThread.TASK_GENERICTOPCALL,
-					 ("top.writeProgmem(...)", data))
+					 GenericTopCall("top.writeProgmem(...)", data))
 
 	def writeChipEeprom(self):
 		bufferWidget = self.bufferTab.eepromBuffer
@@ -2443,7 +2467,7 @@ class MainWindow(QMainWindow):
 				"No (E)EPROM memory available")
 			return False
 		return self.runOperation(self.OP_WRITEEPROM, HwThread.TASK_GENERICTOPCALL,
-					 ("top.writeEEPROM(...)", data))
+					 GenericTopCall("top.writeEEPROM(...)", data))
 
 	def writeChipFuses(self):
 		bufferWidget = self.bufferTab.fuseBuffer
@@ -2453,7 +2477,7 @@ class MainWindow(QMainWindow):
 				"No fuse bits available")
 			return False
 		return self.runOperation(self.OP_WRITEFUSE, HwThread.TASK_GENERICTOPCALL,
-					 ("top.writeFuse(...)", data))
+					 GenericTopCall("top.writeFuse(...)", data))
 
 	def writeChipLockbits(self):
 		bufferWidget = self.bufferTab.lockBuffer
@@ -2463,7 +2487,7 @@ class MainWindow(QMainWindow):
 				"No lock bits available")
 			return False
 		return self.runOperation(self.OP_WRITELOCK, HwThread.TASK_GENERICTOPCALL,
-					 ("top.writeLockbits(...)", data))
+					 GenericTopCall("top.writeLockbits(...)", data))
 
 	def writeRam(self):
 		bufferWidget = self.bufferTab.ramBuffer
@@ -2473,11 +2497,11 @@ class MainWindow(QMainWindow):
 				"No RAM memory available")
 			return False
 		return self.runOperation(self.OP_WRITERAM, HwThread.TASK_GENERICTOPCALL,
-					 ("top.writeRAM(...)", data))
+					 GenericTopCall("top.writeRAM(...)", data))
 
 	def runTest(self):
 		return self.runOperation(self.OP_TEST, HwThread.TASK_GENERICTOPCALL,
-					 ("top.testChip()", ))
+					 GenericTopCall("top.testChip()"))
 
 	def verifyChip(self):
 		return self.runOperation(self.OP_VERIFY, HwThread.TASK_READALL)
