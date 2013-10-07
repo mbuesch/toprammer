@@ -1669,9 +1669,15 @@ class BufferTabWidget(QTabWidget):
 					bold=True)
 				fail = True
 				continue
-			nrPadding = len(image) - len(bufImage)
-			paddedBufImage = bufImage + b'\xFF' * nrPadding
-			if paddedBufImage != image:
+			compareSize = min(len(image), len(bufImage))
+			if len(image) != len(bufImage):
+				self.mainWindow.console.showMessage(
+					"%s: Only comparing the first 0x%X bytes due "
+					"to a mismatch of the buffer size (0x%X) "
+					"with the actual device image size (0x%X).\n" %\
+					(bufferWidget.getName(), compareSize,
+					 len(bufImage), len(image)))
+			if bufImage[:compareSize] != image[:compareSize]:
 				self.mainWindow.console.showMessage(
 					"Chip verify of %s FAILED! "
 					"Image data mismatch.\n" %\
