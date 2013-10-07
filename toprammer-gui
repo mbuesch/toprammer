@@ -703,6 +703,7 @@ class GenericTopCall(object):
 	def __init__(self, methodName, *parameters):
 		self.methodName = methodName
 		self.parameters = parameters
+		self.result = None
 
 class HwThread(QThread):
 	TASK_SHUTDOWN		= 0
@@ -921,6 +922,7 @@ class HwThread(QThread):
 				for i in range(len(topCall.parameters)):
 					paramList.append("topCall.parameters[%d]" % i)
 				result = eval("self.top.%s(%s)" % (method, ", ".join(paramList)))
+				topCall.result = result
 				resultList.append(result)
 			# Return the result list as retval.
 			# If there is only one result (= there was only one call),
