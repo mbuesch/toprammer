@@ -1880,7 +1880,7 @@ class TopToolBar(QToolBar):
 		self.addSeparator()
 		a = self.addAction(getIcon("up"), "Read chip", mainWindow.readChip)
 		a.setEnabled(chipSupportFlags != 0)
-		a = self.addAction(getIcon("verify"), "Verify", mainWindow.verifyChip)
+		a = self.addAction(getIcon("verify"), "Verify all", mainWindow.verifyChip)
 		a.setEnabled(chipSupportFlags != 0)
 
 class RightToolBar(QToolBar):
@@ -1952,7 +1952,7 @@ class AutorunWidget(QDockWidget):
 				"Write fuses", True)
 		(self.verifyCheckBox, row) = self.__addCheckBox(row,
 				chipSupportFlags != 0,
-				"Verify", True)
+				"Verify selected memories", True)
 		(self.lockbitsCheckBox, row) = self.__addCheckBox(row,
 				chipSupportFlags & Chip.SUPPORT_LOCKWRITE,
 				"Write lock bits", False)
@@ -2038,9 +2038,9 @@ class AutorunWidget(QDockWidget):
 			action += 1
 		if self.verifyCheckBox:
 			if self.currentAction == action:
-				if self.__runAction(self.mainWindow.verifyChip,
+				if self.__runAction(self.__verifySelectedMemories,
 						    self.verifyCheckBox,
-						    "Verify"):
+						    "Verify selected memories"):
 					return
 			action += 1
 		if self.lockbitsCheckBox:
@@ -2061,6 +2061,14 @@ class AutorunWidget(QDockWidget):
 				self.abortRun(withMessage=True)
 			return True
 		return False
+
+	def __verifySelectedMemories(self):
+		def checked(cb):
+			return cb and (cb.checkState() == Qt.Checked)
+		return self.mainWindow.verifySelectedMemories(
+			verifyProgmem = checked(self.progmemCheckBox),
+			verifyEEPROM = checked(self.eepromCheckBox),
+			verifyFuse = checked(self.fusesCheckBox))
 
 class ProgrammerSelectDialog(QDialog):
 	def __init__(self, parent=None):
@@ -2201,7 +2209,7 @@ class MainWindow(QMainWindow):
 		a.setEnabled(bool(chipSupportFlags & Chip.SUPPORT_RAMWRITE))
 		a = menu.addAction("Run &Unit-test", self.runTest)
 		a.setEnabled(bool(chipSupportFlags & Chip.SUPPORT_TEST))
-		a = menu.addAction("&Verify chip", self.verifyChip)
+		a = menu.addAction("&Verify whole chip", self.verifyChip)
 		a.setEnabled(chipSupportFlags != 0)
 
 	def blockInputEvents(self):
@@ -2518,8 +2526,21 @@ class MainWindow(QMainWindow):
 					 GenericTopCall("top.testChip()"))
 
 	def verifyChip(self):
+		return self.verifySelectedMemories() # defaults to "all".
+
+	def verifySelectedMemories(self, verifyProgmem=True,
+				   verifyEEPROM=True,
+				   verifyFuse=True,
+				   verifyRAM=True):
+		callChain = self.__makeReadCallChain(
+			mayReadSig = False,
+			mayReadProgmem = verifyProgmem,
+			mayReadEEPROM = verifyEEPROM,
+			mayReadFuse = verifyFuse,
+			mayReadLockbits = False,
+			mayReadRAM = verifyRAM)
 		return self.runOperation(self.OP_VERIFY, HwThread.TASK_GENERICTOPCALL,
-					 self.__makeReadCallChain())
+					 callChain)
 
 	def guiUpdateEnable(self):
 		enable = not self.guiDisable and\
