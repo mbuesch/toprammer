@@ -700,16 +700,16 @@ class GuiUserInterface(AbstractUserInterface):
 class GenericTopCall(object):
 	"One call to 'class Top'. Used by TASK_GENERICTOPCALL"
 
-	def __init__(self, methodName, *parameters):
+	def __init__(self, methodName, *parameters, **userData):
 		self.methodName = methodName
 		self.parameters = parameters
 		self.result = None
+		self.userData = userData
 
 class HwThread(QThread):
 	TASK_SHUTDOWN		= 0
 	TASK_INITCHIP		= 1
-	TASK_READALL		= 2
-	TASK_GENERICTOPCALL	= 3
+	TASK_GENERICTOPCALL	= 2
 
 	class CancelException(Exception):
 		def __init__(self):
@@ -865,43 +865,6 @@ class HwThread(QThread):
 				asciiArtLayout = layoutGen.zifLayoutAsciiArt()
 			self.__unblockCancellation()
 			retval = (chip, asciiArtLayout)
-		elif task == self.TASK_READALL:
-			self.top.checkChip()
-			supportFlags = self.top.getChip().getSupportFlags()
-			self.__globalProgressInit(nrBitsSet(supportFlags & (
-					Chip.SUPPORT_SIGREAD |
-					Chip.SUPPORT_PROGMEMREAD |
-					Chip.SUPPORT_EEPROMREAD |
-					Chip.SUPPORT_FUSEREAD |
-					Chip.SUPPORT_LOCKREAD |
-					Chip.SUPPORT_RAMREAD)))
-			count = 0
-			sigImage = None
-			progmemImage = None
-			eepromImage = None
-			fuseImage = None
-			lockbitsImage = None
-			ramImage = None
-			if supportFlags & Chip.SUPPORT_SIGREAD:
-				sigImage = self.top.readSignature()
-				count = self.__globalProgress(count + 1)
-			if supportFlags & Chip.SUPPORT_PROGMEMREAD:
-				progmemImage = self.top.readProgmem()
-				count = self.__globalProgress(count + 1)
-			if supportFlags & Chip.SUPPORT_EEPROMREAD:
-				eepromImage = self.top.readEEPROM()
-				count = self.__globalProgress(count + 1)
-			if supportFlags & Chip.SUPPORT_FUSEREAD:
-				fuseImage = self.top.readFuse()
-				count = self.__globalProgress(count + 1)
-			if supportFlags & Chip.SUPPORT_LOCKREAD:
-				lockbitsImage = self.top.readLockbits()
-				count = self.__globalProgress(count + 1)
-			if supportFlags & Chip.SUPPORT_RAMREAD:
-				ramImage = self.top.readRAM()
-				count = self.__globalProgress(count + 1)
-			retval = (sigImage, progmemImage, eepromImage, fuseImage,
-				  lockbitsImage, ramImage)
 		elif task == self.TASK_GENERICTOPCALL:
 			# The parameter is one GenericTopCall
 			# or a list of calls.
@@ -910,9 +873,9 @@ class HwThread(QThread):
 			   not isinstance(topCallList, tuple):
 				# It is only a single call. Make an iterable.
 				topCallList = (topCallList, )
+			self.__globalProgressInit(len(topCallList))
 			# Iterate over the list of GenericTopCalls
-			resultList = []
-			for topCall in topCallList:
+			for topCallIndex, topCall in enumerate(topCallList):
 				method = topCall.methodName.strip()
 				if method.endswith(")"): # strip (...) suffix
 					method = method[:method.rfind("(")]
@@ -923,15 +886,13 @@ class HwThread(QThread):
 					paramList.append("topCall.parameters[%d]" % i)
 				result = eval("self.top.%s(%s)" % (method, ", ".join(paramList)))
 				topCall.result = result
-				resultList.append(result)
-			# Return the result list as retval.
-			# If there is only one result (= there was only one call),
-			# just return the single result
-			assert(len(resultList) == len(topCallList))
-			if len(resultList) == 1:
-				retval = resultList[0]
+				self.__globalProgress(topCallIndex + 1)
+			# If there was only one call, return the result.
+			# Otherwise return the complete call-list including results.
+			if len(topCallList) == 1:
+				retval = topCallList[0].result
 			else:
-				retval = resultList
+				retval = topCallList
 		else:
 			raise TOPException("INTERNAL ERROR: HwThread: unknown task")
 		return retval
@@ -1663,27 +1624,37 @@ class BufferTabWidget(QTabWidget):
 		if prevSelect and prevSelect.isAvailable():
 			self.setCurrentIndex(self.indexOf(prevSelect))
 
-	def loadBuffers(self, progmemImage, eepromImage,
-			fuseImage, lockbitsImage, ramImage):
-		if progmemImage is not None:
-			self.progmemBuffer.loadImage(progmemImage)
-		if eepromImage is not None:
-			self.eepromBuffer.loadImage(eepromImage)
-		if fuseImage is not None:
-			self.fuseBuffer.loadImage(fuseImage)
-		if lockbitsImage is not None:
-			self.lockBuffer.loadImage(lockbitsImage)
-		if ramImage is not None:
-			self.ramBuffer.loadImage(ramImage)
+	def loadBuffers(self, images):
+		try:
+			self.progmemBuffer.loadImage(images["progmem"])
+		except KeyError:
+			pass # Ignore
+		try:
+			self.eepromBuffer.loadImage(images["eeprom"])
+		except KeyError:
+			pass # Ignore
+		try:
+			self.fuseBuffer.loadImage(images["fusebits"])
+		except KeyError:
+			pass # Ignore
+		try:
+			self.lockBuffer.loadImage(images["lockbits"])
+		except KeyError:
+			pass # Ignore
+		try:
+			self.ramBuffer.loadImage(images["ram"])
+		except KeyError:
+			pass # Ignore
 
-	def verifyBuffers(self, progmemImage, eepromImage,
-			  fuseImage, ramImage):
+	def verifyBuffers(self, images):
 		fail = False
-		for (image, bufferWidget) in ((progmemImage, self.progmemBuffer),
-					      (eepromImage, self.eepromBuffer),
-					      (fuseImage, self.fuseBuffer),
-					      (ramImage, self.ramBuffer)):
-			if image is None:
+		for (imageName, bufferWidget) in (("progmem", self.progmemBuffer),
+						  ("eeprom", self.eepromBuffer),
+						  ("fusebits", self.fuseBuffer),
+						  ("ram", self.ramBuffer)):
+			try:
+				image = images[imageName]
+			except KeyError:
 				continue
 			bufImage = bufferWidget.getRawData()
 			if len(bufImage) > len(image):
@@ -2444,8 +2415,49 @@ class MainWindow(QMainWindow):
 		return self.runOperation(self.OP_INITCHIP, HwThread.TASK_INITCHIP,
 					 chipDescription.chipID)
 
+	def __makeReadCallChain(self, mayReadSig=True, mayReadProgmem=True,
+				mayReadEEPROM=True, mayReadFuse=True,
+				mayReadLockbits=True, mayReadRAM=True):
+		callChain = []
+		suppFlags = self.chip.getSupportFlags()
+		callChain.append(GenericTopCall("top.checkChip()",
+						name = "check"))
+		if mayReadSig and (suppFlags & Chip.SUPPORT_SIGREAD):
+			callChain.append(GenericTopCall("top.readSignature()",
+							name = "signature"))
+		if mayReadProgmem and (suppFlags & Chip.SUPPORT_PROGMEMREAD):
+			callChain.append(GenericTopCall("top.readProgmem()",
+							name = "progmem"))
+		if mayReadEEPROM and (suppFlags & Chip.SUPPORT_EEPROMREAD):
+			callChain.append(GenericTopCall("top.readEEPROM()",
+							name = "eeprom"))
+		if mayReadFuse and (suppFlags & Chip.SUPPORT_FUSEREAD):
+			callChain.append(GenericTopCall("top.readFuse()",
+							name = "fusebits"))
+		if mayReadLockbits and (suppFlags & Chip.SUPPORT_LOCKREAD):
+			callChain.append(GenericTopCall("top.readLockbits()",
+							name = "lockbits"))
+		if mayReadRAM and (suppFlags & Chip.SUPPORT_RAMREAD):
+			callChain.append(GenericTopCall("top.readRAM()",
+							name = "ram"))
+		return callChain
+
+	def __readCallChainGetResultImages(self, callChain):
+		images = {}
+		for topCall in callChain:
+			name = topCall.userData["name"]
+			if name in ("signature", "progmem", "eeprom",
+				    "fusebits", "lockbits", "ram"):
+				images[name] = topCall.result
+			elif name == "check":
+				pass # Nothing to do
+			else:
+				assert(0)
+		return images
+
 	def readChip(self):
-		return self.runOperation(self.OP_READALL, HwThread.TASK_READALL)
+		return self.runOperation(self.OP_READALL, HwThread.TASK_GENERICTOPCALL,
+					 self.__makeReadCallChain())
 
 	def eraseChip(self):
 		return self.runOperation(self.OP_ERASE, HwThread.TASK_GENERICTOPCALL,
@@ -2506,7 +2518,8 @@ class MainWindow(QMainWindow):
 					 GenericTopCall("top.testChip()"))
 
 	def verifyChip(self):
-		return self.runOperation(self.OP_VERIFY, HwThread.TASK_READALL)
+		return self.runOperation(self.OP_VERIFY, HwThread.TASK_GENERICTOPCALL,
+					 self.__makeReadCallChain())
 
 	def guiUpdateEnable(self):
 		enable = not self.guiDisable and\
@@ -2588,14 +2601,12 @@ class MainWindow(QMainWindow):
 		elif self.operation == self.OP_SHUTDOWN:
 			pass # Nothing to do
 		elif self.operation == self.OP_READALL:
-			assert(task == HwThread.TASK_READALL)
-			(sigImage, progmemImage, eepromImage, fuseImage,
-			 lockbitsImage, ramImage) = returnValue
+			assert(task == HwThread.TASK_GENERICTOPCALL)
+			topCallList = returnValue
+			images = self.__readCallChainGetResultImages(topCallList)
 			self.bufferTab.setupBuffers(self.chip.getSupportFlags())
-			self.bufferTab.loadBuffers(progmemImage, eepromImage,
-						   fuseImage, lockbitsImage,
-						   ramImage)
-			self.bufferTab.infoBuffer.setChipSignature(sigImage)
+			self.bufferTab.loadBuffers(images)
+			self.bufferTab.infoBuffer.setChipSignature(images["signature"])
 		elif self.operation == self.OP_ERASE:
 			pass # Nothing to do
 		elif self.operation == self.OP_WRITEPROG:
@@ -2612,12 +2623,10 @@ class MainWindow(QMainWindow):
 			self.console.showMessage("Unit-test success. The chip seems to be OK.\n",
 						 bold=True)
 		elif self.operation == self.OP_VERIFY:
-			assert(task == HwThread.TASK_READALL)
-			(sigImage, progmemImage, eepromImage, fuseImage,
-			 lockbitsImage, ramImage) = returnValue
-			failed = not self.bufferTab.verifyBuffers(
-						progmemImage, eepromImage,
-						fuseImage, ramImage)
+			assert(task == HwThread.TASK_GENERICTOPCALL)
+			topCallList = returnValue
+			images = self.__readCallChainGetResultImages(topCallList)
+			failed = not self.bufferTab.verifyBuffers(images)
 		elif self.operation == self.OP_RAWCOMMAND:
 			self.console.showMessage("Successfully sent raw command\n", bold=True)
 		else:
