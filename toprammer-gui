@@ -1947,6 +1947,9 @@ class AutorunWidget(QDockWidget):
 		(self.eepromCheckBox, row) = self.__addCheckBox(row,
 				chipSupportFlags & Chip.SUPPORT_EEPROMWRITE,
 				"Write (E)EPROM", True)
+		(self.ramCheckBox, row) = self.__addCheckBox(row,
+				chipSupportFlags & Chip.SUPPORT_RAMWRITE,
+				"Write RAM", True)
 		(self.fusesCheckBox, row) = self.__addCheckBox(row,
 				chipSupportFlags & Chip.SUPPORT_FUSEWRITE,
 				"Write fuses", True)
@@ -2029,6 +2032,13 @@ class AutorunWidget(QDockWidget):
 						    "Write (E)EPROM"):
 					return
 			action += 1
+		if self.ramCheckBox:
+			if self.currentAction == action:
+				if self.__runAction(self.mainWindow.writeRam,
+						    self.ramCheckBox,
+						    "Write RAM"):
+					return
+			action += 1
 		if self.fusesCheckBox:
 			if self.currentAction == action:
 				if self.__runAction(self.mainWindow.writeChipFuses,
@@ -2068,7 +2078,8 @@ class AutorunWidget(QDockWidget):
 		return self.mainWindow.verifySelectedMemories(
 			verifyProgmem = checked(self.progmemCheckBox),
 			verifyEEPROM = checked(self.eepromCheckBox),
-			verifyFuse = checked(self.fusesCheckBox))
+			verifyFuse = checked(self.fusesCheckBox),
+			verifyRAM = checked(self.ramCheckBox))
 
 class ProgrammerSelectDialog(QDialog):
 	def __init__(self, parent=None):
