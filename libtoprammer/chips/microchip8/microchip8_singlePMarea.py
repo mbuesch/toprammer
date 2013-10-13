@@ -22,17 +22,16 @@
 
 from libtoprammer.chips.microchip8.microchip8_common import *
 
-class microchip8_singlePMarea(Chip_Microchip8_common):    
+class microchip8_singlePMarea(Chip_Microchip8_common):
 	CMD_BEGIN_PROGRAMMING = 0x08
 	CMD_END_PROGRAMMING = 0x0E
-	
+
 	userIDLocationSize = 4
-	SUPPORT_SIGREAD	 = (0 << 1)
-	
+
 	voltageVDD = 5
 	voltageVPP = 13
 	defaultWord = [b'\xFF', b'\x0F']
-	
+
 	def __init__(self,
 	    chipPackage, chipPinVCC, chipPinsVPP, chipPinGND,
 	    signature,

@@ -43,12 +43,10 @@ class Chip_Microchip8_18_common(Chip):
 	CMD_TWII				 = 0xD
 	CMD_TWDD				 = 0xE
 	CMD_TW_START_PROG		 = 0xF
-	
-		
+
 	# EEPROM access: default on, if does not exist override it
-	SUPPORT_EEPROMREAD		 = (1 << 4)
-	SUPPORT_EEPROMWRITE		 = (1 << 5)
-	
+	hasEEPROM = True
+
 	# default delays - can be overridden
 	delayP2A = 400e-9  # Serial clock low time 
   	delayP5 = 2.2e-6  # Delay between 4-bit command and command operand

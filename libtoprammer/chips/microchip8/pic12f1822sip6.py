@@ -26,10 +26,8 @@ class Chip_Pic12F1822sip6(microchip8_splittedPMarea_hasResetPC):
 
 	rowSize = 16
 	nLatches = 16
+	hasEEPROM = True
 
-	SUPPORT_EEPROMREAD		 = (1 << 4)
-	SUPPORT_EEPROMWRITE		 = (1 << 5)
-	
     	def __init__(self):
 	    	microchip8_splittedPMarea_hasResetPC.__init__(self,
 			chipPackage = "DIP10",

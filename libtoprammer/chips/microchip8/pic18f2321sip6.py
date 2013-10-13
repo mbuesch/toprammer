@@ -23,9 +23,8 @@
 from microchip8_18f2221family import *
 
 class Chip_PIC18F2321sip6(microchip8_18f2221family):
-	
-	SUPPORT_EEPROMREAD		 = (1 << 4)
-	SUPPORT_EEPROMWRITE		 = (1 << 5)
+
+	hasEEPROM = True
 
      	writeBufferSize			 = 8
      	eraseBufferSize			 = 64

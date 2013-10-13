@@ -35,12 +35,10 @@ class Chip_Microchip16_common(Chip):
 	codeExitResetVectorSimple = (0x040200, 0x000000)
 	codeInitializeW7toVISI = (0x207847, 0x000000)
 	codeResetDeviceInternalPC = (0x040200, 0x000000)
-	
-	
+
 	# EEPROM access: default on, if does not exist override it
-	SUPPORT_EEPROMREAD		 = (1 << 4)
-	SUPPORT_EEPROMWRITE		 = (1 << 5)
-	
+	hasEEPROM = True
+
 	# default delays - can be overridden
 	delayTdis = 0.0001
 	delayTprog = 0.001

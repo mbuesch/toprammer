@@ -38,19 +38,17 @@ class Chip_Microchip8_common(Chip):
 	
 	STAT_BUSY = 0x01
 	STAT_SDIO = 0x02
-	
+
 	# EEPROM access: default off, if exists override it
-	SUPPORT_EEPROMREAD		 = (0 << 4)
-	SUPPORT_EEPROMWRITE		 = (0 << 5)
-	
+	hasEEPROM = False
+
 	# default delays - can be overridden
 	delayTdly5 = 0.00000015
 	delayTdis = 0.0001
 	delayTprog = 0.001
 	delayTdly = 0.000001
 	delayTera = 0.01
-	
-    
+
 	def __init__(self,
 			chipPackage, chipPinVCC, chipPinsVPP, chipPinGND,
 			signature,
@@ -72,10 +70,6 @@ class Chip_Microchip8_common(Chip):
 		self.PC = 0
 		self.isInPmMode = False
 
-		# if(eepromPageSize == 0):
-		# 	self.SUPPORT_EEPROMREAD		= (0 << 4)
-		# 	self.SUPPORT_EEPROMWRITE	= (0 << 5)
-	
 	def erase(self):
 		if(hasattr(self, 'osccalAddr')):
 			self.__erase(keepOSCCAL=True)
@@ -134,7 +128,7 @@ class Chip_Microchip8_common(Chip):
 			self.progressMeterInit("Writing ConfigWord, value %x" % CW, 0)
 			self.writeConfigWord(CW)
 			self.progressMeterFinish()
-		if((not keepEEPROM) and self.SUPPORT_EEPROMWRITE):
+		if((not keepEEPROM) and self.hasEEPROM):
 			self.progressMeterInit("Erasing EEPROM", 0)
 			self.bulkEraseDM()
 			self.progressMeterFinish()

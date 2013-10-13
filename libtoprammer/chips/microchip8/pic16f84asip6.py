@@ -32,9 +32,8 @@ class Chip_Pic16F84asip6(microchip8_splittedPMarea):
 	delayTinternalProgPM = 0.004
 
 	userIDLocationSize = 4
-	SUPPORT_EEPROMREAD		 = (1 << 4)
-	SUPPORT_EEPROMWRITE		 = (1 << 5)	
-	
+	hasEEPROM = True
+
 	def __init__(self):
 	 	microchip8_splittedPMarea.__init__(self,
 		chipPackage = "DIP10",

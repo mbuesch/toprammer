@@ -27,9 +27,8 @@ class Chip_Pic16F630sip6(microchip8_splittedPMarea):
 	voltageVPP = 9
 
 	userIDLocationSize = 4
-	SUPPORT_EEPROMREAD		 = (1 << 4)
-	SUPPORT_EEPROMWRITE		 = (1 << 5)
-	
+	hasEEPROM = True
+
 	CMD_BEGIN_INTERNALLY_TIMED_PROGRAMMING = 0x08
 	delayTinternalProgPM = 0.002
 	delayTinternalProgDM = 0.005

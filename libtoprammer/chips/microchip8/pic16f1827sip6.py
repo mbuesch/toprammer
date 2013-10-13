@@ -23,9 +23,8 @@
 from microchip8_splittedPMarea_hasResetPC import *
 
 class Chip_Pic16F1827sip6(microchip8_splittedPMarea_hasResetPC):
-	
-	SUPPORT_EEPROMREAD		 = (1 << 4)
-	SUPPORT_EEPROMWRITE		 = (1 << 5)
+
+	hasEEPROM = True
 
     	def __init__(self):
 	    	microchip8_splittedPMarea_hasResetPC.__init__(self,
