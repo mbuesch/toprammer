@@ -219,7 +219,7 @@ class Chip_Microchip8_common(Chip):
 			self.progressMeter(wordAddr)
 			# do not swap following two lines
 			WD = (byte2int(image[wordAddr * 2 + 1]) << 8) | byte2int(image[wordAddr * 2 + 0])
-			if(WD != (ord(self.defaultWord[1]) << 8) + ord(self.defaultWord[0])):
+			if(WD != (byte2int(self.defaultWord[1]) << 8) + byte2int(self.defaultWord[0])):
 				self.send6bitWriteInstruction(self.CMD_LOAD_DATA_FOR_PGM, WD)
 				self.top.cmdDelay(self.delayTdly)				
 				self.sendWriteFlashInstr()
@@ -264,7 +264,7 @@ class Chip_Microchip8_common(Chip):
 			self.progressMeter(word)
 			# do not swap following two lines
 			WD = (byte2int(image[word * 2 + 1]) << 8) | byte2int(image[word * 2 + 0])
-			if(WD != (ord(self.defaultWord[1]) << 8) + ord(self.defaultWord[0])):
+			if(WD != (byte2int(self.defaultWord[1]) << 8) + byte2int(self.defaultWord[0])):
 				self.send6bitWriteInstruction(self.CMD_LOAD_DATA_FOR_PGM, WD)
 				self.sendWriteFlashInstr()
 			self.incrementPC(1)
