@@ -4,7 +4,7 @@
 #
 #    Commandline utility
 #
-#    Copyright (c) 2009-2010 Michael Buesch <m@bues.ch>
+#    Copyright (c) 2009-2013 Michael Buesch <m@bues.ch>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -85,12 +85,14 @@ def usage():
 	print " auto                    Autodetect. (input only)"
 	print " bin                     Raw binary data"
 	print " ihex                    Intel hex"
+	print " ihex-raw                Raw Intel hex (don't interpret sections)"
 	print " ahex                    Hex with ASCII dump"
 
 IO_handlers = {
-	"bin"	: IO_binary,
-	"ihex"	: IO_ihex,
-	"ahex"	: IO_ahex,
+	"bin"		: IO_binary,
+	"ihex"		: IO_ihex,
+	"ihex-raw"	: IO_ihex,
+	"ahex"		: IO_ahex,
 }
 
 def fileOut(filename, fmtString, data):
@@ -101,7 +103,7 @@ def fileOut(filename, fmtString, data):
 	else:
 		open(filename, "w+b").write(data)
 
-def fileIn(filename, fmtString, minMaxAddr=None):
+def fileIn(top, action, filename, fmtString):
 	if filename == "-":
 		data = sys.stdin.read()
 	else:
@@ -110,10 +112,29 @@ def fileIn(filename, fmtString, minMaxAddr=None):
 		handler = IO_autodetect(data)()
 	else:
 		handler = IO_handlers[fmtString]()
-	if(handler.__class__.__name__== "IO_ihex"):
-		return handler.toBinary(data, minMaxAddr)
-	else:
-		return handler.toBinary(data)
+	if isinstance(handler, IO_ihex):
+		interp = top.getChip().getIHexInterpreter()
+		interp.interpret(data)
+		if interp.cumulativeSupported():
+			readRaw = fmtString.endswith("-raw")
+		else:
+			readRaw = True
+		if action == "write-prog":
+			binData = interp.getProgmem(dontInterpretSections = readRaw)
+		elif action == "write-eeprom":
+			binData = interp.getEEPROM(dontInterpretSections = readRaw)
+		elif action == "write-fuse":
+			binData = interp.getFusebits(dontInterpretSections = readRaw)
+		elif action == "write-lock":
+			binData = interp.getLockbits(dontInterpretSections = readRaw)
+		elif action == "write-ram":
+			binData = interp.getRAM(dontInterpretSections = readRaw)
+		elif action == "write-uil":
+			binData = interp.getUIL(dontInterpretSections = readRaw)
+		else:
+			assert(0)
+		return binData
+	return handler.toBinary(data)
 
 def main(argv):
 	opt_verbose = 1
@@ -227,10 +248,10 @@ def main(argv):
 	if opt_action != "print-list" and not opt_chipID:
 		print "-c|--chip-id is mandatory!"
 		return 1
-	if not opt_informat in ("auto", "bin", "ihex", "ahex"):
+	if not opt_informat in ("auto", "bin", "ihex", "ihex-raw", "ahex"):
 		print "Invalid -I|--in-format"
 		return 1
-	if not opt_outformat in ("bin", "ihex", "ahex"):
+	if not opt_outformat in ("bin", "ihex", "ihex-raw", "ahex"):
 		print "Invalid -O|--out-format"
 		return 1
 
@@ -259,43 +280,29 @@ def main(argv):
 		elif opt_action == "read-prog":
 			fileOut(opt_file, opt_outformat, top.readProgmem())
 		elif opt_action == "write-prog":
-			if(hasattr(top.getChip(),'programMemoryByteAddressRange')): #FIXME UGLY!
-				for minMaxAddr in top.getChip().programMemoryByteAddressRange:
-					print "trying %x, %x\n" % minMaxAddr
-					image = fileIn(opt_file, opt_informat, minMaxAddr)
-					if(len(image)>0):
-						break
-			else:
-				image = fileIn(opt_file, opt_informat)
+			image = fileIn(top, opt_action, opt_file, opt_informat)
 			top.writeProgmem(image)
 		elif opt_action == "read-eeprom":
 			fileOut(opt_file, opt_outformat, top.readEEPROM())
 		elif opt_action == "write-eeprom":
-			top.writeEEPROM(fileIn(opt_file, opt_informat))
+			top.writeEEPROM(fileIn(top, opt_action, opt_file, opt_informat))
 		elif opt_action == "read-fuse":
 			fileOut(opt_file, opt_outformat, top.readFuse())
 		elif opt_action == "write-fuse":
-			if(hasattr(top.getChip(),'configWordByteAddressRange')): #FIXME UGLY!
-				for minMaxAddr in top.getChip().configWordByteAddressRange:
-					print "trying %x, %x\n" % minMaxAddr
-					image = fileIn(opt_file, opt_informat, minMaxAddr)
-					if(len(image)>0):
-						break
-			else:
-				image = fileIn(opt_file, opt_informat)
+			image = fileIn(top, opt_action, opt_file, opt_informat)
 			top.writeFuse(image)
 		elif opt_action == "read-lock":
 			fileOut(opt_file, opt_outformat, top.readLockbits())
 		elif opt_action == "write-lock":
-			top.writeLockbits(fileIn(opt_file, opt_informat))
+			top.writeLockbits(fileIn(top, opt_action, opt_file, opt_informat))
 		elif opt_action == "read-ram":
 			fileOut(opt_file, opt_outformat, top.readRAM())
 		elif opt_action == "write-ram":
-			top.writeRAM(fileIn(opt_file, opt_informat))
+			top.writeRAM(fileIn(top, opt_action, opt_file, opt_informat))
 		elif opt_action == "read-uil":
 			fileOut(opt_file, opt_outformat, top.readUserIdLocation())
 		elif opt_action == "write-uil":
-			top.writeUserIdLocation(fileIn(opt_file, opt_informat))			
+			top.writeUserIdLocation(fileIn(top, opt_action, opt_file, opt_informat))
 		else:
 			print "No action specified"
 		top.shutdownChip()

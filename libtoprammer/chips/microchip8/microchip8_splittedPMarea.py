@@ -56,10 +56,16 @@ class microchip8_splittedPMarea(Chip_Microchip8_common):
 		self.userIDLocationAddr = self.logicalFlashProgramMemorySize
 		self.deviceIDAddr = self.logicalFlashProgramMemorySize + 0x06
 		self.configWordAddr = self.logicalFlashProgramMemorySize + 0x07
-		self.programMemoryByteAddressRange = [(0, 2 * self.flashPageSize)]
-		self.configWordByteAddressRange = [(2 * self.configWordAddr, 2 * self.configWordAddr + 1)]
-		self.userIDLocationByteAddressRange = [(2 * self.userIDLocationAddr, 2 * (self.userIDLocationAddr + self.userIDLocationSize) - 1)]
-	
+
+	def getIHexInterpreter(self):
+		inter = IHexInterpreter()
+		inter.progmemRanges = [ AddressRange(0, 2 * self.flashPageSize) ]
+		inter.fuseRanges = [ AddressRange(2 * self.configWordAddr,
+						  2 * self.configWordAddr + 1) ]
+		inter.uilRanges = [ AddressRange(2 * self.userIDLocationAddr,
+						 2 * (self.userIDLocationAddr + self.userIDLocationSize) - 1) ]
+		return inter
+
 	def incrementPC(self, count):
 		for address in range(0, count):
 			self.sendCommand(0, 0, 0, self.CMD_INCREMENT_ADDRESS)

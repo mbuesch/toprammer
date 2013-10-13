@@ -46,10 +46,18 @@ class microchip8_singlePMarea(Chip_Microchip8_common):
 		self.osccalAddr = self.flashPageSize - 1
 		self.userIDLocationAddr = self.flashPageSize
 		self.osccalBackupAddr = self.userIDLocationAddr + self.userIDLocationSize
-		self.programMemoryByteAddressRange = [(0, 2 * self.flashPageSize)]
-		self.configWordByteAddressRange = [(2 * self.configWordAddr, 2 * self.configWordAddr + 1), (2 * 0xFFF, 2 * 0xFFF + 1)]
-		self.userIDLocationByteAddressRange = [(2 * self.userIDLocationAddr, 2 * (self.userIDLocationAddr + self.userIDLocationSize) - 1)]
-	
+
+	def getIHexInterpreter(self):
+		inter = IHexInterpreter()
+		inter.progmemRanges = [ AddressRange(0, 2 * self.flashPageSize) ]
+		inter.fuseRanges = [ AddressRange(2 * self.configWordAddr,
+						  2 * self.configWordAddr + 1),
+				     AddressRange(2 * 0xFFF,
+						  2 * 0xFFF + 1) ]
+		inter.uilRanges = [ AddressRange(2 * self.userIDLocationAddr,
+						 2 * (self.userIDLocationAddr + self.userIDLocationSize) - 1) ]
+		return inter
+
 	def setPC(self, address):
 		while(self.PC != address):
 			self.incrementPC(1)

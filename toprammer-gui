@@ -1353,6 +1353,9 @@ class BufferWidget(QWidget):
 	def setRawData(self, data):
 		return False
 
+	def setDataWithIHexInterpreter(self, interp, readRaw):
+		return False
+
 	def clear(self):
 		pass
 
@@ -1574,17 +1577,52 @@ class BitBufferWidget(BufferWidget):
 	def clear(self):
 		self.loadImage(None)
 
+class ProgmemBufferWidget(ImageBufferWidget):
+	def __init__(self, mainWindow):
+		ImageBufferWidget.__init__(self, mainWindow, "program memory")
+
+	def setDataWithIHexInterpreter(self, interp, readRaw):
+		return self.setRawData(interp.getProgmem(dontInterpretSections = readRaw))
+
+class EEPROMBufferWidget(ImageBufferWidget):
+	def __init__(self, mainWindow):
+		ImageBufferWidget.__init__(self, mainWindow, "(E)EPROM memory")
+
+	def setDataWithIHexInterpreter(self, interp, readRaw):
+		return self.setRawData(interp.getEEPROM(dontInterpretSections = readRaw))
+
+class RAMBufferWidget(ImageBufferWidget):
+	def __init__(self, mainWindow):
+		ImageBufferWidget.__init__(self, mainWindow, "RAM memory")
+
+	def setDataWithIHexInterpreter(self, interp, readRaw):
+		return self.setRawData(interp.getRAM(dontInterpretSections = readRaw))
+
+class FuseBufferWidget(BitBufferWidget):
+	def __init__(self, mainWindow):
+		BitBufferWidget.__init__(self, mainWindow, "fuse bits", "fuseDesc")
+
+	def setDataWithIHexInterpreter(self, interp, readRaw):
+		return self.setRawData(interp.getFusebits(dontInterpretSections = readRaw))
+
+class LockBufferWidget(BitBufferWidget):
+	def __init__(self, mainWindow):
+		BitBufferWidget.__init__(self, mainWindow, "lock bits", "lockbitDesc")
+
+	def setDataWithIHexInterpreter(self, interp, readRaw):
+		return self.setRawData(interp.getLockbits(dontInterpretSections = readRaw))
+
 class BufferTabWidget(QTabWidget):
 	def __init__(self, mainWindow):
 		QTabWidget.__init__(self, mainWindow)
 		self.mainWindow = mainWindow
 
 		self.infoBuffer = InfoBufferWidget(mainWindow, "chip info")
-		self.progmemBuffer = ImageBufferWidget(mainWindow, "program memory")
-		self.eepromBuffer = ImageBufferWidget(mainWindow, "(E)EPROM memory")
-		self.fuseBuffer = BitBufferWidget(mainWindow, "fuse bits", "fuseDesc")
-		self.lockBuffer = BitBufferWidget(mainWindow, "lock bits", "lockbitDesc")
-		self.ramBuffer = ImageBufferWidget(mainWindow, "RAM memory")
+		self.progmemBuffer = ProgmemBufferWidget(mainWindow)
+		self.eepromBuffer = EEPROMBufferWidget(mainWindow)
+		self.fuseBuffer = FuseBufferWidget(mainWindow)
+		self.lockBuffer = LockBufferWidget(mainWindow)
+		self.ramBuffer = RAMBufferWidget(mainWindow)
 
 		self.setTabPosition(self.South)
 		self.__addBufferTab(self.infoBuffer, readOnly=True)
@@ -2348,42 +2386,46 @@ class MainWindow(QMainWindow):
 			return
 		try:
 			if ".bin" in extensions:
-				data = IO_binary().toBinary(dataIn) # no-op
+				handler = IO_binary()
 			elif ".ahex" in extensions:
-				data = IO_ahex().toBinary(dataIn)
-			elif (not extensions or ".ihex" in extensions): # auto
-				if ".ihex" in extensions:
-					handler = IO_ihex()
-				else:
-					handler = IO_autodetect(dataIn)()
-				#FIXME UGLY!
-				if(handler.__class__.__name__== "IO_ihex"):
-					if(bufWidget.__class__.__name__=='ImageBufferWidget' and hasattr(self.chip,'programMemoryByteAddressRange')):
-						for minMaxAddr in self.chip.programMemoryByteAddressRange:
-							print "trying %x, %x\n" % minMaxAddr
-							data = handler.toBinary(dataIn, minMaxAddr)
-							if(len(data)>0):
-								break
-					elif(bufWidget.__class__.__name__ =='BitBufferWidget' and hasattr(self.chip,'configWordByteAddressRange')):
-						for minMaxAddr in self.chip.configWordByteAddressRange:
-							print "trying %x, %x\n" % minMaxAddr
-							data = handler.toBinary(dataIn, minMaxAddr)
-							if(len(data)>0):
-								break
-							print "failed"
-					else:
-						data = handler.toBinary(dataIn)
-				else:
-					data = handler.toBinary(dataIn)
+				handler = IO_ahex()
+			elif ".ihex" in extensions:
+				handler = IO_ihex()
+			elif not extensions: # auto
+				handler = IO_autodetect(dataIn)()
 			else:
 				assert(0)
+			if isinstance(handler, IO_ihex):
+				interp = self.chip.getIHexInterpreter()
+				interp.interpret(dataIn)
+				if interp.cumulativeSupported():
+					res = QMessageBox.question(self,
+						"Parse IHEX sections?",
+						"This IHEX file might contain sections for "
+						"the different memory areas (progmem, eeprom, etc...).\n"
+						"\n"
+						"Should the sections be interpreted?\n"
+						"\n"
+						"If 'Yes' is selected, only the section corresponding "
+						"to the current buffer is extracted from the IHEX file.\n"
+						"If 'No' is selected, the IHEX file will be read "
+						"in raw mode and all of its data will be "
+						"put into the current buffer.",
+						QMessageBox.Yes | QMessageBox.No,
+						QMessageBox.Yes)
+					readRaw = (res != QMessageBox.Yes)
+				else:
+					readRaw = True
+				ok = bufWidget.setDataWithIHexInterpreter(interp, readRaw)
+			else:
+				ok = bufWidget.setRawData(handler.toBinary(dataIn))
+			if not ok:
+				QMessageBox.critical(self, "Failed to load data",
+					"Failed to load the file into the buffer")
 		except (TOPException), e:
 			QMessageBox.critical(self, "Failed to convert data",
 				"Failed to convert the input file data to binary\n%s" % str(e))
 			return
-		if not bufWidget.setRawData(data):
-			QMessageBox.critical(self, "Failed to load data",
-				"Failed to load the file into the buffer")
 
 	def saveBuffer(self):
 		bufWidget = self.bufferTab.getCurrentBuffer()

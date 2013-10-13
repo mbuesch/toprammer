@@ -24,6 +24,7 @@ from util import *
 from layout_generator import *
 from user_interface import *
 from generic_algorithms import *
+from ihex import *
 
 
 class Chip:
@@ -194,6 +195,12 @@ class Chip:
 		# Override me in the subclass, if required.
 		self.printDebug("Default chip shutdown")
 		GenericAlgorithms(self).simpleVoltageShutdown()
+
+	def getIHexInterpreter(self):
+		# Returns the IHEX file interpreter.
+		# This defaults to the non-section interpreter.
+		# Override me in the subclass, if required.
+		return IHexInterpreter()
 
 	def readSignature(self):
 		# Override me in the subclass, if required.

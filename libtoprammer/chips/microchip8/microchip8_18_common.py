@@ -70,7 +70,7 @@ class Chip_Microchip8_18_common(Chip):
 	deviceIDLength 			 = 2
 	voltageVDD				 = 5
 	voltageVPP				 = 12
-		  
+
 	def __init__(self,
 			chipPackage, chipPinVCC, chipPinsVPP, chipPinGND,
 			signature,
@@ -92,9 +92,15 @@ class Chip_Microchip8_18_common(Chip):
 		self.isInPmMode = False
 		self.BufferedBytes = 0
 		self.Image = ""
-	    	self.programMemoryByteAddressRange = [(0, self.flashPageSize)]
-	    	self.configWordByteAddressRange = [(self.configWordAddr, self.configWordAddr + self.fuseBytes)]
-	    	self.userIDLocationByteAddressRange = [(self.userIDLocationAddr, self.userIDLocationAddr + self.userIDLocationSize)]		
+
+	def getIHexInterpreter(self):
+		inter = IHexInterpreter()
+		inter.progmemRanges = [ AddressRange(0, self.flashPageSize) ]
+		inter.fuseRanges = [ AddressRange(self.configWordAddr,
+						  self.configWordAddr + self.fuseBytes) ]
+		inter.uilRanges = [ AddressRange(self.userIDLocationAddr,
+						 self.userIDLocationAddr + self.userIDLocationSize) ]
+		return inter
 
 	def enterPM(self, force=False):
 		if self.isInPmMode and not force:

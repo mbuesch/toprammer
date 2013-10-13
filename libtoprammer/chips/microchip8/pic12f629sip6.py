@@ -49,8 +49,7 @@ class Chip_Pic12F629sip6(microchip8_splittedPMarea):
 			)
 		self.configWordAddr = 0x2007
 		self.osccalAddr = self.flashPageSize - 1
-		# self.configWordByteAddressRange = self.configWordByteAddressRange.append((2*0xFFF, 2*0xFFF+1))
-		
+
 fuseDesc = (
 	BitDescription(0, "FOSC[0], 0=LP, 100=INTOSC"),
 	BitDescription(1, "FOSC[1]"),

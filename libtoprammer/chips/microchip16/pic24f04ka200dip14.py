@@ -44,10 +44,15 @@ class Chip_Pic24f04ka200dip14(Chip_Microchip16_common):
 		fuseBytes=16 * 2
 		)
 		self.configWordAddr = 0xF80000
-		self.programMemoryByteAddressRange = [(0, 2 * self.flashPageSize)]
-		self.configWordByteAddressRange = [(2 * self.configWordAddr, 2 * self.configWordAddr + 1)]
-		
 		# self.osccalBackupAddr = self.userIDLocationAddr + self.userIDLocationSize
+
+	def getIHexInterpreter(self):
+		inter = IHexInterpreter()
+		inter.progmemRanges = [ AddressRange(0, 2 * self.flashPageSize) ]
+		inter.fuseRanges = [ AddressRange(2 * self.configWordAddr,
+						  2 * self.configWordAddr + 1) ]
+		return inter
+
 	def sendWriteFlashInstr(self):
 		'''
 		'''

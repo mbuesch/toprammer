@@ -155,11 +155,12 @@ class IO_ihex(object):
 			return False
 		return True
 
-	def toBinary(self, ihexData, minMaxAddr=None):
+	def toBinary(self, ihexData, addressRange=None, defaultBytes=b"\xFF"):
+		#TODO defaultBytes
 		bin = []
 		checksumWarned = False
 		doublewriteWarned = False
-		addrBias = minMaxAddr[0] if minMaxAddr else 0
+		addrBias = addressRange.startAddress if addressRange else 0
 		try:
 			lines = ihexData.splitlines()
 			hiAddr = 0
@@ -202,10 +203,10 @@ class IO_ihex(object):
 						raise TOPException("Invalid IHEX format (inval ELAR)")
 					hiAddr = (int(line[9:11], 16) << 8) | int(line[11:13], 16)
 					continue
-				if(minMaxAddr and addr < minMaxAddr[0]):
+				if addressRange and addr < addressRange.startAddress:
 					continue
-				if(minMaxAddr and addr > minMaxAddr[1]):
-					continue				
+				if addressRange and addr > addressRange.endAddress:
+					continue
 				if type == self.TYPE_DATA:
 					if len(bin) < addr - addrBias + count: # Reallocate
 						bin += [b'\xFF'] * (addr - addrBias + count - len(bin))
