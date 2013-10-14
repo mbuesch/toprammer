@@ -1,7 +1,7 @@
 """
 #    TOP2049 Open Source programming suite
 #
-#   Microchip PIC16F1829 DIP14
+#   Microchip PIC16F1829 DIP20
 #
 #    Copyright (c) 2013 Pavel Stemberk <stemberk@gmail.com>
 #
@@ -22,7 +22,7 @@
 
 from microchip8_splittedPMarea_hasResetPC import *
 
-class Chip_Pic16F1829dip14(microchip8_splittedPMarea_hasResetPC):
+class Chip_Pic16F1829sip6(microchip8_splittedPMarea_hasResetPC):
 
 	hasEEPROM = True
 
@@ -75,7 +75,7 @@ fuseDesc = (
 )
 
 ChipDescription(
-	Chip_Pic16F1829dip14,
+	Chip_Pic16F1829sip6,
 	bitfile = "microchip01sip6",
 	chipID="pic16f1829sip6",
 	runtimeID = (0xDE05, 0x01),

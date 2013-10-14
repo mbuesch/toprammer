@@ -22,7 +22,7 @@
 
 from microchip8_splittedPMarea_hasResetPC import *
 
-class Chip_Pic16F1828dip14(microchip8_splittedPMarea_hasResetPC):
+class Chip_Pic16F1828sip6(microchip8_splittedPMarea_hasResetPC):
 
 	hasEEPROM = True
 
@@ -75,9 +75,9 @@ fuseDesc = (
 )
 
 ChipDescription(
-	Chip_Pic16F1828dip14,
+	Chip_Pic16F1828sip6,
 	bitfile = "microchip01sip6",
-	chipID="pic16f1828dip14",
+	chipID="pic16f1828sip6",
 	runtimeID = (0xDE05, 0x01),
 	chipVendors="Microchip",
 	description = "PIC16F1828, PIC16LF1828 - ICD",
