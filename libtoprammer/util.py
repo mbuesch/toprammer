@@ -259,8 +259,12 @@ class IO_ahex(object):
 			return False
 		return True
 
-	def toBinary(self, data):
-		return parseHexdump(data)
+	def toBinary(self, data, addressRange=None, defaultBytes=b"\xFF"):
+		# defaultBytes is ignored
+		binData = parseHexdump(data)
+		if addressRange:
+			binData = binData[addressRange.startAddress : addressRange.endAddress + 1]
+		return binData
 
 	def fromBinary(self, data):
 		return generateHexdump(data)
@@ -269,7 +273,10 @@ class IO_binary(object):
 	def autodetect(self, data):
 		return True
 
-	def toBinary(self, data):
+	def toBinary(self, data, addressRange=None, defaultBytes=b"\xFF"):
+		# defaultBytes is ignored
+		if addressRange:
+			data = data[addressRange.startAddress : addressRange.endAddress + 1]
 		return data
 
 	def fromBinary(self, data):
