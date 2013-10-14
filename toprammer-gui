@@ -257,11 +257,12 @@ class ZifWidget(QGroupBox):
 class UnitestDialog(QDialog):
 	def __init__(self, mainWindow):
 		QDialog.__init__(self, mainWindow)
-		self.setWindowTitle("Universal chip tester")
+		self.setWindowTitle("Universal logic tester")
 		self.mainWindow = mainWindow
 		self.setLayout(QGridLayout())
 
 		self.inputPollBlocked = 0
+		self.uiChangeBlocked = 0
 
 		# Initialize the unitest chip
 		(failed, returnValue) = self.mainWindow.runOperationSync(
@@ -333,7 +334,7 @@ class UnitestDialog(QDialog):
 
 		group = QGroupBox("Input polling", self)
 		group.setLayout(QGridLayout())
-		self.inputPollEn = QCheckBox("Input polling enabled", self)
+		self.inputPollEn = QCheckBox("Enabled", self)
 		self.inputPollEn.setCheckState(Qt.Checked)
 		group.layout().addWidget(self.inputPollEn, 0, 0)
 		self.inputPollInterval = QDoubleSpinBox(self)
@@ -345,11 +346,26 @@ class UnitestDialog(QDialog):
 		group.layout().addWidget(self.inputPollInterval, 1, 0)
 		self.layout().addWidget(group, 3, 1)
 
+		group = QGroupBox("Frequency counter", self)
+		group.setLayout(QGridLayout())
+		self.fcntEn = QCheckBox("Enabled", self)
+		self.fcntEn.setCheckState(Qt.Unchecked)
+		group.layout().addWidget(self.fcntEn, 0, 0)
+		self.fcntPosEdge = QCheckBox("Positive edge", self)
+		self.fcntPosEdge.setCheckState(Qt.Checked)
+		group.layout().addWidget(self.fcntPosEdge, 1, 0)
+		self.fcntPin = QComboBox(self)
+		group.layout().addWidget(self.fcntPin, 2, 0)
+		self.fcntValueLabel = QLabel(self)
+		group.layout().addWidget(self.fcntValueLabel, 3, 0)
+		self.fcntValue = 0
+		self.layout().addWidget(group, 4, 1)
+
 		group = QGroupBox("Oscillator", self)
 		group.setLayout(QGridLayout())
 		self.oscPin = QComboBox(self)
 		self.oscPin.addItem("Disabled", Wrapper(0))
-		for i in range(0, self.zifWidget.nrPins):
+		for i in range(0, self.param_nrZifPins):
 			self.oscPin.addItem("On pin %d" % (i + 1),
 					    Wrapper(bit(i)))
 		group.layout().addWidget(self.oscPin, 0, 0)
@@ -362,7 +378,7 @@ class UnitestDialog(QDialog):
 		group.layout().addWidget(self.oscDiv, 1, 0)
 		self.oscFreq = QLabel(self)
 		group.layout().addWidget(self.oscFreq, 2, 0)
-		self.layout().addWidget(group, 4, 1)
+		self.layout().addWidget(group, 5, 1)
 
 		group = QGroupBox("VPP layout", self)
 		group.setLayout(QGridLayout())
@@ -409,14 +425,72 @@ class UnitestDialog(QDialog):
 			     self.vccLayoutChanged)
 		self.connect(self.vppVoltage, SIGNAL("valueChanged(double)"),
 			     self.vppLayoutChanged)
+		self.connect(self.fcntEn, SIGNAL("stateChanged(int)"),
+			     self.fcntChanged)
+		self.connect(self.fcntPosEdge, SIGNAL("stateChanged(int)"),
+			     self.fcntChanged)
+		self.connect(self.fcntPin, SIGNAL("currentIndexChanged(int)"),
+			     self.fcntChanged)
 		self.connect(self.oscPin, SIGNAL("currentIndexChanged(int)"),
 			     self.oscChanged)
 		self.connect(self.oscDiv, SIGNAL("valueChanged(int)"),
 			     self.oscChanged)
+		self.__modeChanged()
 		self.gndLayoutChanged()
 		self.vccLayoutChanged()
 		self.inputPollChanged()
 		self.oscChanged()
+
+	def __readFcntValue(self):
+		try:
+			self.fcntValue = self.queryTop("top.getChip().getFreqCount()")
+		except (TOPException), e:
+			QMessageBox.critical(self, "TOP communication failed",
+				"Failed to read frequency counter value:\n" +\
+				str(e))
+			return False
+		return True
+
+	def __updateFcntValueLabel(self):
+		if self.getMode() != Chip_Unitest.MODE_FCNT:
+			self.fcntValueLabel.clear()
+			return
+		if self.fcntValue:
+			hz = "%.3f" % (float(self.param_oscFreq) / self.fcntValue)
+		else:
+			hz = "~~~"
+		self.fcntValueLabel.setText("Measured: %s Hz" % hz)
+
+	def __modeChanged(self):
+		mode = self.getMode()
+		activePinMask = self.queryTop("top.getChip().getActivePinMask()")
+
+		self.uiChangeBlocked += 1
+
+		# Update freq count UI
+		self.fcntValue = 0
+		self.fcntPin.clear()
+		self.fcntPin.setEnabled(False)
+		self.fcntPosEdge.setEnabled(False)
+		if mode == Chip_Unitest.MODE_FCNT:
+			for i in range(0, self.param_nrZifPins):
+				if bit(i) & activePinMask == 0:
+					continue
+				self.fcntPin.addItem("On pin %d" % (i + 1), i)
+			self.fcntPin.setEnabled(True)
+			self.fcntPosEdge.setEnabled(True)
+		self.__updateFcntValueLabel()
+
+		# Update the ZIF widget
+		self.updateZifCheckboxes()
+
+		self.uiChangeBlocked -= 1
+
+	def switchMode(self, mode):
+		if self.getMode() == mode:
+			return
+		self.queryTop("top.getChip().setMode(...)", mode)
+		self.__modeChanged()
 
 	def __loadFile(self, filename):
 		try:
@@ -487,6 +561,23 @@ class UnitestDialog(QDialog):
 			mask = int(p.get(sect, "zifOutMask"), 16)
 			self.zifWidget.setOutMask(mask)
 
+			enabled = p.getboolean(sect, "fcntEnabled")
+			if enabled:
+				self.fcntEn.setCheckState(Qt.Checked)
+			else:
+				self.fcntEn.setCheckState(Qt.Unchecked)
+			pos = p.getboolean(sect, "fcntPosEdge")
+			if pos:
+				self.fcntPosEdge.setCheckState(Qt.Checked)
+			else:
+				self.fcntPosEdge.setCheckState(Qt.Unchecked)
+			pin = p.getint(sect, "fcntPin")
+			if pin >= 0:
+				idx = self.fcntPin.findData(pin)
+				if idx < 0:
+					raise TOPException("Invalid fcntPin")
+				self.fcntPin.setCurrentIndex(idx)
+
 		except (ConfigParser.Error, TOPException, ValueError), e:
 			QMessageBox.critical(self, "Failed to load settings",
 					     "Failed to load settings: %s" % str(e))
@@ -524,6 +615,13 @@ class UnitestDialog(QDialog):
 			fd.write("vppVoltage=%f\r\n" % self.vppVoltage.value())
 			fd.write("inputPollEnabled=%d\r\n" % int(self.inputPollEn.checkState() == Qt.Checked))
 			fd.write("inputPollInterval=%f\r\n" % self.inputPollInterval.value())
+			fd.write("fcntEnabled=%d\r\n" % (int(self.fcntEn.checkState() == Qt.Checked)))
+			fd.write("fcntPosEdge=%d\r\n" % (int(self.fcntPosEdge.checkState() == Qt.Checked)))
+			idx = self.fcntPin.currentIndex()
+			pin = -1
+			if idx >= 0:
+				pin = self.fcntPin.itemData(idx)
+			fd.write("fcntPin=%d\r\n" % pin)
 			idx = self.oscPin.currentIndex()
 			fd.write("oscillatorMask=%X\r\n" % self.oscPin.itemData(idx).obj)
 			fd.write("oscillatorDiv=%d\r\n" % self.oscDiv.value())
@@ -547,20 +645,29 @@ class UnitestDialog(QDialog):
 		self.inputPollTimer.stop()
 
 	def queryTop(self, funcname, *parameters):
-		self.blockInputPoll() # Avoid recursion
+		self.inputPollBlocked += 1 # Avoid recursion
 		(failed, returnValue) = self.mainWindow.runOperationSync(
 				HwThread.TASK_GENERICTOPCALL,
 				GenericTopCall(funcname, *parameters))
-		self.unblockInputPoll()
+		self.inputPollBlocked -= 1
 		if failed:
 			raise TOPException("Failed to query TOP %s\n%s" % (funcname, str(returnValue)))
 		return returnValue
+
+	def getMode(self):
+		return self.queryTop("top.getChip().getMode()")
 
 	def shutdown(self):
 		self.inputPollTimer.stop()
 
 	def updateZifCheckboxes(self):
+		mode = self.getMode()
 		blockedPins = []
+		# Basic mask
+		activePinMask = self.queryTop("top.getChip().getActivePinMask()")
+		for i in range(0, self.zifWidget.nrPins):
+			if activePinMask & bit(i) == 0:
+				blockedPins.append(i + 1)
 		# GND
 		idx = self.gndLayout.currentIndex()
 		lay = self.gndLayout.itemData(idx)
@@ -579,9 +686,17 @@ class UnitestDialog(QDialog):
 		for i in range(0, self.zifWidget.nrPins):
 			if mask & bit(i):
 				blockedPins.append(i + 1)
-		self.zifWidget.setBlockedPins(blockedPins)
+		# Freq counter
+		if mode == Chip_Unitest.MODE_FCNT:
+			idx = self.fcntPin.currentIndex()
+			pinNumber = self.fcntPin.itemData(idx)
+			blockedPins.append(pinNumber + 1)
+		# Set blocked pins in ZIF widget
+		self.zifWidget.setBlockedPins(tuple(set(blockedPins)))
 
 	def gndLayoutChanged(self, unused=None):
+		if self.uiChangeBlocked:
+			return
 		idx = self.gndLayout.currentIndex()
 		selLayout = self.gndLayout.itemData(idx)
 		try:
@@ -594,6 +709,8 @@ class UnitestDialog(QDialog):
 		self.updateZifCheckboxes()
 
 	def vccLayoutChanged(self, unused=None):
+		if self.uiChangeBlocked:
+			return
 		selVoltage = self.vccVoltage.value()
 		idx = self.vccLayout.currentIndex()
 		selLayout = self.vccLayout.itemData(idx)
@@ -607,6 +724,8 @@ class UnitestDialog(QDialog):
 		self.updateZifCheckboxes()
 
 	def vppLayoutChanged(self, unused=None):
+		if self.uiChangeBlocked:
+			return
 		selVoltage = self.vppVoltage.value()
 		selLayouts = []
 		for key in self.vppLayouts.keys():
@@ -621,21 +740,18 @@ class UnitestDialog(QDialog):
 			return
 		self.updateZifCheckboxes()
 
-	def blockInputPoll(self):
-		self.inputPollBlocked += 1
-
-	def unblockInputPoll(self):
-		self.inputPollBlocked -= 1
-
 	def doInputPollTimer(self):
 		if self.inputPollBlocked:
 			# Blocked. Reschedule.
 			self.inputPollTimer.start(1)
 			return
-		self.mainWindow.blockInputEvents()
-		result = self.zifWidget.readInputs()
-		self.mainWindow.unblockInputEvents()
-		if not result:
+		ok = self.zifWidget.readInputs()
+		if ok:
+			if self.fcntEn.checkState() == Qt.Checked:
+				ok = self.__readFcntValue()
+				if ok:
+					self.__updateFcntValueLabel()
+		if not ok:
 			# Whoops, error. Disable input polling
 			self.inputPollEn.setCheckState(Qt.Unchecked)
 			return False
@@ -645,6 +761,8 @@ class UnitestDialog(QDialog):
 		return True
 
 	def inputPollChanged(self, unused=None):
+		if self.uiChangeBlocked:
+			return
 		if self.inputPollEn.checkState() == Qt.Checked:
 			self.inputPollInterval.setEnabled(True)
 			if self.doInputPollTimer():
@@ -654,7 +772,36 @@ class UnitestDialog(QDialog):
 			self.inputPollInterval.setEnabled(False)
 			self.inputPollTimer.stop()
 
+	def fcntChanged(self, unused=None):
+		if self.uiChangeBlocked:
+			return
+		try:
+			if self.fcntEn.checkState() == Qt.Checked:
+				self.switchMode(Chip_Unitest.MODE_FCNT)
+				idx = self.fcntPin.currentIndex()
+				pinNumber = self.fcntPin.itemData(idx)
+				inv = (self.fcntPosEdge.checkState() != Qt.Checked)
+				self.queryTop("top.getChip().setFreqCountPin(...)",
+					      pinNumber, inv)
+				self.__readFcntValue()
+				self.__updateFcntValueLabel()
+				# Force enable input polling
+				self.inputPollEn.setCheckState(Qt.Checked)
+				self.inputPollEn.setEnabled(False)
+			else:
+				self.switchMode(Chip_Unitest.MODE_UNITEST)
+				self.__updateFcntValueLabel()
+				self.inputPollEn.setEnabled(True)
+		except (TOPException), e:
+			QMessageBox.critical(self, "TOP communication failed",
+				"Failed configure frequency counter:\n" +\
+				str(e))
+			return
+		self.updateZifCheckboxes()
+
 	def oscChanged(self, unused=None):
+		if self.uiChangeBlocked:
+			return
 		try:
 			div = self.oscDiv.value()
 			self.queryTop("top.getChip().setOscDivider(...)", div)
@@ -723,6 +870,7 @@ class HwThread(QThread):
 		self.messageQueue = []
 		self.top = None
 		self.task = None
+		self.opaqueId = None
 		self.taskParameter = None
 		self.cancel = False
 		self.cancellationBlocked = 0
@@ -756,14 +904,17 @@ class HwThread(QThread):
 		self.param_usebroken = usebroken
 		self.param_forceBitfileUpload = forceBitfileUpload
 
-	def triggerTask(self, task, taskParameter=None):
-		self.mutex.lock()
+	def triggerTask(self, task, taskParameter=None,
+			opaqueId=None, mutexIsLocked=False):
+		if not mutexIsLocked:
+			self.mutex.lock()
 		self.cancel = False
 		self.task = task
+		self.opaqueId = opaqueId
 		self.taskParameter = taskParameter
 		self.waitCondition.wakeAll()
-		self.mutex.unlock()
-		return True
+		if not mutexIsLocked:
+			self.mutex.unlock()
 
 	def run(self):
 		self.mutex.lock()
@@ -829,10 +980,11 @@ class HwThread(QThread):
 			result = e
 		except (Exception), e:
 			result = e
-		self.appendMessage("finished", (self.task, failed, result),
+		self.appendMessage("finished", (self.opaqueId, failed, result),
 				   nocancel=True)
 		self.task = None
 		self.taskParameter = None
+		self.opaqueId = None
 
 	def __runTask(self, task):
 		retval = None
@@ -916,7 +1068,7 @@ class HwThread(QThread):
 		for (message, data) in self.messageQueue:
 			if message == "finished":
 				self.mainWindow.hardwareTaskFinished(
-					task=data[0], failed=data[1], returnValue=data[2])
+					opaqueId=data[0], failed=data[1], returnValue=data[2])
 			elif message == "console":
 				self.mainWindow.console.showMessage(data)
 			elif message == "progrInit":
@@ -1914,6 +2066,8 @@ class TopToolBar(QToolBar):
 		a.setEnabled(chipSupportFlags != 0)
 		a = self.addAction(getIcon("save"), "Save buffer", mainWindow.saveBuffer)
 		a.setEnabled(chipSupportFlags != 0)
+		self.addSeparator()
+		self.addAction(getIcon("chip"), "Run logic tester", mainWindow.startUnitest)
 		self.addAction(getIcon("chip"), "Select chip", mainWindow.selectChip)
 		self.addSeparator()
 		a = self.addAction(getIcon("up"), "Read chip", mainWindow.readChip)
@@ -2165,7 +2319,7 @@ class ProgrammerSelectDialog(QDialog):
 		else:
 			self.okButton.setEnabled(False)
 
-class MainWindow(QMainWindow):
+class Operation(object):
 	OP_NONE		= 0
 	OP_SHUTDOWN	= 1
 	OP_INITCHIP	= 2
@@ -2181,12 +2335,20 @@ class MainWindow(QMainWindow):
 	OP_RAWCOMMAND	= 12
 	OP_SYNCHRONOUS	= 13
 
+	def __init__(self, op, hwTask, hwTaskParam=None):
+		self.op = op
+		self.hwTask = hwTask
+		self.hwTaskParam = hwTaskParam
+		self.returnValue = None
+		self.failed = False
+		self.finished = False
+
+class MainWindow(QMainWindow):
 	def __init__(self, parent=None):
 		QMainWindow.__init__(self, parent)
 		self.setWindowTitle("TOPrammer v%s - Open Source programming suite" % VERSION)
 
 		self.guiDisable = 0
-		self.inputEventsBlocked = 0
 		self.chip = None # Chip instance 
 		self.currentChipDescription = None
 		self.previousRawCommand = ""
@@ -2211,7 +2373,7 @@ class MainWindow(QMainWindow):
 		self.menuBar().addMenu(self.runMenu)
 
 		menu = QMenu("&Programmer", self)
-		menu.addAction("&Universal chip tester...", self.startUnitest)
+		menu.addAction("&Universal logic tester...", self.startUnitest)
 		menu.addSeparator()
 		menu.addAction("Select &programmer...", self.selectProgrammer)
 		menu.addAction("&Send raw command...", self.sendRawCommand)
@@ -2231,9 +2393,9 @@ class MainWindow(QMainWindow):
 		self.addDockWidget(Qt.LeftDockWidgetArea, self.autorun)
 
 		self.hwThread = HwThread(self)
-		self.taskRunning = False
-		self.taskRetval = None
-		self.operation = self.OP_NONE
+		self.threadRunning = False
+		self.queuedOps = []
+		self.runningOps = {}
 
 	def setupRunMenu(self, chipSupportFlags):
 		menu = self.runMenu
@@ -2261,12 +2423,6 @@ class MainWindow(QMainWindow):
 		a = menu.addAction("&Verify whole chip", self.verifyChip)
 		a.setEnabled(chipSupportFlags != 0)
 
-	def blockInputEvents(self):
-		self.inputEventsBlocked += 1
-
-	def unblockInputEvents(self):
-		self.inputEventsBlocked -= 1
-
 	def event(self, e):
 		if e.type() == EVENT_HWTHREAD:
 			self.hwThread.handleMessageQueue()
@@ -2275,7 +2431,7 @@ class MainWindow(QMainWindow):
 		return QMainWindow.event(self, e)
 
 	def closeEvent(self, e):
-		if self.taskRunning:
+		if self.threadRunning:
 			res = QMessageBox.critical(self, "Task running",
 				"A hardware access task is running.\n\n"
 				"'Cancel' the close request and continue, or\n"
@@ -2289,7 +2445,7 @@ class MainWindow(QMainWindow):
 				return
 			e.ignore()
 			return
-		self.operation = self.OP_SHUTDOWN
+		self.threadRunning = False
 		self.hwThread.killThread()
 		e.accept()
 
@@ -2313,7 +2469,8 @@ class MainWindow(QMainWindow):
 		self.console.unblockStatusUpdate()
 		self.guiDisable -= 1
 		self.guiUpdateEnable()
-		self.runOperation(self.OP_SHUTDOWN, HwThread.TASK_SHUTDOWN)
+		self.runOperation(Operation(Operation.OP_SHUTDOWN,
+					    HwThread.TASK_SHUTDOWN))
 
 	def selectProgrammer(self):
 		dlg = ProgrammerSelectDialog(self)
@@ -2323,8 +2480,9 @@ class MainWindow(QMainWindow):
 		self.runOperationSync(HwThread.TASK_SHUTDOWN)
 		self.hwThread.setDevice(devIdentifier)
 		if self.currentChipDescription:
-			self.runOperation(self.OP_INITCHIP, HwThread.TASK_INITCHIP,
-					  self.currentChipDescription.chipID)
+			self.runOperation(Operation(Operation.OP_INITCHIP,
+						    HwThread.TASK_INITCHIP,
+						    self.currentChipDescription.chipID))
 
 	def sendRawCommand(self):
 		(string, ok) = QInputDialog.getText(self,
@@ -2352,8 +2510,9 @@ class MainWindow(QMainWindow):
 		command = hex2bin(string)
 		if len(command) == 0:
 			return
-		self.runOperation(self.OP_RAWCOMMAND, HwThread.TASK_GENERICTOPCALL,
-				  GenericTopCall("top.runCommandSync(...)", command))
+		self.runOperation(Operation(Operation.OP_RAWCOMMAND,
+					    HwThread.TASK_GENERICTOPCALL,
+					    GenericTopCall("top.runCommandSync(...)", command)))
 
 	def loadBuffer(self):
 		bufWidget = self.bufferTab.getCurrentBuffer()
@@ -2473,8 +2632,9 @@ class MainWindow(QMainWindow):
 		if not chipDescription:
 			return
 		self.currentChipDescription = chipDescription
-		return self.runOperation(self.OP_INITCHIP, HwThread.TASK_INITCHIP,
-					 chipDescription.chipID)
+		return self.runOperation(Operation(Operation.OP_INITCHIP,
+						   HwThread.TASK_INITCHIP,
+						   chipDescription.chipID))
 
 	def __makeReadCallChain(self, mayReadSig=True, mayReadProgmem=True,
 				mayReadEEPROM=True, mayReadFuse=True,
@@ -2517,12 +2677,14 @@ class MainWindow(QMainWindow):
 		return images
 
 	def readChip(self):
-		return self.runOperation(self.OP_READALL, HwThread.TASK_GENERICTOPCALL,
-					 self.__makeReadCallChain())
+		return self.runOperation(Operation(Operation.OP_READALL,
+						   HwThread.TASK_GENERICTOPCALL,
+					 self.__makeReadCallChain()))
 
 	def eraseChip(self):
-		return self.runOperation(self.OP_ERASE, HwThread.TASK_GENERICTOPCALL,
-					 GenericTopCall("top.eraseChip()"))
+		return self.runOperation(Operation(Operation.OP_ERASE,
+						   HwThread.TASK_GENERICTOPCALL,
+						   GenericTopCall("top.eraseChip()")))
 
 	def writeChipProgmem(self):
 		bufferWidget = self.bufferTab.progmemBuffer
@@ -2531,8 +2693,9 @@ class MainWindow(QMainWindow):
 			QMessageBox.critical(self, "No program memory",
 				"No program memory available")
 			return False
-		return self.runOperation(self.OP_WRITEPROG, HwThread.TASK_GENERICTOPCALL,
-					 GenericTopCall("top.writeProgmem(...)", data))
+		return self.runOperation(Operation(Operation.OP_WRITEPROG,
+						   HwThread.TASK_GENERICTOPCALL,
+						   GenericTopCall("top.writeProgmem(...)", data)))
 
 	def writeChipEeprom(self):
 		bufferWidget = self.bufferTab.eepromBuffer
@@ -2541,8 +2704,9 @@ class MainWindow(QMainWindow):
 			QMessageBox.critical(self, "No (E)EPROM memory",
 				"No (E)EPROM memory available")
 			return False
-		return self.runOperation(self.OP_WRITEEPROM, HwThread.TASK_GENERICTOPCALL,
-					 GenericTopCall("top.writeEEPROM(...)", data))
+		return self.runOperation(Operation(Operation.OP_WRITEEPROM,
+						   HwThread.TASK_GENERICTOPCALL,
+						   GenericTopCall("top.writeEEPROM(...)", data)))
 
 	def writeChipFuses(self):
 		bufferWidget = self.bufferTab.fuseBuffer
@@ -2551,8 +2715,9 @@ class MainWindow(QMainWindow):
 			QMessageBox.critical(self, "No fuse bits",
 				"No fuse bits available")
 			return False
-		return self.runOperation(self.OP_WRITEFUSE, HwThread.TASK_GENERICTOPCALL,
-					 GenericTopCall("top.writeFuse(...)", data))
+		return self.runOperation(Operation(Operation.OP_WRITEFUSE,
+						   HwThread.TASK_GENERICTOPCALL,
+						   GenericTopCall("top.writeFuse(...)", data)))
 
 	def writeChipLockbits(self):
 		bufferWidget = self.bufferTab.lockBuffer
@@ -2561,8 +2726,9 @@ class MainWindow(QMainWindow):
 			QMessageBox.critical(self, "No lock bits",
 				"No lock bits available")
 			return False
-		return self.runOperation(self.OP_WRITELOCK, HwThread.TASK_GENERICTOPCALL,
-					 GenericTopCall("top.writeLockbits(...)", data))
+		return self.runOperation(Operation(Operation.OP_WRITELOCK,
+						   HwThread.TASK_GENERICTOPCALL,
+						   GenericTopCall("top.writeLockbits(...)", data)))
 
 	def writeRam(self):
 		bufferWidget = self.bufferTab.ramBuffer
@@ -2571,12 +2737,14 @@ class MainWindow(QMainWindow):
 			QMessageBox.critical(self, "No RAM memory",
 				"No RAM memory available")
 			return False
-		return self.runOperation(self.OP_WRITERAM, HwThread.TASK_GENERICTOPCALL,
-					 GenericTopCall("top.writeRAM(...)", data))
+		return self.runOperation(Operation(Operation.OP_WRITERAM,
+						   HwThread.TASK_GENERICTOPCALL,
+						   GenericTopCall("top.writeRAM(...)", data)))
 
 	def runTest(self):
-		return self.runOperation(self.OP_TEST, HwThread.TASK_GENERICTOPCALL,
-					 GenericTopCall("top.testChip()"))
+		return self.runOperation(Operation(Operation.OP_TEST,
+						   HwThread.TASK_GENERICTOPCALL,
+						   GenericTopCall("top.testChip()")))
 
 	def verifyChip(self):
 		return self.verifySelectedMemories() # defaults to "all".
@@ -2592,12 +2760,13 @@ class MainWindow(QMainWindow):
 			mayReadFuse = verifyFuse,
 			mayReadLockbits = False,
 			mayReadRAM = verifyRAM)
-		return self.runOperation(self.OP_VERIFY, HwThread.TASK_GENERICTOPCALL,
-					 callChain)
+		return self.runOperation(Operation(Operation.OP_VERIFY,
+						   HwThread.TASK_GENERICTOPCALL,
+					 callChain))
 
 	def guiUpdateEnable(self):
 		enable = not self.guiDisable and\
-			 not self.taskRunning and\
+			 not self.threadRunning and\
 			 not self.autorun.isRunning()
 		self.menuBar().setEnabled(enable)
 		self.topToolBar.setEnabled(enable)
@@ -2608,62 +2777,59 @@ class MainWindow(QMainWindow):
 	def cancelHardwareTask(self):
 		if self.autorun.isRunning():
 			self.autorun.abortRun()
-		if self.taskRunning:
+		if self.threadRunning:
 			self.hwThread.cancelTask()
 
-	def runOperation(self, operation, hwTask, taskParameter=None):
-		assert(not self.taskRunning)
-		self.taskRunning = True
-		if not self.hwThread.triggerTask(hwTask, taskParameter):
-			self.taskRunning = False
-			return False
+	def __triggerOperation(self, op, threadMutexIsLocked=False):
+		self.hwThread.triggerTask(op.hwTask, op.hwTaskParam,
+					  id(op), threadMutexIsLocked)
+		self.threadRunning = True
+		self.runningOps[id(op)] = op
 		self.console.setTaskRunning(True)
-		self.operation = operation
 		self.guiUpdateEnable()
-		return True
+
+	def __triggerNextOperation(self, threadMutexIsLocked=False):
+		assert(self.queuedOps)
+		op = self.queuedOps.pop(0)
+		self.__triggerOperation(op, threadMutexIsLocked)
+
+	def runOperation(self, op):
+		self.queuedOps.append(op)
+		if not self.threadRunning:
+			self.__triggerNextOperation()
 
 	def runOperationSync(self, hwTask, taskParameter=None):
-		assert(not self.taskRunning)
-		if not self.runOperation(self.OP_SYNCHRONOUS, hwTask, taskParameter):
-			return (True, None)
-		while self.taskRunning:
-			evFilter = QEventLoop.AllEvents
-			if self.inputEventsBlocked:
-				evFilter |= QEventLoop.ExcludeUserInputEvents
-			QApplication.processEvents(evFilter, 50)
-		(retTask, failed, returnValue) = self.taskRetval
-		self.taskRetval = None
-		assert(not self.taskRunning and retTask == hwTask and\
-		       self.operation == self.OP_NONE)
-		return (failed, returnValue)
+		op = Operation(Operation.OP_SYNCHRONOUS,
+			       hwTask, taskParameter)
+		self.runOperation(op)
+		while not op.finished:
+			QApplication.processEvents(QEventLoop.AllEvents, 50)
+		self.runningOps.pop(id(op))
+		return (op.failed, op.returnValue)
 
 	def setOperationFinished(self, failed):
 		self.console.setTaskRunning(running=False, success=not failed)
-		self.operation = self.OP_NONE
 		if self.autorun.isRunning():
 			if failed:
 				QTimer.singleShot(0, self.autorun.abortRunWithMessage)
 			else:
 				QTimer.singleShot(0, self.autorun.runNextAction)
 
-	def hardwareTaskFinished(self, task, failed, returnValue):
-		self.taskRunning = False
-		self.guiUpdateEnable()
-		if self.operation == self.OP_SYNCHRONOUS:
-			self.operation = self.OP_NONE
+	def __hardwareTaskFinished(self, op):
+		if op.op == Operation.OP_SYNCHRONOUS:
 			self.console.setTaskRunning(running=False, success=True)
-			self.taskRetval = (task, failed, returnValue)
 			return
-		if failed:
+		self.runningOps.pop(id(op))
+		if op.failed:
 			self.console.showMessage("[op %d task %d failed] %s\n" %\
-					(self.operation, task, str(returnValue)),
+					(op.op, op.hwTask, str(op.returnValue)),
 					bold=True)
 			self.setOperationFinished(failed=True)
 			return
 		# Task succeed
-		if self.operation == self.OP_INITCHIP:
-			assert(task == HwThread.TASK_INITCHIP)
-			(self.chip, asciiArtLayout) = returnValue
+		if op.op == Operation.OP_INITCHIP:
+			assert(op.hwTask == HwThread.TASK_INITCHIP)
+			(self.chip, asciiArtLayout) = op.returnValue
 			self.bufferTab.setupBuffers(self.chip.getSupportFlags())
 			self.bufferTab.infoBuffer.clear()
 			self.bufferTab.infoBuffer.setupDescription(self.currentChipDescription)
@@ -2672,40 +2838,55 @@ class MainWindow(QMainWindow):
 			self.topToolBar.setup(self.chip.getSupportFlags())
 			self.rightToolBar.setup(self.chip.getSupportFlags())
 			self.setupRunMenu(self.chip.getSupportFlags())
-		elif self.operation == self.OP_SHUTDOWN:
+		elif op.op == Operation.OP_SHUTDOWN:
 			pass # Nothing to do
-		elif self.operation == self.OP_READALL:
-			assert(task == HwThread.TASK_GENERICTOPCALL)
-			topCallList = returnValue
+		elif op.op == Operation.OP_READALL:
+			assert(op.hwTask == HwThread.TASK_GENERICTOPCALL)
+			topCallList = op.returnValue
 			images = self.__readCallChainGetResultImages(topCallList)
 			self.bufferTab.setupBuffers(self.chip.getSupportFlags())
 			self.bufferTab.loadBuffers(images)
 			self.bufferTab.infoBuffer.setChipSignature(images["signature"])
-		elif self.operation == self.OP_ERASE:
+		elif op.op == Operation.OP_ERASE:
 			pass # Nothing to do
-		elif self.operation == self.OP_WRITEPROG:
+		elif op.op == Operation.OP_WRITEPROG:
 			pass # Nothing to do
-		elif self.operation == self.OP_WRITEEPROM:
+		elif op.op == Operation.OP_WRITEEPROM:
 			pass # Nothing to do
-		elif self.operation == self.OP_WRITEFUSE:
+		elif op.op == Operation.OP_WRITEFUSE:
 			pass # Nothing to do
-		elif self.operation == self.OP_WRITELOCK:
+		elif op.op == Operation.OP_WRITELOCK:
 			pass # Nothing to do
-		elif self.operation == self.OP_WRITERAM:
+		elif op.op == Operation.OP_WRITERAM:
 			pass # Nothing to do
-		elif self.operation == self.OP_TEST:
+		elif op.op == Operation.OP_TEST:
 			self.console.showMessage("Unit-test success. The chip seems to be OK.\n",
 						 bold=True)
-		elif self.operation == self.OP_VERIFY:
-			assert(task == HwThread.TASK_GENERICTOPCALL)
-			topCallList = returnValue
+		elif op.op == Operation.OP_VERIFY:
+			assert(op.hwTask == HwThread.TASK_GENERICTOPCALL)
+			topCallList = op.returnValue
 			images = self.__readCallChainGetResultImages(topCallList)
-			failed = not self.bufferTab.verifyBuffers(images)
-		elif self.operation == self.OP_RAWCOMMAND:
+			op.failed = not self.bufferTab.verifyBuffers(images)
+		elif op.op == Operation.OP_RAWCOMMAND:
 			self.console.showMessage("Successfully sent raw command\n", bold=True)
 		else:
-			print "ERROR: No handler for op %d task %d" % (self.operation, task)
-		self.setOperationFinished(failed)
+			print "ERROR: No handler for op %d task %d" % (op.op, op.hwTask)
+		self.setOperationFinished(op.failed)
+
+	def hardwareTaskFinished(self, opaqueId, failed, returnValue):
+		if opaqueId is None:
+			return
+		op = self.runningOps[opaqueId]
+		op.returnValue = returnValue
+		op.failed = failed
+		self.threadRunning = False
+		self.__hardwareTaskFinished(op)
+		op.op = Operation.OP_NONE
+		op.finished = True
+		if self.queuedOps:
+			self.__triggerNextOperation(threadMutexIsLocked=True)
+			return
+		self.guiUpdateEnable()
 
 def main():
 	app = QApplication(sys.argv)
