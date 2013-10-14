@@ -2828,7 +2828,10 @@ class MainWindow(QMainWindow):
 			images = self.__readCallChain_GetResultImages(topCallList)
 			self.bufferTab.setupBuffers(self.chip.getSupportFlags())
 			self.bufferTab.loadBuffers(images)
-			self.bufferTab.infoBuffer.setChipSignature(images["signature"])
+			try:
+				self.bufferTab.infoBuffer.setChipSignature(images["signature"])
+			except KeyError:
+				pass
 		elif op.op == Operation.OP_ERASE:
 			pass # Nothing to do
 		elif op.op == Operation.OP_WRITEPROG:
