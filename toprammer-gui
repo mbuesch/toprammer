@@ -2663,9 +2663,9 @@ class MainWindow(QMainWindow):
 							name = "ram"))
 		return callChain
 
-	def __readCallChainGetResultImages(self, callChain):
+	def __readCallChain_GetResultImages(self, callChain):
 		images = {}
-		for topCall in callChain:
+		for topCall in (callChain if callChain else []):
 			name = topCall.userData["name"]
 			if name in ("signature", "progmem", "eeprom",
 				    "fusebits", "lockbits", "ram"):
@@ -2797,6 +2797,7 @@ class MainWindow(QMainWindow):
 		self.queuedOps.append(op)
 		if not self.threadRunning:
 			self.__triggerNextOperation()
+		return True
 
 	def runOperationSync(self, hwTask, taskParameter=None):
 		op = Operation(Operation.OP_SYNCHRONOUS,
@@ -2843,7 +2844,7 @@ class MainWindow(QMainWindow):
 		elif op.op == Operation.OP_READALL:
 			assert(op.hwTask == HwThread.TASK_GENERICTOPCALL)
 			topCallList = op.returnValue
-			images = self.__readCallChainGetResultImages(topCallList)
+			images = self.__readCallChain_GetResultImages(topCallList)
 			self.bufferTab.setupBuffers(self.chip.getSupportFlags())
 			self.bufferTab.loadBuffers(images)
 			self.bufferTab.infoBuffer.setChipSignature(images["signature"])
@@ -2865,7 +2866,7 @@ class MainWindow(QMainWindow):
 		elif op.op == Operation.OP_VERIFY:
 			assert(op.hwTask == HwThread.TASK_GENERICTOPCALL)
 			topCallList = op.returnValue
-			images = self.__readCallChainGetResultImages(topCallList)
+			images = self.__readCallChain_GetResultImages(topCallList)
 			op.failed = not self.bufferTab.verifyBuffers(images)
 		elif op.op == Operation.OP_RAWCOMMAND:
 			self.console.showMessage("Successfully sent raw command\n", bold=True)
