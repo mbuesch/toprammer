@@ -1834,6 +1834,20 @@ class BufferTabWidget(QTabWidget):
 			except KeyError:
 				continue
 			bufImage = bufferWidget.getRawData()
+			if not bufImage:
+				if not image:
+					# Both images are empty. Go on...
+					continue
+				self.mainWindow.console.showMessage(
+					"Chip verify of %s FAILED! "
+					"There is no data in the "
+					"%s buffer. First load data into "
+					"the buffer tab, please.\n" %\
+					(bufferWidget.getName(),
+					 bufferWidget.getName()),
+					bold=True)
+				fail = True
+				continue
 			if len(bufImage) > len(image):
 				self.mainWindow.console.showMessage(
 					"Chip verify of %s FAILED! "
