@@ -42,20 +42,18 @@ def substitute(input, oldSocket, newSocket):
 def makeSip():
 	inputFileName = '__init__.py'
 	fin = open(inputFileName)
-	# from pic16f1824dip14 import *
 	dMCU = {}
 	for line in fin:
-		matchObj = re.match('#do not edit the text below this line.*', line)
+		matchObj = re.match('.*(pic[0-9]+l?f\w+)(sip[0-9a]+).*', line)
 		if matchObj:
-			break
+			continue
 		matchObj = re.match('.*(pic[0-9]+l?f\w+)(dip[0-9a]+).*', line)
 		if not matchObj:
 			print("{} did not match".format(line))
 			continue
-		print('matched {} - {}'.format(matchObj.group(1), matchObj.group(2)))
+#		print('matched {} - {}'.format(matchObj.group(1), matchObj.group(2)))
 		dMCU.setdefault(matchObj.group(1), matchObj.group(2))
 	fin.close()
-	finit = open("init", "a")
 	for item in dMCU.items():
 		fin = open("{}{}.py".format(item[0], item[1]))
 		fout = open("{}sip6.py".format(item[0]), 'w')
@@ -67,10 +65,7 @@ def makeSip():
 			fout.write(substitute(line, "{}".format(item[1]), "sip6"))
 		fout.close()
 		fin.close()
-		finit.write("from {}sip6 import *\n".format(item[0]))
-	finit.close()
-	print ('{} - {}'.format(item[0], item[1]))	
-	
+
 def main(argv):
 	makeSip()
 
