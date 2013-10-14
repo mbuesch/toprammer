@@ -1927,22 +1927,16 @@ class ChipSelectDialog(QDialog):
 		self.cancelButton = QPushButton("&Cancel", self)
 		self.layout().addWidget(self.cancelButton, 2, 3, 1, 3)
 
-		self.connect(self.okButton, SIGNAL("released()"),
-			     self.accept)
-		self.connect(self.cancelButton, SIGNAL("released()"),
-			     self.reject)
-		self.connect(self.vendorList, SIGNAL("itemSelectionChanged()"),
-			     self.vendorSelectionChanged)
-		self.connect(self.chipList, SIGNAL("itemSelectionChanged()"),
-			     self.chipSelectionChanged)
-		self.connect(self.chipList, SIGNAL("itemDoubleClicked(QListWidgetItem)"),
-			     self.accept)
-		self.connect(self.showBroken, SIGNAL("stateChanged(int)"),
-			     self.typeToggled)
+		self.okButton.released.connect(self.accept)
+		self.cancelButton.released.connect(self.reject)
+		self.vendorList.itemSelectionChanged.connect(self.vendorSelectionChanged)
+		self.chipList.itemSelectionChanged.connect(self.chipSelectionChanged)
+		self.chipList.itemDoubleClicked.connect(self.accept)
+		self.showBroken.stateChanged.connect(self.typeToggled)
 		for radio in (self.allRadio, self.mcuRadio, self.epromRadio,
 			      self.eepromRadio, self.galRadio,
 			      self.sramRadio, self.logicRadio):
-			self.connect(radio, SIGNAL("toggled(bool)"), self.typeToggled)
+			radio.toggled.connect(self.typeToggled)
 
 		self.__updateVendorList()
 		self.__updateChipList()
