@@ -27,6 +27,7 @@ class microchip8_singlePMarea(Chip_Microchip8_common):
 	CMD_END_PROGRAMMING = 0x0E
 
 	userIDLocationSize = 4
+	hasSigBytes = False
 
 	voltageVDD = 5
 	voltageVPP = 13

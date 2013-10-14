@@ -41,6 +41,8 @@ class Chip_Microchip8_common(Chip):
 
 	# EEPROM access: default off, if exists override it
 	hasEEPROM = False
+	# Signature bytes access: default on, if doesn't exist, override it
+	hasSigBytes = True
 
 	# default delays - can be overridden
 	delayTdly5 = 0.00000015
@@ -48,6 +50,16 @@ class Chip_Microchip8_common(Chip):
 	delayTprog = 0.001
 	delayTdly = 0.000001
 	delayTera = 0.01
+
+	@classmethod
+	def getSupportFlags(cls):
+		flags = super(Chip_Microchip8_common, cls).getSupportFlags()
+		if not cls.hasEEPROM:
+			flags &= ~(Chip.SUPPORT_EEPROMREAD |\
+				   Chip.SUPPORT_EEPROMWRITE)
+		if not cls.hasSigBytes:
+			flags &= ~Chip.SUPPORT_SIGREAD
+		return flags
 
 	def __init__(self,
 			chipPackage, chipPinVCC, chipPinsVPP, chipPinGND,

@@ -27,7 +27,7 @@ from generic_algorithms import *
 from ihex import *
 
 
-class Chip:
+class Chip(object):
 	SUPPORT_ERASE		= (1 << 0)
 	SUPPORT_SIGREAD		= (1 << 1)
 	SUPPORT_PROGMEMREAD	= (1 << 2)
