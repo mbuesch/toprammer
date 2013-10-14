@@ -2287,10 +2287,11 @@ class ProgrammerSelectDialog(QDialog):
 
 		self.rescan()
 
-		self.connect(self.deviceList, SIGNAL("currentRowChanged(int)"), self.selectionChanged)
-		self.connect(self.okButton, SIGNAL("released()"), self.accept)
-		self.connect(self.cancelButton, SIGNAL("released()"), self.reject)
-		self.connect(self.rescanButton, SIGNAL("released()"), self.rescan)
+		self.deviceList.currentRowChanged.connect(self.selectionChanged)
+		self.deviceList.itemDoubleClicked.connect(self.accept)
+		self.okButton.released.connect(self.accept)
+		self.cancelButton.released.connect(self.reject)
+		self.rescanButton.released.connect(self.rescan)
 
 	def rescan(self):
 		self.deviceList.clear()
