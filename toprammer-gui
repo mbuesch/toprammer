@@ -398,7 +398,7 @@ class UnitestDialog(QDialog):
 				if layMask & bit(i):
 					descr = str(i + 1) + " "
 			self.vppLayouts[layId] = QCheckBox(descr, self)
-			self.connect(self.vppLayouts[layId], SIGNAL("stateChanged(int)"),
+			self.vppLayouts[layId].stateChanged.connect(
 				     self.vppLayoutChanged)
 			group.layout().addWidget(self.vppLayouts[layId],
 					yOffset + 1, xOffset)
@@ -410,31 +410,20 @@ class UnitestDialog(QDialog):
 
 		self.inputPollTimer = QTimer()
 		self.inputPollTimer.setSingleShot(True)
-		self.connect(self.inputPollTimer, SIGNAL("timeout()"),
-			     self.doInputPollTimer)
+		self.inputPollTimer.timeout.connect(self.doInputPollTimer)
 
-		self.connect(self.inputPollEn, SIGNAL("stateChanged(int)"),
-			     self.inputPollChanged)
-		self.connect(self.inputPollInterval, SIGNAL("valueChanged(double)"),
-			     self.inputPollChanged)
-		self.connect(self.gndLayout, SIGNAL("currentIndexChanged(int)"),
-			     self.gndLayoutChanged)
-		self.connect(self.vccVoltage, SIGNAL("valueChanged(double)"),
-			     self.vccLayoutChanged)
-		self.connect(self.vccLayout, SIGNAL("currentIndexChanged(int)"),
-			     self.vccLayoutChanged)
-		self.connect(self.vppVoltage, SIGNAL("valueChanged(double)"),
-			     self.vppLayoutChanged)
-		self.connect(self.fcntEn, SIGNAL("stateChanged(int)"),
-			     self.fcntChanged)
-		self.connect(self.fcntPosEdge, SIGNAL("stateChanged(int)"),
-			     self.fcntChanged)
-		self.connect(self.fcntPin, SIGNAL("currentIndexChanged(int)"),
-			     self.fcntChanged)
-		self.connect(self.oscPin, SIGNAL("currentIndexChanged(int)"),
-			     self.oscChanged)
-		self.connect(self.oscDiv, SIGNAL("valueChanged(int)"),
-			     self.oscChanged)
+		self.inputPollEn.stateChanged.connect(self.inputPollChanged)
+		self.inputPollInterval.valueChanged.connect(self.inputPollChanged)
+		self.gndLayout.currentIndexChanged.connect(self.gndLayoutChanged)
+		self.vccVoltage.valueChanged.connect(self.vccLayoutChanged)
+		self.vccLayout.currentIndexChanged.connect(self.vccLayoutChanged)
+		self.vppVoltage.valueChanged.connect(self.vppLayoutChanged)
+		self.fcntEn.stateChanged.connect(self.fcntChanged)
+		self.fcntPosEdge.stateChanged.connect(self.fcntChanged)
+		self.fcntPin.currentIndexChanged.connect(self.fcntChanged)
+		self.oscPin.currentIndexChanged.connect(self.oscChanged)
+		self.oscDiv.valueChanged.connect(self.oscChanged)
+
 		self.__modeChanged()
 		self.gndLayoutChanged()
 		self.vccLayoutChanged()
@@ -1126,8 +1115,7 @@ class Console(QDockWidget):
 			GuiUserInterface.PROGRESSMETER_USER_GLOBAL	: self.globalProgress,
 		}
 
-		self.connect(self.cancelButton, SIGNAL("released()"),
-			     mainWindow.cancelHardwareTask)
+		self.cancelButton.released.connect(mainWindow.cancelHardwareTask)
 
 	def blockStatusUpdate(self):
 		self.statusUpdateBlocked += 1
@@ -1691,8 +1679,7 @@ class BitBufferWidget(BufferWidget):
 			if byte2int(image[i // 8]) & bit(i % 8):
 				checkbox.setCheckState(Qt.Checked)
 			self.bitsArea.layout().addWidget(checkbox, 1 + i, 0, 1, 2)
-			self.connect(checkbox, SIGNAL("stateChanged(int)"),
-				     self.__bitStateChanged)
+			checkbox.stateChanged.connect(self.__bitStateChanged)
 			self.checkboxes.append(checkbox)
 		self.__updateHexView()
 
@@ -2153,8 +2140,7 @@ class AutorunWidget(QDockWidget):
 			self.runButton.setIcon(getIcon("run"))
 			self.widget().layout().addWidget(self.runButton, row, 0)
 			row += 1
-			self.connect(self.runButton, SIGNAL("released()"),
-				     self.runNextChip)
+			self.runButton.released.connect(self.runNextChip)
 
 		self.widget().layout().setRowStretch(row, 99)
 
