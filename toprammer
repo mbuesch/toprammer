@@ -63,7 +63,7 @@ def usage():
 	print ""
 	print "Other options:"
 	print " -t|--list               Print a list of supported chips and exit."
-	print "                         Use -V|--verbose to control the list verbosity (1-4)"
+	print "                         Use -V|--verbose to control the list verbosity (0-4)"
 	print " -d|--device DEVID       Use a specific programmer. For USB:"
 	print "                         usb:BUSNR.DEVNR"
 	print "                         First found programmer is used, if not given."

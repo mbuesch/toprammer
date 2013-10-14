@@ -474,6 +474,10 @@ class ChipDescription:
 	def dump(self, fd, verbose=1):
 		"Dump information about a registered chip to file fd."
 
+		if verbose <= 0:
+			fd.write(self.chipID)
+			return
+
 		def wrline(prefix, content):
 			# Write a formatted feature line
 			fd.write("%15s:  %s\n" % (prefix, content))
