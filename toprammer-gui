@@ -2470,7 +2470,7 @@ class MainWindow(QMainWindow):
 			"Send raw command to programmer",
 			"Enter raw command to send, in " +\
 			"hex format (AABB1122...).\n" +\
-			"Warning: The programmer will malfunction on invalid commands.",
+			"WARNING: The programmer will malfunction on invalid commands.",
 			QLineEdit.Normal,
 			self.previousRawCommand)
 		if not ok:
@@ -2493,7 +2493,7 @@ class MainWindow(QMainWindow):
 			return
 		self.runOperation(Operation(Operation.OP_RAWCOMMAND,
 					    HwThread.TASK_GENERICTOPCALL,
-					    GenericTopCall("top.runCommandSync(...)", command)))
+					    GenericTopCall("top.hw.runCommandSync(...)", command)))
 
 	def loadBuffer(self):
 		bufWidget = self.bufferTab.getCurrentBuffer()
