@@ -1,7 +1,7 @@
 """
 #    TOP2049 Open Source programming suite
 #
-#   Microchip PIC10F202, PIC10F206 and PIC10f222 DIP8
+#   Microchip PIC10F202, PIC10F206 and PIC10f222 SIP6
 #
 #    Copyright (c) 2013 Pavel Stemberk <stemberk@gmail.com>
 #

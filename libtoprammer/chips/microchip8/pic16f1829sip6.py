@@ -1,7 +1,7 @@
 """
 #    TOP2049 Open Source programming suite
 #
-#   Microchip PIC16F1829 DIP20
+#   Microchip PIC16F1829 SIP6
 #
 #    Copyright (c) 2013 Pavel Stemberk <stemberk@gmail.com>
 #

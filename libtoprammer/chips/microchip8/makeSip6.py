@@ -36,9 +36,9 @@ def substitute(input, oldSocket, newSocket):
 	input = re.sub('(^\s*description).+"(.*)".*', lambda m:'{} = "{} - ICD",'.format(m.group(1), m.group(2)), input)
 	input = re.sub('(^\s*bitfile).*', lambda m:'{} = "microchip01sip6",'.format(m.group(1)), input)
 	input = re.sub("{}".format(oldSocket), "{}".format(newSocket), input)
+	input = re.sub("{}".format(oldSocket.upper()), "{}".format(newSocket.upper()), input)
 	return input
-    
-    
+
 def makeSip():
 	inputFileName = '__init__.py'
 	fin = open(inputFileName)
