@@ -276,6 +276,14 @@ def getRegisteredVendors():
 			vendors.setdefault(vendor, []).append(descriptor)
 	return vendors
 
+def _registerChip(chipDesc):
+	regList = getRegisteredChips()
+	if chipDesc.chipID in [ cd.chipID for cd in regList ]:
+		raise TOPException("Chip description registration: "
+			"The chipID '%s' is not unique." %\
+			chipDesc.chipID)
+	regList.append(chipDesc)
+
 class BitDescription:
 	def __init__(self, bitNr, description):
 		self.bitNr = bitNr
@@ -424,7 +432,7 @@ class ChipDescription:
 		self.maintainer = maintainer
 		self.broken = broken
 
-		getRegisteredChips().append(self)
+		_registerChip(self)
 
 	@classmethod
 	def findAll(cls, chipID, allowBroken=False):
