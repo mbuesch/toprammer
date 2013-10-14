@@ -55,6 +55,8 @@ class microchip8_singlePMarea(Chip_Microchip8_common):
 						  2 * 0xFFF + 1) ]
 		inter.uilRanges = [ AddressRange(2 * self.userIDLocationAddr,
 						 2 * (self.userIDLocationAddr + self.userIDLocationSize) - 1) ]
+		inter.progmemDefaultBytes = self.defaultWord[0] + self.defaultWord[1]
+		inter.fuseDefaultBytes = self.defaultWord[0] + self.defaultWord[1]
 		return inter
 
 	def setPC(self, address):

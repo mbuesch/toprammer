@@ -40,9 +40,9 @@ class microchip8_splittedPMarea(Chip_Microchip8_common):
 	delayTprog = 0.0021
 	delayTdly = 0.0000015
 	delayTera = 0.005
-	
+
 	defaultWord = [b'\xFF', b'\x3F']
-    
+
 	def __init__(self,
 	    chipPackage, chipPinVCC, chipPinsVPP, chipPinGND,
 	    signature,
@@ -64,6 +64,8 @@ class microchip8_splittedPMarea(Chip_Microchip8_common):
 						  2 * self.configWordAddr + 1) ]
 		inter.uilRanges = [ AddressRange(2 * self.userIDLocationAddr,
 						 2 * (self.userIDLocationAddr + self.userIDLocationSize) - 1) ]
+		inter.progmemDefaultBytes = self.defaultWord[0] + self.defaultWord[1]
+		inter.fuseDefaultBytes = self.defaultWord[0] + self.defaultWord[1]
 		return inter
 
 	def incrementPC(self, count):
