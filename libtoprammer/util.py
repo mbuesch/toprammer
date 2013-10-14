@@ -156,7 +156,6 @@ class IO_ihex(object):
 		return True
 
 	def toBinary(self, ihexData, addressRange=None, defaultBytes=b"\xFF"):
-		#TODO defaultBytes
 		bin = []
 		checksumWarned = False
 		doublewriteWarned = False
@@ -209,14 +208,18 @@ class IO_ihex(object):
 					continue
 				if type == self.TYPE_DATA:
 					if len(bin) < addr - addrBias + count: # Reallocate
-						bin += [b'\xFF'] * (addr - addrBias + count - len(bin))
+						bytesToAdd = addr - addrBias + count - len(bin)
+						for i in range(bytesToAdd):
+							defOffs = len(bin) % len(defaultBytes)
+							bin += [ defaultBytes[defOffs], ]
 					for i in range(9, 9 + count * 2, 2):
 						byte = int2byte(int(line[i:i+2], 16))
-						if bin[(i - 9) / 2 + addr - addrBias] != '\xFF' and \
+						offset = (i - 9) // 2 + addr - addrBias
+						if bin[offset] != defaultBytes[offset % len(defaultBytes)] and \
 						   not doublewriteWarned:
 							doublewriteWarned = True
 							print "Invalid IHEX format (Wrote twice to same location)"
-						bin[(i - 9) / 2 + addr - addrBias] = byte
+						bin[offset] = byte
 					continue
 				raise TOPException("Invalid IHEX format (unsup type %d)" % type)
 		except ValueError:
