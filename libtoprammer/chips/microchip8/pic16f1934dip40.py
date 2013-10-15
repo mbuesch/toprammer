@@ -79,7 +79,7 @@ fuseDesc = (
 ChipDescription(
 	Chip_Pic16F1934dip40,
 	bitfile="microchip01dip40",
-	chipID="pic16f1934dip40",
+	chipID="pic16f1934dip40a",
 	runtimeID=(0xDE08, 0x01),
 	chipVendors="Microchip",
 	description="PIC16F1934",

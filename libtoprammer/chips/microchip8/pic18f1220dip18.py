@@ -53,7 +53,7 @@ fuseDesc = (
 	BitDescription(0o05, "NA"),
 	BitDescription(0o06, "NA"),
 	BitDescription(0o07, "NA"),
-	BitDescription(0o10, "FOSC[0], 0=LP, 100=INTOSC"),
+	BitDescription(0o10, "FOSC[0], 0000=LP, 1000=internal RC oscillator, RA6=CLKO"),
 	BitDescription(0o11, "FOSC[1]"),
 	BitDescription(0o12, "FOSC[2]"),
 	BitDescription(0o13, "FOSC[3]"),
