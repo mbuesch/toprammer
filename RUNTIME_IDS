@@ -19,7 +19,15 @@
 0x000A		=> hm62256dip28
 0x000B		=> m24c16dip8
 0x000C		=> 27cxxxdip28
-0x000D		=> pic10fXXXdip8
+0xDE01		=> pic10fxxxdip8
+0xDE02		=> microchip01dip8
+0xDE03		=> microchip01dip14dip20
+0xDE04		=> microchip01dip18
+0xDE05		=> microchip01sip6
+0xDE06		=> microchip01dip40
+0xDE07		=> microchip01dip28
+0xDE08		=> microchip01dip40a
+0xDF01		=> microchip16dip14dip20
 0xFEFD		=> Reserved. Do not use.
 0xFFFF		=> Reserved. Do not use.
 
