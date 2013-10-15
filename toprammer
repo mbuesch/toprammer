@@ -304,7 +304,8 @@ def main(argv):
 		elif opt_action == "write-uil":
 			top.writeUserIdLocation(fileIn(top, opt_action, opt_file, opt_informat))
 		else:
-			print "No action specified"
+			if opt_verbose >= 1:
+				print "No action specified"
 		top.shutdownChip()
 	except (TOPException, BitfileException, IOError), e:
 		print e
