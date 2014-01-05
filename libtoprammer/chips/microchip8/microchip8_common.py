@@ -50,6 +50,7 @@ class Chip_Microchip8_common(Chip):
 	delayTprog = 0.001
 	delayTdly = 0.000001
 	delayTera = 0.01
+	nLatches =1
 
 	@classmethod
 	def getSupportFlags(cls):
@@ -123,15 +124,14 @@ class Chip_Microchip8_common(Chip):
 		self.progressMeterInit("Erasing chip", 0)
 		self.bulkErasePGM()
 		self.progressMeterFinish()
-		# OSCCAL=0x3454
-		# OSCCAL=0x0C0A
+		#OSCCAL=0x3454
+		#OSCCAL=0x0C10
 		if(keepOSCCAL and OSCCAL != 0xfff):
 			self.exitPM()
 			self.enterPM()
 			self.progressMeterInit("Writing osccal,  value %x" % OSCCAL, 0)
 			print("Writing osccal,  value %x" % OSCCAL)
 			self.setPC(self.osccalAddr)
-			# print("PC is set to %x" % self.PC)
 			self.send6bitWriteInstruction(self.CMD_LOAD_DATA_FOR_PGM, OSCCAL)
 			self.top.cmdDelay(self.delayTdly)
 			self.sendWriteFlashInstr()
@@ -227,6 +227,8 @@ class Chip_Microchip8_common(Chip):
 		self.progressMeterInit("Writing flash", len(image) // 2)
 		self.enterPM()
 		self.setPC(0)
+		latCnt=1;
+		writeCurrentLatches=False
 		for wordAddr in range(0, len(image) // 2):
 			self.progressMeter(wordAddr)
 			# do not swap following two lines
@@ -234,8 +236,16 @@ class Chip_Microchip8_common(Chip):
 			if(WD != (byte2int(self.defaultWord[1]) << 8) + byte2int(self.defaultWord[0])):
 				self.send6bitWriteInstruction(self.CMD_LOAD_DATA_FOR_PGM, WD)
 				self.top.cmdDelay(self.delayTdly)				
-				self.sendWriteFlashInstr()
+				writeCurrentLatches=True
+			if(latCnt == self.nLatches):
+				if(writeCurrentLatches):
+					self.sendWriteFlashInstr()
+				latCnt=0
+				writeCurrentLatches=False
+			latCnt+=1
 			self.incrementPC(1)
+		if(latCnt>1):
+			self.sendWriteFlashInstr()
 		self.progressMeterFinish()
 		# self.exitPM()
 
@@ -350,15 +360,11 @@ class Chip_Microchip8_common(Chip):
 		# self.top.cmdEnableZifPullups(True)
 		self.applyGND(True)
 		
-		self.applyVCC(True)
-		# self.top.cmdDelay(0.000005)
-		
-		for i in range(0, 2):
-			self.applyVPP(True)
-			# self.top.cmdDelay(0.000005)
-			self.applyVPP(False)
-			# self.top.cmdDelay(0.000031)
 		self.applyVPP(True)
+		self.top.cmdDelay(0.000250)
+		
+		
+		self.applyVCC(True)
 		# self.top.cmdEnableZifPullups(True)
 		
 		# self.top.cmdDelay(0.000005) #least 5us is required to reach Vdd first entry PM

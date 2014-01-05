@@ -1,7 +1,7 @@
 """
 #    TOP2049 Open Source programming suite
 #
-#   Microchip PIC16F1828 DIP20
+#   Microchip PIC16F1503 DIP14
 #
 #    Copyright (c) 2013 Pavel Stemberk <stemberk@gmail.com>
 #
@@ -22,42 +22,40 @@
 
 from microchip8_splittedPMarea_hasResetPC import *
 
-class Chip_Pic16F1828dip20(microchip8_splittedPMarea_hasResetPC):
+class Chip_Pic16F1503dip14(microchip8_splittedPMarea_hasResetPC):
 	
-	nLatches = 32
-	rowSize = 32
-
-	hasEEPROM = True
+	nLatches = 16
+	rowSize = 16
 
     	def __init__(self):
 	    	microchip8_splittedPMarea_hasResetPC.__init__(self,
-			chipPackage="DIP20",
+			chipPackage="DIP14",
 			chipPinVCC=1,
 			chipPinsVPP=4,
-			chipPinGND=20,
+			chipPinGND=14,
 			signature="\x43\x27",
-			flashPageSize=0x1000,
+			flashPageSize=0x800,
 			flashPages=1,
 			eepromPageSize=256,
-			eepromPages=1,
+			eepromPages=0,
 			fuseBytes=4
 			)
 
 fuseDesc = (
-	BitDescription(0, "FOSC[0], 0=LP, 100=INTOSC"),
+	BitDescription(0, "FOSC[0], 0=LP, 00=INTOSC"),
 	BitDescription(1, "FOSC[1]"),
-	BitDescription(2, "FOSC[2]"),
+	BitDescription(2, "Unused"),
 	BitDescription(3, "WDTE[0], 00=WDT disabled, 11=WDT enabled"),
 	BitDescription(4, "WDTE[1]"),
 	BitDescription(5, "nPWRTE"),
 	BitDescription(6, "MCLRE, 1=nMCLR/Vpp pin is nMCLR, weak pull-up enabled, ignored if LVP=1 "),
 	BitDescription(7, "nCP 1=program memory code protection is disabled"),
-	BitDescription(8, "nCPD, 1=data memory code protection is disabled"),
+	BitDescription(8, "Unused"),
 	BitDescription(9, "BOREN[0], 00=BOR disabled"),
 	BitDescription(10, "BOREN[1]"),
 	BitDescription(11, "nCLKOUTEN, 0=CLKOUT is enabled on CLKOUT pin"),
-	BitDescription(12, "IESO, 0=Internal/External Switchover mode is disabled"),
-	BitDescription(13, "FCMEM, 0=Fail-Safe Clock Monitor is disabled"),
+	BitDescription(12, "Unused"),
+	BitDescription(13, "Unused"),
 	BitDescription(14, "NA"),
 	BitDescription(15, "NA"),
 	
@@ -69,22 +67,22 @@ fuseDesc = (
 	BitDescription(21, "Unused"),
 	BitDescription(22, "Unused"),
 	BitDescription(23, "Unused"),
-	BitDescription(24, "PLLEN, 0=4xPLL disabled"),
+	BitDescription(24, "Unused"),
 	BitDescription(25, "STVREN, 1=Stack overflow or underflow will cause a reset"),
 	BitDescription(26, "BORV"),
-	BitDescription(27, "Unused"),
-	BitDescription(28, "nDEBUG, 0=ICSPCLK and ICSPDAT are dedicated to the debugger"),
+	BitDescription(27, "nLPBOR, 1=Low-Power BOR is disabled"),
+	BitDescription(28, "Unused"),
 	BitDescription(29, "LVP 1=Low-voltage programming enabled"),
 )
 
 ChipDescription(
-	Chip_Pic16F1828dip20,
+	Chip_Pic16F1503dip14,
 	bitfile="microchip01dip14dip20",
-	chipID="pic16f1828dip20",
+	chipID="pic16f1503dip14",
 	runtimeID=(0xDE03, 0x01),
 	chipVendors="Microchip",
-	description="PIC16F1828, PIC16LF1828",
-	packages=(("DIP20", ""),),
+	description="PIC16F1503, PIC16LF1503",
+	packages=(("DIP14", ""),),
 	fuseDesc=fuseDesc, 	
 	maintainer="Pavel Stemberk <stemberk@gmail.com>",
 )

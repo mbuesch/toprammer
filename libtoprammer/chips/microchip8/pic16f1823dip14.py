@@ -24,8 +24,8 @@ from microchip8_splittedPMarea_hasResetPC import *
 
 class Chip_Pic16F1823dip14(microchip8_splittedPMarea_hasResetPC):
 
-	rowSize = 32
-	nLatches = 32
+	rowSize = 16
+	nLatches = 16
 	hasEEPROM = True
 
     	def __init__(self):

@@ -28,6 +28,9 @@
 from microchip8_splittedPMarea_hasResetPC import *
 
 class Chip_PIC16F1826sip6(microchip8_splittedPMarea_hasResetPC):
+	
+	nLatches = 8
+	rowSize = 32
 
 	hasEEPROM = True
 

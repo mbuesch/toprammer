@@ -85,4 +85,13 @@ class microchip8_singlePMarea(Chip_Microchip8_common):
 		self.sendWriteFlashInstr()
 
 	def sendWriteFlashInstrCW(self):
-		self.sendWriteFlashInstr()	
+		self.sendWriteFlashInstr()
+	def readProgmem(self):
+		self.exitPM()
+		return Chip_Microchip8_common.readProgmem(self)
+	def readFuse(self):
+		self.exitPM()
+		return Chip_Microchip8_common.readFuse(self)
+	def writeFuse(self, image):
+		self.exitPM()
+		Chip_Microchip8_common.writeFuse(self,image)

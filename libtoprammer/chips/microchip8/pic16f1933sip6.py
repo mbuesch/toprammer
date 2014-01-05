@@ -28,7 +28,8 @@
 from microchip8_splittedPMarea_hasResetPC import *
 
 class Chip_Pic16F1933sip6(microchip8_splittedPMarea_hasResetPC):
-
+		
+	nLatches = 8
 	hasEEPROM = True
 
     	def __init__(self):
@@ -87,7 +88,7 @@ ChipDescription(
 	chipID="pic16f1933sip6",
 	runtimeID = (0xDE05, 0x01),
 	chipVendors="Microchip",
-	description = "PIC16F1933 - ICD",
+	description = "PIC16F1933, PIC16LF1933 - ICD",
 	packages = (("DIP10", ""), ),
 	fuseDesc=fuseDesc, 	
 	maintainer="Pavel Stemberk <stemberk@gmail.com>",

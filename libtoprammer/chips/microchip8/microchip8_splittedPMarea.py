@@ -42,6 +42,23 @@ class microchip8_splittedPMarea(Chip_Microchip8_common):
 	delayTera = 0.005
 
 	defaultWord = [b'\xFF', b'\x3F']
+	nDeviceIdRevisionBits = 5
+	
+	deviceIdMapDict = {
+			0o474:"16F1826", 0o475:"16F1827", 0o504:"16LF1826", 0o505:"16LF1827", 0o471:"16F1823", 0o501:"16LF1823",
+			0o470:"16F1822", 0o500:"16LF1822", 0o472:"16F1824", 0o502:"16LF1824", 0o473:"16F1825", 0o503:"16LF1825",
+			0o476:"16F1828", 0o506:"16LF1828", 0o477:"16F1829", 0o507:"16LF1829",
+			0o515:"10F320", 0o514:"10F322", 0o517:"10LF320", 0o516:"10LF322",
+			0o174:"12F629", 0o176:"12F675", 0o206:"16F630", 0o207:"16F676",
+			0o053:"16F84A",
+			0o546:"12F1501", 0o554:"12LF1501", 0o547:"16F1503", 0o555:"16LF1503", 0o550:"16F1507", 0o556:"16LF1507",
+			0o551:"16F1508", 0o557:"16LF1508", 0o552:"16F1509", 0o560:"16LF1509",
+			0o460:"16F1933", 0o462:"16F1934", 0o463:"16F1936", 0o464:"16F1937", 0o465:"16F1938", 0o466:"16F1939",
+			0o450:"16F1946", 0o451:"16F1947", 0o440:"16LF1933", 0o442:"16LF1934", 0o443:"16LF1936", 0o444:"16LF1937",
+			0o445:"16LF1938", 0o446:"16LF1939", 0o454:"16LF1946", 0o455:"16LF1947", 0o541:"16LF1902", 0o540:"16LF1903",
+			0o544:"16LF1904", 0o543:"16LF1906", 0o542:"16LF1907",
+			0x3020:"16F1454", 0x3024:"16LF1454", 0x3021:"16F1455", 0x3025:"16LF1455", 0x3023:"16F1459", 0x3027:"16LF1459",
+			}
 
 	def __init__(self,
 	    chipPackage, chipPinVCC, chipPinsVPP, chipPinGND,
@@ -107,7 +124,13 @@ class microchip8_splittedPMarea(Chip_Microchip8_common):
 			self.readSDOBufferHigh()
 			self.incrementPC(1)
 		self.progressMeterFinish()
-		return self.top.cmdReadBufferReg()[0:2 * idSize]
+		signature = self.top.cmdReadBufferReg()[0:2 * idSize]
+		devId = ((byte2int(signature[1]) << 8) | byte2int(signature[0])) >> self.nDeviceIdRevisionBits
+		if(devId in self.deviceIdMapDict):
+			print("device: {:s}".format(self.deviceIdMapDict.get(devId)))
+		else:
+			print("WARNING: device id {:o} not found in local dictionary".format(devId))
+		return signature
 			
 	def sendWriteFlashInstrExternallyTimed(self):
 		'''

@@ -29,6 +29,9 @@ from microchip8_splittedPMarea_hasResetPC import *
 
 class Chip_Pic10F322sip6(microchip8_splittedPMarea_hasResetPC):
 	
+	rowSize = 16
+	nLatches = 16
+	
 	logicalFlashProgramMemorySize = 0x2000
 	logicalFlashConfigurationMemorySize = 0x2000
 

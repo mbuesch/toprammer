@@ -23,7 +23,8 @@
 from microchip8_splittedPMarea_hasResetPC import *
 
 class Chip_Pic16LF1904dip40(microchip8_splittedPMarea_hasResetPC):
-
+		
+	nLatches = 8
     	def __init__(self):
 	    	microchip8_splittedPMarea_hasResetPC.__init__(self,
 			chipPackage="dip40",
