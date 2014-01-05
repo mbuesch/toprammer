@@ -27,6 +27,7 @@
 0xDE06		=> microchip01dip40
 0xDE07		=> microchip01dip28
 0xDE08		=> microchip01dip40a
+0xDE09		=> microchip01dip14dip20a
 0xDF01		=> microchip16dip14dip20
 0xFEFD		=> Reserved. Do not use.
 0xFFFF		=> Reserved. Do not use.
