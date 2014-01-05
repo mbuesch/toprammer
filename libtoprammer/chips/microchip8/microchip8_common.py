@@ -91,6 +91,7 @@ class Chip_Microchip8_common(Chip):
 		
 	def __erase(self, keepConfigWord=False, keepUserIDLocation=False, keepOSCCAL=False, keepEEPROM=False):
 		OSCCAL = 0xfff
+		self.exitPM()
 		self.enterPM()
 		if(keepOSCCAL):
 			self.progressMeterInit("Reading OSCCAL)", 0)
