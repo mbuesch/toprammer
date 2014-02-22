@@ -28,7 +28,7 @@ if __pymajor < 2 or (__pymajor == 2 and __pyminor < 6):
 
 # TOPrammer version stamp
 VERSION_MAJOR	= 0
-VERSION_MINOR	= 14
+VERSION_MINOR	= 15
 VERSION = "%d.%d" % (VERSION_MAJOR, VERSION_MINOR)
 
 
