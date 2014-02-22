@@ -10,7 +10,6 @@ from pic24f08kl201dip20 import *
 from pic24f08kl200dip14 import *
 from pic24f04kl101dip20 import *
 from pic24f04kl100dip14 import *
-#
 from pic24f04ka200sip6 import *
 from pic24f04ka201sip6 import *
 from pic24f04kl100sip6 import *
