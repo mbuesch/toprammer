@@ -24,7 +24,7 @@
 `include "common.vh"
 `include "microchip16.vh"
 
-`define DUT_SDIO    17
+`define DUT_SDIO    35
 
 `define DELAY42NSEC(D42NSEC)    __delay_count <= (D42NSEC) - 1;//41.666 ns wait cycle if D42NSEC = 1
 
@@ -34,8 +34,7 @@
 `define CMD_SEND9SIXINSTR    3
 `define ENTERPM_SEQ 32'h4D434851
 
-`ALL_WITHOUT_ZIF(microchip16dip14dip20, 32'hDF01, 1)
-
+`ALL_WITHOUT_ZIF(microchip16dip28, 32'hDF02, 1)          
     `ZIF_UNUSED(1)
     `ZIF_UNUSED(2)
     `ZIF_UNUSED(3)
@@ -50,9 +49,9 @@
     `ZIF_UNUSED(12)
     `ZIF_UNUSED(13)
     `ZIF_UNUSED(14)
-    bufif0(zif[15], low, dut_vpp);                             /* VPP/Reset */ 
-    bufif0(zif[16], dut_sci, low);                             /* SCI - PGEC2 */
-    bufif0(zif[17], dut_sdio_value, !dut_sdio_driven);         /* SDO - PGED2 */
+    `ZIF_UNUSED(15)
+    bufif0(zif[16], low, low);                                 /* GND */
+    bufif0(zif[17], high, low);                                /* VCC */
     `ZIF_UNUSED(18)
     `ZIF_UNUSED(19) 
     `ZIF_UNUSED(20)
@@ -67,11 +66,11 @@
     `ZIF_UNUSED(29)
     `ZIF_UNUSED(30) 
     `ZIF_UNUSED(31)
-    `ZIF_UNUSED(32)
-    bufif0(zif[33], low, low);                                 /* GND */
-    bufif0(zif[34], high, low);                                /* VCC */
-    `ZIF_UNUSED(35)
-    `ZIF_UNUSED(36)
+    bufif0(zif[32], low, dut_vpp);                             /* VPP/Reset */
+    `ZIF_UNUSED(33)
+    `ZIF_UNUSED(34)
+    bufif0(zif[35], dut_sdio_value, !dut_sdio_driven);         /* SDO - PGED1 */
+    bufif0(zif[36], dut_sci, low);                             /* SCI - PGEC1 */
     `ZIF_UNUSED(37)
     `ZIF_UNUSED(38)
     `ZIF_UNUSED(39)

@@ -1,9 +1,9 @@
 """
 #    TOP2049 Open Source programming suite
 #
-#   Microchip PIC24f04ka200 DIP14
+#   Microchip PIC24f08kl402 DIP28
 #
-#    Copyright (c) 2013 Pavel Stemberk <stemberk@gmail.com>
+#    Copyright (c) 2014 Pavel Stemberk <stemberk@gmail.com>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -21,9 +21,9 @@
 """
 
 from microchip16_common import *
-from configWords import ka200_fuseDesc
+from configWords import klx0x_fuseDesc
 
-class Chip_Pic24f04ka200dip14(Chip_Microchip16_common):
+class Chip_Pic24f08kl402dip28(Chip_Microchip16_common):
 	
 	voltageVDD = 3.3
 	voltageVPP = 8
@@ -31,38 +31,36 @@ class Chip_Pic24f04ka200dip14(Chip_Microchip16_common):
 	logicalFlashProgramMemorySize = 0x800000
 	logicalFlashConfigurationMemorySize = 0x800000
 	
-	hasEEPROM = False
-	
 	def __init__(self):
 	 	Chip_Microchip16_common.__init__(self,
-		chipPackage="DIP14",
-		chipPinVCC=14,
+		chipPackage="DIP28",
+		chipPinVCC=28,
 		chipPinsVPP=1,
-		chipPinGND=13,
-		signature="\x02\x0d",
+		chipPinGND=27,
+		signature="\x04\x4b",
 		# flashPageSize (in number of 24bit words)
-		flashPageSize=0xAFE / 2 + 2,
+		flashPageSize=0x15fe / 2 + 2,
 		# flashPageSize=0x40,
 		flashPages=1,
 		# eepromPageSize (in 16bit words)
-		eepromPageSize=0,
-		eepromPages=0,
+		eepromPageSize=0x100,
+		eepromPages=1,
 		# all 7 words uses lowest byte only
 		fuseBytes=2 * 9
 		)
 		self.configWordAddr = 0xF80000
 		# self.osccalBackupAddr = self.userIDLocationAddr + self.userIDLocationSize
-	
-fuseDesc = ka200_fuseDesc
+
+fuseDesc = klx0x_fuseDesc
 
 ChipDescription(
-	Chip_Pic24f04ka200dip14,
-	bitfile="microchip16dip14dip20",
-	chipID="pic24f04ka200dip14",
-	runtimeID=(0xDF01, 0x01),
+	Chip_Pic24f08kl402dip28,
+	bitfile="microchip16dip28",
+	chipID="pic24f08kl402dip28",
+	runtimeID=(0xDF02, 0x01),
 	chipVendors="Microchip",
-	description="PIC24F04KA200",
-	packages=(("DIP14", ""),),
+	description="PIC24F08KL402",
+	packages=(("DIP28", ""),),
 	fuseDesc=fuseDesc, 	
 	maintainer="Pavel Stemberk <stemberk@gmail.com>",
 )

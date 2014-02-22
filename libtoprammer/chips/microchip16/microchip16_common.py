@@ -29,7 +29,8 @@ class Chip_Microchip16_common(Chip):
 
 	PROGCMD_SENDSIXINSTR	 = 0
 	PROGCMD_SENDREGOUTINSTR	 = 1
-	PROGCMD_ENTERPM 		 = 2
+	PROGCMD_ENTERPM 	 = 2
+	PROGCMD_SEND9SIXINSTR	 = 3
 	
 	codeExitResetVector = (0x000000, 0x040200, 0x000000)
 	codeExitResetVectorSimple = (0x040200, 0x000000)
@@ -38,12 +39,15 @@ class Chip_Microchip16_common(Chip):
 
 	# EEPROM access: default on, if does not exist override it
 	hasEEPROM = True
-
+	eepromStartAddress = 0x7FFE00
+	
 	# default delays - can be overridden
 	delayTdis = 0.0001
 	delayTprog = 0.001
-	delayTdly = 0.000005
+	delayCommandDataREGOUT = 0.0000005
 	delayTera = 0.01
+	# delayP3 = 0.000000015 # Input Data Hold Time from PGECx rise
+	delayP3 = 0.00000006  # this is hard-tuned value !
 	delayP4 = 0.000000040  # Delay between 4-Bit Command Operand and Command Operand
 	delayP4A = 0.000000040  # Delay between 4-Bit Command Operand and the Next 4-bit command
 	delayP5 = 0.000000020  # Delay between Last PGCx fall of Command Byte and First PGC rise by Programming Executive
@@ -57,8 +61,27 @@ class Chip_Microchip16_common(Chip):
 	delayP19 = 0.001  # delay between last PGC fall for key sequence on PGDx and second nMCLR rise
   
   	deviceIDAddr = 0xFF0000
-	deviceIDLength = 2
-		  
+	deviceIDLength = 1
+	
+	deviceIdMapDict = {
+			0x0d00:"24f04ka201", 0x0d02:"24f04ka200", 0x4b14:"24f16kl402", 0x4b1e:"24f16kl401", 0x4b04:"24f08kl402", 0x4b0e:"24f08kl401",
+			0x4b00:"24f08kl302", 0x4b0a:"24f08kl301", 0x4b06:"24f08kl201", 0x4b05:"24f08kl200", 0x4b02:"24f04kl101", 0x4b01:"24f04kl100"
+	}
+	def getIHexInterpreter(self):
+		inter = IHexInterpreter()
+		inter.progmemRanges = [ AddressRange(0, 2 * self.flashPageSize) ]
+		inter.fuseRanges = [ AddressRange(2 * self.configWordAddr,
+						  2 * self.configWordAddr + 1) ]
+		return inter
+		
+	@classmethod
+	def getSupportFlags(cls):
+		flags = super(Chip_Microchip16_common, cls).getSupportFlags()
+		if not cls.hasEEPROM:
+			flags &= ~(Chip.SUPPORT_EEPROMREAD | \
+				   Chip.SUPPORT_EEPROMWRITE)
+		return flags
+	
 	def __init__(self,
 			chipPackage, chipPinVCC, chipPinsVPP, chipPinGND,
 			signature,
@@ -95,15 +118,19 @@ class Chip_Microchip16_common(Chip):
 		self.applyVCC(True)
 		self.top.hostDelay(self.delayP6)
 		self.applyVPP(True)
+		self.setTopProgrammerDelays();
 		if lowVoltageIcspEntry:
 			self.top.hostDelay(self.delayP6)
 			self.applyVPP(False)
 		self.top.hostDelay(self.delayP18)
-		# self.sendCommand(self.PROGCMD_ENTERPM)		
+		self.sendCommand(self.PROGCMD_ENTERPM)
 		if lowVoltageIcspEntry:
 			self.top.hostDelay(self.delayP19)
 			self.applyVPP(True)
 		self.top.hostDelay(self.delayP7)
+		self.sendSIX(0x0, True)
+		self.executeCode(self.codeExitResetVectorSimple)
+		# self.testPORTA()
 		self.isInPmMode = True
 
 	def checkSignature(self):
@@ -150,23 +177,35 @@ class Chip_Microchip16_common(Chip):
 		self.progressMeterInit("Erasing chip", 0)
 		self.enterPM()
 		er(0x4064)
-		if(not keepEEPROM):
+		if(not keepEEPROM and self.eepromPageSize != 0):
 			er(0x4050)
 		self.progressMeterFinish()
+		self.exitPM()
 
 	def readProgmem(self):	
+		def unpackImage():
+			out = ""
+			for halfPackAddr in range(0, len(self.Image), 6):
+				out += self.Image[halfPackAddr:halfPackAddr + 3] + "\0"
+				out += self.Image[halfPackAddr + 4:halfPackAddr + 6] + self.Image[halfPackAddr + 3] + "\0"
+			return out
+	
 		nrWords = self.flashPages * self.flashPageSize
+		# return self.readSequentialBlock(0x0 , nrWords/2, "Reading Progmem")
+		# something wrong for packed PM reading below
 		self.enterPM()
 		self.progressMeterInit("Reading flash", nrWords / 2)
 		self.BufferedBytes = 0
 		self.Image = ""
 		self.executeCode(self.codeExitResetVector)
 		self.executeCode(self.getCodeInitializeTBLPAG(0, 6))
-		self.executeCode((0x207847, 0x0))
+		self.executeCode(self.codeInitializeW7toVISI)
 		for wordAddrHalf in range(0, nrWords / 2):
 			self.executeCode((0xBA0B96, 0x0, 0x0))
 			self.readREGOUTword()
-			self.executeCode((0x0, 0xBA8BB6, 0x0, 0x0, 0xBAD3D6, 0x0, 0x0))
+			# Microchip's bug in the documentation
+			# TBLRDH.B [W6++], [W7++] is correct instead of TBLRDH [W6++], [W7]
+			self.executeCode((0x0, 0xBADBB6, 0x0, 0x0, 0xBAD3D6, 0x0, 0x0))
 			self.readREGOUTword()
 			self.executeCode((0x0, 0xBA0BB6, 0x0, 0x0))
 			self.readREGOUTword()
@@ -174,7 +213,10 @@ class Chip_Microchip16_common(Chip):
 			self.progressMeter(wordAddrHalf)
 		self.progressMeterFinish()
 		self.flushBufferToImage()
-		return self.Image
+		self.exitPM()
+		# return self.Image
+		return unpackImage()
+		
 
 	def _t_readEEPROM(self):	
 		nrWords = self.eepromPages * self.eepromPageSize
@@ -196,14 +238,37 @@ class Chip_Microchip16_common(Chip):
 	
 	def readEEPROM(self):
 		nrWords = self.eepromPages * self.eepromPageSize
-		return self.readSequentialBlock(0x7F0000 , nrWords, "Reading EEPROM")
+		return self.readSequentialBlock(self.eepromStartAddress , nrWords, "Reading EEPROM")
 	
 	def readFuse(self):
 		return self.readSequentialBlock(self.configWordAddr, self.fuseBytes / 2, "Reading Config Words")
-	
+	6402
+	def tmp_readSignature(self):
+		self.enterPM()
+		self.executeCode(self.codeExitResetVector)
+		self.executeCode((0x200FF0, 0x880190, 0x200006, 0x0, 0x0, 0x207847, 0x0, 0xBA0BB6, 0x0, 0x0, 0x0))
+		self.Image = ""
+		self.readREGOUTword()
+		self.executeCode(self.codeExitResetVector)
+		self.flushBufferToImage()
+		signature = self.top.cmdReadBufferReg()[0:2]
+		devId = (byte2int(signature[1]) << 8) | byte2int(signature[0])
+		if(devId in self.deviceIdMapDict):
+			print("device: {:s}".format(self.deviceIdMapDict.get(devId)))
+		else:
+			print("WARNING: device id {:o} not found in local dictionary".format(devId))
+		return self.Image
 	def readSignature(self):
-		return self.readSequentialBlock(self.deviceIDAddr, self.deviceIDLength, "Reading Signature")
-	
+		signature = self.readSequentialBlock(self.deviceIDAddr, self.deviceIDLength, "Reading Signature")
+		devId = (byte2int(signature[1]) << 8) | byte2int(signature[0])
+		if(devId in self.deviceIdMapDict):
+			print("device: {:s}".format(self.deviceIdMapDict.get(devId)))
+		else:
+			print("WARNING: device id {:x} not found in local dictionary".format(devId))
+		return signature
+		
+	def testPORTA(self):
+		self.executeCode((0x0, 0x23CFF4, 0x881644, 0x0, 0xEB8200, 0x881654, 0x0, 0x0))
 	def readSequentialBlock(self, startAddr, nWords, infoText):	
 		self.enterPM()
 		self.progressMeterInit(infoText, nWords)
@@ -213,41 +278,45 @@ class Chip_Microchip16_common(Chip):
 		self.executeCode(self.getCodeInitializeTBLPAG(startAddr, 6))
 		self.executeCode(self.codeInitializeW7toVISI)		
 		for wordAddr in range(0, nWords):
+			# print "wAddr:{:x}".format(wordAddr)
 			self.executeCode((0xBA0BB6, 0x0, 0x0))
 			self.readREGOUTword()
-			self.executeCode(self.codeExitResetVector)
+			self.executeCode((0x0,))
 			self.progressMeter(wordAddr)
+		self.executeCode(self.codeExitResetVectorSimple)
 		self.progressMeterFinish()
 		self.flushBufferToImage()
-		return self.Image	
+		self.exitPM()
+		return self.Image
 				
 	def writeProgmem(self, image):
-		nrWords = self.flashPages * self.flashPageSize
-		if len(image) > nrWords * 2 or len(image) % 2 != 0:
-			self.throwError("Invalid flash image size %d (expected <=%d and word aligned)" % \
-				(len(image), nrWords * 2))
-		self.progressMeterInit("Writing flash", len(image) // 12)
-		self.enterPM()
-		self.executeCode(self.codeExitResetVector)
-		self.executeCode(self.getCodeSetNVMCON(0x4004))
-		for packAddr in range(0, len(image) // 12):
-			self.progressMeter(packAddr)
-			writePackedInstructionWords(packAddr * 4, image[12 * packAddr:][:12])
-			if(0 == (packAddr % 8)):
-				writeSeq()
-		writeSeq()
-		self.progressMeterFinish()
-		
-		# TODO: packed format is probably wrong
-		def writePackedInstructionWords(addr, packed12bytes):
+		def writePackedInstructionWords(addr, _16bytes):
+			"""
+			writes 4 double word size instructions to program memory.
+			Most high instruction byte has 0x00 value and thus is ignored.
+			"""
+			print("writingPackedInstr init, addr: {:x}\n".format(addr))
 			self.executeCode(self.getCodeInitializeTBLPAG(addr, 7))
-			for wIdx in range(0, 6):
-				WD = (byte2int(packed12bytes[wIdx * 2 + 1]) << 8) | byte2int(packed12bytes[wIdx * 2 + 0])
-				self.executeCode((0x200000 | (WD << 4) | wIdx))
+			cnt = 0
+			for wIdx in (0, 8):
+			       # LSW0
+			       WD = (byte2int(_16bytes[wIdx + 1]) << 8) | byte2int(_16bytes[wIdx + 0])
+			       self.executeCode(((0x200000 | (WD << 4) | cnt),))
+			       cnt += 1
+			       # MSB1 MSB0
+			       WD = (byte2int(_16bytes[wIdx + 6]) << 8) | byte2int(_16bytes[wIdx + 2])
+			       self.executeCode(((0x200000 | (WD << 4) | cnt),))
+			       cnt += 1
+			       # LSW1
+			       WD = (byte2int(_16bytes[wIdx + 5]) << 8) | byte2int(_16bytes[wIdx + 4])
+			       self.executeCode(((0x200000 | (WD << 4) | cnt),))
+			       cnt += 1
 			self.executeCode((0xEB0300, 0x0))
+			print("writingPackedInstr med\n")
 			# Set the Read Pointer and load the (next set of) write latches
 			for i in range(0, 2):
 				self.executeCode((0xBB0BB6, 0x0, 0x0, 0xBBDBB6, 0x0, 0x0, 0xBBEBB6, 0x0, 0x0, 0xBB1BB6, 0x0, 0x0))
+			print("writingPackedInstr done\n")
 		def writeSeq():
 			# Initiate the write cycle
 			self.executeCode((0xA8E761, 0x0, 0x0))
@@ -255,9 +324,27 @@ class Chip_Microchip16_common(Chip):
 				pass
 			self.executeCode((0x040200, 0x0))
 
-	def writeEEPROM(self, image):	
+		nrWords = self.flashPages * self.flashPageSize
+		if len(image) > (nrWords * 4) or len(image) % 4 != 0:
+			self.throwError("Invalid flash image size %d (expected <=%d and double word aligned)" % \
+				(len(image), nrWords * 4))
+		self.progressMeterInit("Writing flash", len(image) // 12)
+		self.enterPM()
+		self.executeCode(self.codeExitResetVector)
+		self.executeCode(self.getCodeSetNVMCON(0x4004))
+		for packAddr in range(0, len(image) // 16):
+			self.progressMeter(packAddr)
+			writePackedInstructionWords(packAddr * 8, image[16 * packAddr:][:16])
+			if(0 == ((packAddr + 1) % 8)):
+				writeSeq()
+		writeSeq()
+		self.progressMeterFinish()
+		self.exitPM()
+		
+		
+	def writeEEPROM(self, image):
 		nrWords = self.eepromPages * self.eepromPageSize
-		if len(image) > nrWords / 2:
+		if len(image) > nrWords * 2:
 			self.throwError("Invalid flash image size {:d} (expected <={:d})".format(len(image), 2 * nrWords))
 		self.enterPM()
 		self.progressMeterInit("Writing eeprom", len(image) / 2)
@@ -265,9 +352,9 @@ class Chip_Microchip16_common(Chip):
 		self.executeCode(self.getCodeSetNVMCON(0x4004))
 		for addr in range(0, len(image) / 2):
 			self.progressMeter(addr)
-			WD = (byte2int(image[wIdx * 2 + 1]) << 8) | byte2int(image[wIdx * 2 + 0])
+			WD = (byte2int(image[addr * 2 + 1]) << 8) | byte2int(image[addr * 2 + 0])
 			if WD != 0xFFFF:
-				self.executeCode(self.getCodeInitializeTBLPAG(0x7F0000 | addr, 7))
+				self.executeCode(self.getCodeInitializeTBLPAG(self.eepromStartAddress | (2 * addr), 7))
 				# Load W0 with data word program and load the wire latch 
 				self.executeCode((0x200000 | (WD << 4), 0xBB1B80, 0x0, 0x0))
 				# Initiate the write cycle
@@ -281,9 +368,9 @@ class Chip_Microchip16_common(Chip):
 		self.exitPM()
 		
 	def writeFuse(self, image):
-		if len(image) != 2 * self.getConfigWordSize():
+		if len(image) != self.fuseBytes:
 			self.throwError("Invalid Fuses image size %d (expected %d)" % \
-				(len(image), 2 * self.getConfigWordSize()))
+				(len(image), self.fuseBytes))
 		self.progressMeterInit("Writing fuses", 0)
 		# print "image1:%x,,%x,,%x" % (byte2int(image[0]),byte2int(image[1]),byte2int(image[1])<<8)
 		CW = []
@@ -293,21 +380,17 @@ class Chip_Microchip16_common(Chip):
 		self.progressMeterFinish()
     
 	def writeConfigWord(self, listConfigWord16):
-		# Externally timed writes are not supported
-		# for Configuration and Calibration bits. Any
-		# externally timed write to the Configuration
-		# or Calibration Word will have no effect on
-		# the targeted word.
 		self.enterPM()
 		self.executeCode(self.codeExitResetVector)
 		# init WritePointer (W7) for the TBLWT instruction, Set the NVMCON reg. to prog. Config. regs.
 		self.executeCode((0x200007, 0x24004A, 0x883B0A))
 		# init TBLPAG
-		self.executeCode((0x200F86, 0x880190))
+		# another bug in Microchip's doc  - s/0x200F86/0x200F80/
+		self.executeCode((0x200F80, 0x880190))
 		for configWord16 in listConfigWord16:
-			print ("write CW {:x}".format(configWord16))
+			print ("write CW 0x{:x}".format(configWord16))
 			# Load the Config reg data to W6
-			self.executeCode((0x200006 | (configWord16 << 4)))
+			self.executeCode(((0x200006 | (configWord16 << 4)),))
 			# Write the Config. reg. data to the write latch and increment Write Pointer
 			self.executeCode((0x0, 0xBB1B86, 0x0, 0x0))
 			# Initiate the write cycle
@@ -345,7 +428,7 @@ class Chip_Microchip16_common(Chip):
 		CMD_SENDREGOUTINSTR	1
 		CMD_ENTERPM 2
 		'''
-		self.top.cmdFPGAWrite(0x10, command)
+		self.top.cmdFPGAWrite(0x12, command)
 	
 	def readREGOUTword(self):
 		def incBbAndCheckFillImage():
@@ -353,14 +436,14 @@ class Chip_Microchip16_common(Chip):
 			if self.BufferedBytes == self.top.getBufferRegSize():
 				self.Image += self.top.cmdReadBufferReg(self.BufferedBytes)
 				self.BufferedBytes = 0
-		# self.busyWait()
-		self.top.hostDelay(0.000001)
+		self.busyWait()
+		# self.top.hostDelay(0.000001)
 		self.sendCommand(self.PROGCMD_SENDREGOUTINSTR)
-		# self.busyWait()
-		self.top.hostDelay(0.000001)
-		self.readSDOBufferHigh()
-		incBbAndCheckFillImage()
+		self.busyWait()
+		# self.top.hostDelay(0.000001)
 		self.readSDOBufferLow()
+		incBbAndCheckFillImage()
+		self.readSDOBufferHigh()
 		incBbAndCheckFillImage()
 
 	
@@ -369,10 +452,10 @@ class Chip_Microchip16_common(Chip):
 			self.Image += self.top.cmdReadBufferReg(self.BufferedBytes)
 			self.BufferedBytes = 0
 	
-	def sendSIX(self, instr):
+	def sendSIX(self, instr, is9SIX=False):
 		self.busyWait()		
 		self.setSDI(instr)
-		self.sendCommand(self.PROGCMD_SENDSIXINSTR)
+		self.sendCommand((self.PROGCMD_SENDSIXINSTR, self.PROGCMD_SEND9SIXINSTR)[is9SIX])
 
 	def read2words(self):
 		self.executeCode((0xBA0B96, 0x000000, 0x000000))
@@ -422,8 +505,17 @@ class Chip_Microchip16_common(Chip):
 
 	def isBusy(self):
 		return bool(self.getStatusFlags() & self.STAT_BUSY)
-
+	def setTopProgrammerDelays(self):
+		# print("tdel5:{:d}".format(int(math.ceil(self.delayP3 / 42e-9))))
+		# print("tdly:{:d}".format(int(math.ceil(self.delayCommandDataREGOUT / 42e-9))))
+		self.top.cmdFPGAWrite(0x10, int(math.ceil(self.delayP3 / 42e-9)))
+		self.top.cmdFPGAWrite(0x11, int(math.ceil(self.delayCommandDataREGOUT / 42e-9)))
 	def busyWait(self):
+		# We do not poll the busy flag, because that would result
+		# in a significant slowdown. We delay long enough for the
+		# command to finish execution, instead.
+		self.top.hostDelay(0.0000005)
+		return
 		for i in range(0, 100):
 			if not self.isBusy():
 				return
@@ -445,5 +537,5 @@ class Chip_Microchip16_common(Chip):
 		self.Image = ""
 		self.readREGOUTword()
 		self.flushBufferToImage()
-		# self.executeCode((0x000000,))
-		return int(self.Image[1]) & 0x80
+		self.executeCode((0x000000,))
+		return byte2int(self.Image[1]) & 0x80
