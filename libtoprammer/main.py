@@ -71,8 +71,8 @@ class TOP(object):
 		# Find the device
 		devices = self.findDevices()
 		if devIdentifier:
-			devices = filter(lambda d: d.devIdentifier == devIdentifier,
-					 devices)
+			devices = [ d for d in devices
+				    if d.devIdentifier.lower() == devIdentifier.lower() ]
 		if not devices:
 			raise TOPException("TOP programmer device not found!")
 		foundDev = devices[0] # Select first
@@ -168,10 +168,14 @@ class TOP(object):
 		"""Rescan all busses for TOP devices.
 		Returns a list of FoundDev()"""
 		usbFound = HardwareAccessUSB.scan(cls.__usbdev2toptype)
-		devices = [ FoundDev(cls.__usbdev2toptype(d.usbdev),
-				     "usb:%03d:%03d" % (d.busNr, d.devNr),
-				     d)
-			    for d in usbFound ]
+		devices = []
+		for i, ud in enumerate(usbFound):
+			toptype = cls.__usbdev2toptype(ud.usbdev)
+			devices.append(
+				FoundDev(toptype,
+					 "usb:%s:%d" % (toptype, i),
+					 ud)
+			)
 		return devices
 
 	def initializeProgrammer(self, foundDev, noQueue):

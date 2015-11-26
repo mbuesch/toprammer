@@ -64,8 +64,8 @@ def usage():
 	print "Other options:"
 	print " -t|--list               Print a list of supported chips and exit."
 	print "                         Use -V|--verbose to control the list verbosity (0-4)"
-	print " -d|--device DEVID       Use a specific programmer. For USB:"
-	print "                         usb:BUSNR.DEVNR"
+	print " -d|--device DEVID       Use a specific programmer. Example for USB:"
+	print "                         usb:TOP2049:0"
 	print "                         First found programmer is used, if not given."
 	print " -V|--verbose LEVEL      Set the verbosity level:"
 	print "                         0 => show warnings"
@@ -177,14 +177,7 @@ def main(argv):
 			if o in ("-t", "--list"):
 				opt_action = "print-list"
 			if o in ("-d", "--device"):
-				try:
-					v = v.replace('.', ':').split(':')
-					opt_device = "%s:%03d:%03d" %\
-						(v[0], int(v[1], 10),
-						 int(v[2], 10))
-				except (IndexError, ValueError), e:
-					print("-d|--device invalid DEVID.")
-					return 1
+				opt_device = v
 			if o in ("-V", "--verbose"):
 				opt_verbose = int(v)
 			if o in ("-o", "--force"):
