@@ -5,7 +5,10 @@ from _74hc4094 import *
 from at89c2051dip20 import *
 from at89s51dip40 import *
 from at89s52dip40 import *
+from atmega168dip28 import *
 from atmega32dip40 import *
+from atmega328dip28 import *
+from atmega48dip28 import *
 from atmega88dip28 import *
 from atmega8dip28 import *
 from attiny13dip8 import *
