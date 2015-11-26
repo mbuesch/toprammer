@@ -1,0 +1,1 @@
+SUBSYSTEM=="usb", ACTION=="add", ATTR{idVendor}=="2471", ATTR{idProduct}=="0853", MODE="660", GROUP="dialout"
