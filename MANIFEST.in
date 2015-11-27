@@ -1,0 +1,12 @@
+include COPYING.txt
+include 01-toprammer-udev.rules
+include README.lyx
+include README.ps
+include README-DEVELOPERS.lyx
+include README-DEVELOPERS.ps
+include RUNTIME_IDS
+graft tests
+graft reverse-engineering
+
+prune build
+prune ./build

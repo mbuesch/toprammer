@@ -26,5 +26,5 @@ hook_get_version()
 }
 
 project=toprammer
-default_archives=tar.xz
+default_archives=py-sdist-bz2
 makerelease "$@"
