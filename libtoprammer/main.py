@@ -1,7 +1,7 @@
 """
 #    TOP2049 Open Source programming suite
 #
-#    Copyright (c) 2009-2011 Michael Buesch <m@bues.ch>
+#    Copyright (c) 2009-2015 Michael Buesch <m@bues.ch>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ if __pymajor < 2 or (__pymajor == 2 and __pyminor < 6):
 
 # TOPrammer version stamp
 VERSION_MAJOR	= 0
-VERSION_MINOR	= 15
+VERSION_MINOR	= 16
 VERSION = "%d.%d" % (VERSION_MAJOR, VERSION_MINOR)
 
 
