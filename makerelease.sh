@@ -26,4 +26,5 @@ hook_get_version()
 }
 
 project=toprammer
+default_archives=tar.xz
 makerelease "$@"
