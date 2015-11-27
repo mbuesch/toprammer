@@ -5,8 +5,10 @@ include README.ps
 include README-DEVELOPERS.lyx
 include README-DEVELOPERS.ps
 include RUNTIME_IDS
+global-include makeSip6.py
 graft tests
 graft reverse-engineering
+graft libtoprammer/fpga
 
 prune build
 prune ./build
