@@ -200,12 +200,12 @@ class TOP(object):
 		)
 
 		# This is the first hardware access. Try several times since the programmer is in an unknown state.
-		for _ in range(25):
+		for _ in range(5):
 			try:
 				versionString = self.hw.readVersionString()
 				break
 			except TOPException, e:
-				pass
+				time.sleep(0.05)
 		else:
 			raise TOPException("Could not read version string from hardware")
 		for (regex, t) in versionRegex:
