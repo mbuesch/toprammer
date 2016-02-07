@@ -19,6 +19,7 @@
 0x000A		=> hm62256dip28
 0x000B		=> m24c16dip8
 0x000C		=> 27cxxxdip28
+0x000C		=> 27cxxxdip40
 0xDE01		=> pic10fxxxdip8
 0xDE02		=> microchip01dip8
 0xDE03		=> microchip01dip14dip20
