@@ -2,6 +2,7 @@
 
 from _27cxxx import *
 from _27c1024 import *
+from _28f102 import *
 from _74hc4094 import *
 from at89c2051dip20 import *
 from at89s51dip40 import *
