@@ -199,7 +199,15 @@ class TOP(object):
 			(r"top2049\s+ver\s*(\d+\.\d+)", self.TYPE_TOP2049),
 		)
 
-		versionString = self.hw.readVersionString()
+		# This is the first hardware access. Try several times since the programmer is in an unknown state.
+		for _ in range(25):
+			try:
+				versionString = self.hw.readVersionString()
+				break
+			except TOPException, e:
+				pass
+		else:
+			raise TOPException("Could not read version string from hardware")
 		for (regex, t) in versionRegex:
 			if t != self.topType:
 				continue
