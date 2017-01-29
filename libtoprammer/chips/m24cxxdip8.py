@@ -3,7 +3,7 @@
 #
 #    M24C16 I2C based serial EEPROM
 #
-#    Copyright (c) 2011 Michael Buesch <m@bues.ch>
+#    Copyright (c) 2011-2017 Michael Buesch <m@bues.ch>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -24,13 +24,9 @@ from libtoprammer.chip import *
 
 
 class Chip_m24cXXdip8_common(Chip):
-	CMD_DEVSEL_READ		= 0
-	CMD_DEVSEL_WRITE	= 1
-	CMD_SETADDR		= 2
-	CMD_DATA_READ		= 3
-	CMD_DATA_READ_STOP	= 4
-	CMD_DATA_WRITE		= 5
-	CMD_DATA_WRITE_STOP	= 6
+	I2C_BASE_ADDR	= 0x50 << 1
+	I2C_READ	= 0x01
+	I2C_WRITE	= 0x00
 
 	def __init__(self, eepromSize):
 		Chip.__init__(self,
@@ -57,27 +53,34 @@ class Chip_m24cXXdip8_common(Chip):
 		self.__chipTurnOn()
 
 		image = ""
-		count = 0
 		prevAddr = None
 		self.progressMeterInit("Reading EEPROM", self.eepromSize)
 		for addr in range(0, self.eepromSize):
 			self.progressMeter(addr)
 			if prevAddr is None or (prevAddr & 0xFF00) != (addr & 0xFF00):
-				self.__setAddress(addr, writeMode=False)
-				self.__runCommand(self.CMD_DEVSEL_WRITE)
-				self.__runCommand(self.CMD_SETADDR)
-				self.__runCommand(self.CMD_DEVSEL_READ)
-				self.__runCommand(self.CMD_DATA_READ_STOP)
+				self.__setAddressExtension(addr, writeMode=False)
+				# Begin sequential random read
+				self.__runI2C(data=self.I2C_BASE_ADDR | self.currentAddrExt | self.I2C_WRITE,
+					      read=False, do_start=True, do_stop=False)
+				self.__expectACK()
+				self.__runI2C(data=addr & 0xFF,
+					      read=False, do_start=False, do_stop=False)
+				self.__expectACK()
+				self.__runI2C(data=self.I2C_BASE_ADDR | self.currentAddrExt | self.I2C_READ,
+					      read=False, do_start=True, do_stop=False)
+				self.__expectACK()
 				prevAddr = addr
+			# Sequential random read
+			if addr >= self.eepromSize - 1:
+				# Last byte
+				self.__runI2C(read=True, do_start=False, do_stop=True)
+				self.__expectNACK()
 			else:
-				self.__runCommand(self.CMD_DEVSEL_READ)
-				self.__runCommand(self.CMD_DATA_READ_STOP)
+				self.__runI2C(read=True, do_start=False, do_stop=False,
+					      drive_ack=True)
+				self.__expectACK()
 			self.__readData()
-			count += 1
-			if count == self.top.getBufferRegSize():
-				image += self.top.cmdReadBufferReg(count)
-				count = 0
-		image += self.top.cmdReadBufferReg(count)
+			image += self.top.cmdReadBufferReg(1)
 		self.progressMeterFinish()
 
 		return image
@@ -93,18 +96,24 @@ class Chip_m24cXXdip8_common(Chip):
 		for addr in range(0, len(image)):
 			self.progressMeter(addr)
 			if prevAddr is None or (prevAddr & 0xFFF0) != (addr & 0xFFF0):
-				self.__setAddress(addr, writeMode=True)
-				self.__runCommand(self.CMD_DEVSEL_WRITE, busyWait=True)
-				self.__runCommand(self.CMD_SETADDR, busyWait=True)
-				self.__setData(byte2int(image[addr]))
-				self.__runCommand(self.CMD_DATA_WRITE, busyWait=True)
+				self.__setAddressExtension(addr, writeMode=True)
+				self.__runI2C(data=self.I2C_BASE_ADDR | self.currentAddrExt | self.I2C_WRITE,
+					      read=False, do_start=True, do_stop=False)
+				self.__expectACK()
+				self.__runI2C(data=addr & 0xFF,
+					      read=False, do_start=False, do_stop=False)
+				self.__expectACK()
 				prevAddr = addr
+			if (addr & 0xF) == 0xF:
+				self.__runI2C(data=byte2int(image[addr]),
+					      read=False, do_start=False, do_stop=True)
+				self.__expectACK()
+				self.top.cmdDelay(0.005) # Max write time
 			else:
-				self.__setData(byte2int(image[addr]))
-				if (addr & 0xF) == 0xF:
-					self.__runCommand(self.CMD_DATA_WRITE_STOP, busyWait=True)
-				else:
-					self.__runCommand(self.CMD_DATA_WRITE, busyWait=True)
+				self.__runI2C(data=byte2int(image[addr]),
+					      read=False, do_start=False, do_stop=False)
+				self.__expectACK()
+
 		self.progressMeterFinish()
 
 	def __readData(self):
@@ -113,56 +122,39 @@ class Chip_m24cXXdip8_common(Chip):
 	def __setData(self, dataByte):
 		self.top.cmdFPGAWrite(1, dataByte & 0xFF)
 
-	def __setAddress(self, address, writeMode):
-		# Address base
-		self.__setData(address)
-		# Address extension
+	def __setAddressExtension(self, address, writeMode):
 		sizeMask = self.eepromSize - 1
 		assert(sizeMask & ~0x7FF == 0)
-		addrExt = address & 0x700 & sizeMask
-		if self.currentAddrExt != addrExt or\
-		   self.currentWriteMode != writeMode:
-			self.currentAddrExt = addrExt
-			self.currentWriteMode = writeMode
-			if sizeMask & 0x0100:
-				E0 = addrExt & 0x0100
-				E0_en = 0
-			else:
-				E0 = 0
-				E0_en = 1
-			if sizeMask & 0x0200:
-				E1 = addrExt & 0x0200
-				E1_en = 0
-			else:
-				E1 = 0
-				E1_en = 1
-			if sizeMask & 0x0400:
-				E2 = addrExt & 0x0400
-				E2_en = 0
-			else:
-				E2 = 0
-				E2_en = 1
-			if writeMode:
-				WC = 0
-			else:
-				WC = 1
+		addrExt = ((address & 0x700 & sizeMask) >> 8) << 1
+
+		if self.currentWriteMode != writeMode:
+			E0 = E1 = E2 = 0
+			E0_en = not (sizeMask & 0x0100)
+			E1_en = not (sizeMask & 0x0200)
+			E2_en = not (sizeMask & 0x0400)
+			WC = not writeMode
 			self.__setControlPins(E0=E0, E0_en=E0_en,
 					      E1=E1, E1_en=E1_en,
 					      E2=E2, E2_en=E2_en,
 					      WC=WC)
+		self.currentAddrExt = addrExt
+		self.currentWriteMode = writeMode
 
-	def __runCommand(self, command, busyWait=False):
-		self.top.cmdFPGAWrite(0, command & 0xFF)
-		if busyWait:
-			self.__busyWait()
+	def __runI2C(self, data=None, read=False, do_start=False, do_stop=False, drive_ack=False):
+		if data is not None:
+			self.__setData(data)
 		else:
-			# We do not read busy flags, but wait long enough for
-			# the operation to finish. This is safe for eeprom read.
-			self.top.cmdDelay(0.00009)
+			self.__setData(0)
+		command = (0x01 if read else 0) |\
+			  (0x02 if do_start else 0) |\
+			  (0x04 if do_stop else 0) |\
+			  (0x08 if drive_ack else 0)
+		self.top.cmdFPGAWrite(0, command)
+		self.__busyWait()
 
 	def __isBusy(self):
-		(busy0, busy1) = self.__getStatusFlags()
-		return busy0 != busy1
+		(busy, ack) = self.__getStatusFlags()
+		return busy
 
 	def __busyWait(self):
 		for i in range(0, 100):
@@ -174,9 +166,18 @@ class Chip_m24cXXdip8_common(Chip):
 	def __getStatusFlags(self):
 		self.top.cmdFPGARead(1)
 		stat = self.top.cmdReadBufferReg8()
-		busy0 = bool(stat & 0x01)
-		busy1 = bool(stat & 0x02)
-		return (busy0, busy1)
+		busy = bool(stat & 0x01)
+		ack = not bool(stat & 0x02)
+		self.lastAck = ack
+		return (busy, ack)
+
+	def __expectACK(self):
+		if not self.lastAck:
+			self.throwError("Expected I2C ACK, but received NACK")
+
+	def __expectNACK(self):
+		if self.lastAck:
+			self.throwError("Expected I2C NACK, but received ACK")
 
 	def __setControlPins(self, E0, E0_en, E1, E1_en, E2, E2_en, WC):
 		value = 0
