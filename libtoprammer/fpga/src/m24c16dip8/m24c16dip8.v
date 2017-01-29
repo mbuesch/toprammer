@@ -4,7 +4,7 @@
  *   M24C16 I2C based serial EEPROM
  *   FPGA bottomhalf implementation
  *
- *   Copyright (c) 2011 Michael Buesch <m@bues.ch>
+ *   Copyright (c) 2011-2017 Michael Buesch <m@bues.ch>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,11 +25,13 @@
 `define RUNTIME_ID	16'h000B
 `define RUNTIME_REV	16'h01
 
-module i2c_module(clock, scl, sda_out, sda_out_en, sda_in,
+module i2c_module(clock, reset,
+		  scl, sda_out, sda_out_en, sda_in,
 		  write_byte, read_byte, read_mode,
 		  do_start, expect_ack, do_stop,
 		  finished);
 	input clock;
+	input reset;
 	output scl;
 	output sda_out;
 	output sda_out_en;
@@ -48,11 +50,17 @@ module i2c_module(clock, scl, sda_out, sda_out_en, sda_in,
 	reg [1:0] stop_state;
 	reg [2:0] bit_index;
 
-	reg sda_out;
-	reg sda_out_en;
-	reg scl;
-	reg [7:0] read_byte;
-	reg finished;
+	reg sda_out_reg;
+	reg sda_out_en_reg;
+	reg scl_reg;
+	reg [7:0] read_byte_reg;
+	reg finished_reg;
+
+	assign sda_out = sda_out_reg;
+	assign sda_out_en = sda_out_en_reg;
+	assign scl = scl_reg;
+	assign read_byte = read_byte_reg;
+	assign finished = finished_reg;
 
 	initial begin
 		start_state <= 0;
@@ -61,53 +69,53 @@ module i2c_module(clock, scl, sda_out, sda_out_en, sda_in,
 		stop_state <= 0;
 		bit_index <= 7;
 
-		sda_out <= 0;
-		sda_out_en <= 0;
-		scl <= 0;
-		read_byte <= 0;
-		finished <= 0;
+		sda_out_reg <= 0;
+		sda_out_en_reg <= 0;
+		scl_reg <= 0;
+		read_byte_reg <= 0;
+		finished_reg <= 0;
 	end
 
 	always @(posedge clock) begin
 		if (do_start && start_state != 3) begin
 			/* Send start condition */
-			finished <= 0;
-			sda_out_en <= 1;
+			finished_reg <= 0;
+			sda_out_en_reg <= 1;
 			case (start_state)
 			0: begin
 				/* Start SCL high */
-				scl <= 1;
-				sda_out <= 1;
+				scl_reg <= 1;
+				sda_out_reg <= 1;
 				start_state <= 1;
 			end
 			1: begin
 				/* Start condition latch */
-				sda_out <= 0;
+				sda_out_reg <= 0;
 				start_state <= 2;
 			end
 			2: begin
 				/* Start SCL low */
-				scl <= 0;
+				scl_reg <= 0;
 				start_state <= 3;
 			end
 			endcase
 		end else if (data_state != 3) begin
 			/* Data transfer */
-			finished <= 0;
+			finished_reg <= 0;
 			if (read_mode) begin	/* Read */
-				sda_out_en <= 0;
-				sda_out <= 0;
+				sda_out_en_reg <= 0;
+				sda_out_reg <= 0;
 				case (data_state)
 				0: begin
-					scl <= 1;
+					scl_reg <= 1;
 					data_state <= 1;
 				end
 				1: begin
-					read_byte[bit_index] <= sda_in;
+					read_byte_reg[bit_index] <= sda_in;
 					data_state <= 2;
 				end
 				2: begin
-					scl <= 0;
+					scl_reg <= 0;
 					if (bit_index == 0) begin
 						/* Done reading byte */
 						bit_index <= 7;
@@ -119,19 +127,19 @@ module i2c_module(clock, scl, sda_out, sda_out_en, sda_in,
 				end
 				endcase
 			end else begin		/* Write */
-				sda_out_en <= 1;
+				sda_out_en_reg <= 1;
 				case (data_state)
 				0: begin
-					sda_out <= write_byte[bit_index];
-					scl <= 0;
+					sda_out_reg <= write_byte[bit_index];
+					scl_reg <= 0;
 					data_state <= 1;
 				end
 				1: begin
-					scl <= 1;
+					scl_reg <= 1;
 					data_state <= 2;
 				end
 				2: begin
-					scl <= 0;
+					scl_reg <= 0;
 					if (bit_index == 0) begin
 						/* Done writing byte */
 						bit_index <= 7;
@@ -145,15 +153,15 @@ module i2c_module(clock, scl, sda_out, sda_out_en, sda_in,
 			end
 		end else if (expect_ack && ack_state != 2) begin
 			/* Wait for ACK from chip */
-			finished <= 0;
-			sda_out_en <= 0;
+			finished_reg <= 0;
+			sda_out_en_reg <= 0;
 			case (ack_state)
 			0: begin
-				scl <= 1;
+				scl_reg <= 1;
 				ack_state <= 1;
 			end
 			1: begin
-				scl <= 0;
+				scl_reg <= 0;
 				if (sda_in == 0) begin
 					/* Got it */
 					ack_state <= 2;
@@ -164,16 +172,16 @@ module i2c_module(clock, scl, sda_out, sda_out_en, sda_in,
 			endcase
 		end else if (do_stop && stop_state != 2) begin
 			/* Send stop condition */
-			finished <= 0;
-			sda_out_en <= 1;
+			finished_reg <= 0;
+			sda_out_en_reg <= 1;
 			case (stop_state)
 			0: begin
-				scl <= 1;
-				sda_out <= 0;
+				scl_reg <= 1;
+				sda_out_reg <= 0;
 				stop_state <= 1;
 			end
 			1: begin
-				sda_out <= 1;
+				sda_out_reg <= 1;
 				stop_state <= 2;
 			end
 			endcase
@@ -184,7 +192,7 @@ module i2c_module(clock, scl, sda_out, sda_out_en, sda_in,
 			ack_state <= 0;
 			stop_state <= 0;
 
-			finished <= 1;
+			finished_reg <= 1;
 		end
 	end
 endmodule
@@ -238,6 +246,7 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 
 	/* I2C interface */
 	reg i2c_clock;
+	reg i2c_reset;
 	reg [7:0] i2c_write_byte;
 	wire [7:0] i2c_read_byte;
 	reg i2c_read;			/* 1=> Read mode */
@@ -249,6 +258,7 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 
 	i2c_module i2c(
 		.clock(i2c_clock),
+		.reset(i2c_reset),
 		.scl(chip_scl),
 		.sda_out(chip_sda_out),
 		.sda_out_en(chip_sda_out_en),
