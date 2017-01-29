@@ -25,13 +25,13 @@
 `define RUNTIME_ID	16'h000B
 `define RUNTIME_REV	16'h01
 
-module i2c_module(clock, reset,
+module i2c_module(clock, nreset,
 		  scl, sda_out, sda_out_en, sda_in,
 		  write_byte, read_byte, read_mode,
 		  do_start, expect_ack, do_stop,
 		  finished);
 	input clock;
-	input reset;
+	input nreset;
 	output scl;
 	output sda_out;
 	output sda_out_en;
@@ -44,21 +44,29 @@ module i2c_module(clock, reset,
 	input do_stop;
 	output finished;
 
-	reg [1:0] start_state;
+	reg [0:0] start_state;
 	reg [1:0] data_state;
-	reg [1:0] ack_state;
-	reg [1:0] stop_state;
+	reg [0:0] ack_state;
+	reg [0:0] stop_state;
 	reg [2:0] bit_index;
 
 	reg sda_out_reg;
 	reg sda_out_en_reg;
-	reg scl_reg;
+	reg [1:0] scl_reg;
+	reg scl_running;
 	reg [7:0] read_byte_reg;
 	reg finished_reg;
 
+	wire [1:0] scl_pos;
+	assign scl_pos = scl_reg + 1;
+	parameter SCL_HILO	= 0;
+	parameter SCL_LO	= 1;
+	parameter SCL_LOHI	= 2;
+	parameter SCL_HI	= 3;
+
 	assign sda_out = sda_out_reg;
 	assign sda_out_en = sda_out_en_reg;
-	assign scl = scl_reg;
+	assign scl = scl_reg[1];
 	assign read_byte = read_byte_reg;
 	assign finished = finished_reg;
 
@@ -69,130 +77,126 @@ module i2c_module(clock, reset,
 		stop_state <= 0;
 		bit_index <= 7;
 
-		sda_out_reg <= 0;
+		sda_out_reg <= 1;
 		sda_out_en_reg <= 0;
-		scl_reg <= 0;
+		scl_reg <= SCL_HI;
+		scl_running <= 0;
 		read_byte_reg <= 0;
 		finished_reg <= 0;
 	end
 
-	always @(posedge clock) begin
-		if (do_start && start_state != 3) begin
-			/* Send start condition */
-			finished_reg <= 0;
-			sda_out_en_reg <= 1;
-			case (start_state)
-			0: begin
-				/* Start SCL high */
-				scl_reg <= 1;
-				sda_out_reg <= 1;
-				start_state <= 1;
-			end
-			1: begin
-				/* Start condition latch */
-				sda_out_reg <= 0;
-				start_state <= 2;
-			end
-			2: begin
-				/* Start SCL low */
-				scl_reg <= 0;
-				start_state <= 3;
-			end
-			endcase
-		end else if (data_state != 3) begin
-			/* Data transfer */
-			finished_reg <= 0;
-			if (read_mode) begin	/* Read */
-				sda_out_en_reg <= 0;
-				sda_out_reg <= 0;
-				case (data_state)
-				0: begin
-					scl_reg <= 1;
-					data_state <= 1;
-				end
-				1: begin
-					read_byte_reg[bit_index] <= sda_in;
-					data_state <= 2;
-				end
-				2: begin
-					scl_reg <= 0;
-					if (bit_index == 0) begin
-						/* Done reading byte */
-						bit_index <= 7;
-						data_state <= 3;
-					end else begin
-						bit_index <= bit_index - 1;
-						data_state <= 0;
-					end
-				end
-				endcase
-			end else begin		/* Write */
-				sda_out_en_reg <= 1;
-				case (data_state)
-				0: begin
-					sda_out_reg <= write_byte[bit_index];
-					scl_reg <= 0;
-					data_state <= 1;
-				end
-				1: begin
-					scl_reg <= 1;
-					data_state <= 2;
-				end
-				2: begin
-					scl_reg <= 0;
-					if (bit_index == 0) begin
-						/* Done writing byte */
-						bit_index <= 7;
-						data_state <= 3;
-					end else begin
-						bit_index <= bit_index - 1;
-						data_state <= 0;
-					end
-				end
-				endcase
-			end
-		end else if (expect_ack && ack_state != 2) begin
-			/* Wait for ACK from chip */
-			finished_reg <= 0;
-			sda_out_en_reg <= 0;
-			case (ack_state)
-			0: begin
-				scl_reg <= 1;
-				ack_state <= 1;
-			end
-			1: begin
-				scl_reg <= 0;
-				if (sda_in == 0) begin
-					/* Got it */
-					ack_state <= 2;
-				end else begin
-					ack_state <= 0;
-				end
-			end
-			endcase
-		end else if (do_stop && stop_state != 2) begin
-			/* Send stop condition */
-			finished_reg <= 0;
-			sda_out_en_reg <= 1;
-			case (stop_state)
-			0: begin
-				scl_reg <= 1;
-				sda_out_reg <= 0;
-				stop_state <= 1;
-			end
-			1: begin
-				sda_out_reg <= 1;
-				stop_state <= 2;
-			end
-			endcase
-		end else begin
+	always @(posedge clock or negedge nreset) begin
+		if (nreset == 0) begin
 			/* Reset */
 			start_state <= 0;
 			data_state <= 0;
 			ack_state <= 0;
 			stop_state <= 0;
 
-			finished_reg <= 1;
+			bit_index <= 7;
+
+			sda_out_reg <= 1;
+			sda_out_en_reg <= 0;
+			scl_reg <= SCL_HI;
+			scl_running <= 0;
+			read_byte_reg <= 0;
+
+			finished_reg <= 0;
+		end else begin
+
+			if (scl_running) begin
+				scl_reg <= scl_reg + 1;
+			end else begin
+				scl_reg <= SCL_HI;
+			end
+
+			if (do_start && start_state != 1) begin
+				/* Send start condition */
+				finished_reg <= 0;
+				scl_running <= 1;
+				sda_out_en_reg <= 1;
+				case (start_state)
+				0: begin
+					/* Start condition latch */
+					if (scl_pos == SCL_HI) begin
+						sda_out_reg <= 0;
+						start_state <= 1;
+					end
+				end
+				endcase
+			end else if (data_state != 3) begin
+				/* Data transfer */
+				finished_reg <= 0;
+				scl_running <= 1;
+				sda_out_en_reg <= !read_mode;
+				case (data_state)
+				0: begin
+					if (scl_pos == SCL_LO) begin
+						if (read_mode) begin
+							sda_out_reg <= 0;
+						end else begin
+							sda_out_reg <= write_byte[bit_index];
+						end
+						if (bit_index == 0) begin
+							data_state <= 2;
+						end else begin
+							data_state <= 1;
+						end
+					end
+				end
+				1: begin
+					if (scl_pos == SCL_LOHI) begin
+						bit_index <= bit_index - 1;
+					end else if (scl_pos == SCL_HI) begin
+						if (read_mode) begin
+							read_byte_reg[bit_index + 1] <= sda_in;
+						end
+						data_state <= 0;
+					end
+				end
+				2: begin
+					if (scl_pos == SCL_LOHI) begin
+						bit_index <= 7;
+					end else if (scl_pos == SCL_HI) begin
+						if (read_mode) begin
+							read_byte_reg[0] <= sda_in;
+						end
+						data_state <= 3;
+					end
+				end
+				endcase
+			end else if (expect_ack && ack_state != 1) begin
+				/* Wait for ACK from chip */
+				finished_reg <= 0;
+				scl_running <= 1;
+				case (ack_state)
+				0: begin
+					if (scl_pos == SCL_LO) begin
+						sda_out_en_reg <= 0;
+					end else if (scl_pos == SCL_HI) begin
+						if (sda_in == 0) begin
+							/* Got it */
+							ack_state <= 1;
+						end
+					end
+				end
+				endcase
+			end else if (do_stop && stop_state != 1) begin
+				/* Send stop condition */
+				finished_reg <= 0;
+				sda_out_en_reg <= 1;
+				case (stop_state)
+				0: begin
+					if (scl_pos == SCL_HI) begin
+						sda_out_reg <= 1;
+						scl_running <= 0;
+						stop_state <= 1;
+					end
+				end
+				endcase
+			end else begin
+				finished_reg <= 1;
+			end
 		end
 	end
 endmodule
@@ -246,7 +250,7 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 
 	/* I2C interface */
 	reg i2c_clock;
-	reg i2c_reset;
+	reg i2c_nreset;
 	reg [7:0] i2c_write_byte;
 	wire [7:0] i2c_read_byte;
 	reg i2c_read;			/* 1=> Read mode */
@@ -258,7 +262,7 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 
 	i2c_module i2c(
 		.clock(i2c_clock),
-		.reset(i2c_reset),
+		.nreset(i2c_nreset),
 		.scl(chip_scl),
 		.sda_out(chip_sda_out),
 		.sda_out_en(chip_sda_out_en),
@@ -297,6 +301,7 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 		chip_wc <= 0;
 
 		i2c_clock <= 0;
+		i2c_nreset <= 0;
 		i2c_write_byte <= 0;
 		i2c_read <= 0;
 		i2c_do_start <= 0;
@@ -310,13 +315,32 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 			if (i2c_running) begin
 				if (i2c_finished && i2c_running == 2) begin
 					i2c_running <= 0;
+					i2c_nreset <= 0;
 					`SET_FINISHED;
 				end else begin
 					i2c_running <= 2;
 					i2c_clock <= ~i2c_clock;
-					`DELAY_1P5US;
+					delay_count <= 1000;
+//					`DELAY_1P5US;
 				end
 			end else begin
+				i2c_nreset <= 1;
+/*
+					i2c_write_byte[7] <= 1;
+					i2c_write_byte[6] <= 0;
+					i2c_write_byte[5] <= 1;
+					i2c_write_byte[4] <= 0;
+					i2c_write_byte[3] <= 1;
+					i2c_write_byte[2] <= 0;
+					i2c_write_byte[1] <= 1;
+					i2c_write_byte[0] <= 0;
+					i2c_clock <= 0;
+					i2c_read <= 0;
+					i2c_do_start <= 1;
+					i2c_expect_ack <= 0;
+					i2c_do_stop <= 1;
+					i2c_running <= 1;
+*/
 				case (command)
 				CMD_DEVSEL_READ: begin
 					i2c_write_byte[7] <= 1;
