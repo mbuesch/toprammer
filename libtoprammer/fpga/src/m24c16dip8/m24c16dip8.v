@@ -26,13 +26,16 @@
 `define RUNTIME_REV	16'h01
 
 module i2c_module(clock, nreset,
-		  scl, sda_out, sda_out_en, sda_in,
+		  scl_out, scl_out_en, scl_in,
+		  sda_out, sda_out_en, sda_in,
 		  write_byte, read_byte, read_mode,
 		  do_start, expect_ack, do_stop,
 		  finished);
 	input clock;
 	input nreset;
-	output scl;
+	output scl_out;
+	output scl_out_en;
+	input scl_in;
 	output sda_out;
 	output sda_out_en;
 	input sda_in;
@@ -52,13 +55,14 @@ module i2c_module(clock, nreset,
 
 	reg sda_out_reg;
 	reg sda_out_en_reg;
-	reg [1:0] scl_reg;
+	reg [1:0] scl_out_reg;
+	reg scl_out_en_reg;
 	reg scl_running;
 	reg [7:0] read_byte_reg;
 	reg finished_reg;
 
 	wire [1:0] scl_pos;
-	assign scl_pos = scl_reg + 1;
+	assign scl_pos = scl_out_reg + 1;
 	parameter SCL_HILO	= 0;
 	parameter SCL_LO	= 1;
 	parameter SCL_LOHI	= 2;
@@ -66,7 +70,8 @@ module i2c_module(clock, nreset,
 
 	assign sda_out = sda_out_reg;
 	assign sda_out_en = sda_out_en_reg;
-	assign scl = scl_reg[1];
+	assign scl_out = scl_out_reg[1];
+	assign scl_out_en = scl_out_en_reg;
 	assign read_byte = read_byte_reg;
 	assign finished = finished_reg;
 
@@ -79,11 +84,14 @@ module i2c_module(clock, nreset,
 
 		sda_out_reg <= 1;
 		sda_out_en_reg <= 0;
-		scl_reg <= SCL_HI;
+		scl_out_reg <= SCL_HI;
+		scl_out_en_reg <= 1;
 		scl_running <= 0;
 		read_byte_reg <= 0;
 		finished_reg <= 0;
 	end
+
+//TODO clock stretching
 
 	always @(posedge clock or negedge nreset) begin
 		if (nreset == 0) begin
@@ -97,7 +105,8 @@ module i2c_module(clock, nreset,
 
 			sda_out_reg <= 1;
 			sda_out_en_reg <= 0;
-			scl_reg <= SCL_HI;
+			scl_out_reg <= SCL_HI;
+			scl_out_en_reg <= 1;
 			scl_running <= 0;
 			read_byte_reg <= 0;
 
@@ -105,9 +114,9 @@ module i2c_module(clock, nreset,
 		end else begin
 
 			if (scl_running) begin
-				scl_reg <= scl_reg + 1;
+				scl_out_reg <= scl_out_reg + 1;
 			end else begin
-				scl_reg <= SCL_HI;
+				scl_out_reg <= SCL_HI;
 			end
 
 			if (do_start && start_state != 1) begin
@@ -195,6 +204,13 @@ module i2c_module(clock, nreset,
 				end
 				endcase
 			end else begin
+				start_state <= 0;
+				data_state <= 0;
+				ack_state <= 0;
+				stop_state <= 0;
+
+				bit_index <= 7;
+
 				finished_reg <= 1;
 			end
 		end
@@ -239,10 +255,12 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 	reg chip_e2;		/* E2 */
 	reg chip_e2_en;		/* E2 enable */
 	reg chip_wc;		/* /WC */
-	wire chip_scl;		/* I2C SCL */
+	wire chip_scl_out;	/* I2C SCL out */
+	wire chip_scl_out_en;	/* I2C SCL out enable*/
 	wire chip_sda_out;	/* I2C SDA out */
 	wire chip_sda_out_en;	/* I2C SDA out enable */
 	parameter ZIF_SDA	= 25;
+	parameter ZIF_SCL	= 26;
 
 	wire low, high;		/* Constant lo/hi */
 	assign low = 0;
@@ -263,7 +281,9 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 	i2c_module i2c(
 		.clock(i2c_clock),
 		.nreset(i2c_nreset),
-		.scl(chip_scl),
+		.scl_out(chip_scl_out),
+		.scl_out_en(chip_scl_out_en),
+		.scl_in(zif[ZIF_SCL]),
 		.sda_out(chip_sda_out),
 		.sda_out_en(chip_sda_out_en),
 		.sda_in(zif[ZIF_SDA]),
@@ -315,32 +335,17 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 			if (i2c_running) begin
 				if (i2c_finished && i2c_running == 2) begin
 					i2c_running <= 0;
-					i2c_nreset <= 0;
+//					i2c_nreset <= 0;
 					`SET_FINISHED;
 				end else begin
 					i2c_running <= 2;
 					i2c_clock <= ~i2c_clock;
-					delay_count <= 1000;
+					delay_count <= 2000;
 //					`DELAY_1P5US;
 				end
 			end else begin
-				i2c_nreset <= 1;
-/*
-					i2c_write_byte[7] <= 1;
-					i2c_write_byte[6] <= 0;
-					i2c_write_byte[5] <= 1;
-					i2c_write_byte[4] <= 0;
-					i2c_write_byte[3] <= 1;
-					i2c_write_byte[2] <= 0;
-					i2c_write_byte[1] <= 1;
-					i2c_write_byte[0] <= 0;
-					i2c_clock <= 0;
-					i2c_read <= 0;
-					i2c_do_start <= 1;
-					i2c_expect_ack <= 0;
-					i2c_do_stop <= 1;
-					i2c_running <= 1;
-*/
+				i2c_nreset <= 1; //TODO
+
 				case (command)
 				CMD_DEVSEL_READ: begin
 					i2c_write_byte[7] <= 1;
@@ -497,7 +502,7 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 	bufif0(zif[23], chip_e2, !chip_e2_en);			/* E2 */
 	bufif0(zif[24], low, low);				/* VSS */
 	bufif0(zif[25], chip_sda_out, !chip_sda_out_en);	/* SDA */
-	bufif0(zif[26], chip_scl, low);				/* SCL */
+	bufif0(zif[26], chip_scl_out, !chip_scl_out_en);	/* SCL */
 	bufif0(zif[27], chip_wc, low);				/* /WC */
 	bufif0(zif[28], high, low);				/* VCC */
 	bufif0(zif[29], low, low);
