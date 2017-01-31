@@ -211,7 +211,11 @@ module i2c_module(clock, nreset,
 
 				bit_index <= 7;
 
-				finished_reg <= 1;
+				if (scl_pos == SCL_HILO) begin
+					finished_reg <= 1;
+				end else begin
+					finished_reg <= 0;
+				end
 			end
 		end
 	end
@@ -276,7 +280,7 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 	reg i2c_expect_ack;
 	reg i2c_do_stop;
 	wire i2c_finished;
-	reg [1:0] i2c_running;
+	reg i2c_running;
 
 	i2c_module i2c(
 		.clock(i2c_clock),
@@ -333,18 +337,17 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 	always @(posedge osc) begin
 		if (delay_count == 0 && `IS_BUSY) begin
 			if (i2c_running) begin
-				if (i2c_finished && i2c_running == 2) begin
+				if (i2c_finished && i2c_clock) begin
 					i2c_running <= 0;
-//					i2c_nreset <= 0;
+//					i2c_nreset <= !i2c_do_stop;
 					`SET_FINISHED;
 				end else begin
-					i2c_running <= 2;
 					i2c_clock <= ~i2c_clock;
 					delay_count <= 2000;
 //					`DELAY_1P5US;
 				end
 			end else begin
-				i2c_nreset <= 1; //TODO
+				i2c_nreset <= 1;
 
 				case (command)
 				CMD_DEVSEL_READ: begin
@@ -380,7 +383,14 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 					i2c_running <= 1;
 				end
 				CMD_SETADDR: begin
-					i2c_write_byte <= data_buffer;
+					i2c_write_byte[7] <= data_buffer[7];
+					i2c_write_byte[6] <= data_buffer[6];
+					i2c_write_byte[5] <= data_buffer[5];
+					i2c_write_byte[4] <= data_buffer[4];
+					i2c_write_byte[3] <= data_buffer[3];
+					i2c_write_byte[2] <= data_buffer[2];
+					i2c_write_byte[1] <= data_buffer[1];
+					i2c_write_byte[0] <= data_buffer[0];
 					i2c_clock <= 0;
 					i2c_read <= 0;
 					i2c_do_start <= 0;
@@ -389,6 +399,14 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 					i2c_running <= 1;
 				end
 				CMD_DATA_READ: begin
+					i2c_write_byte[7] <= 0;
+					i2c_write_byte[6] <= 0;
+					i2c_write_byte[5] <= 0;
+					i2c_write_byte[4] <= 0;
+					i2c_write_byte[3] <= 0;
+					i2c_write_byte[2] <= 0;
+					i2c_write_byte[1] <= 0;
+					i2c_write_byte[0] <= 0;
 					i2c_clock <= 0;
 					i2c_read <= 1;
 					i2c_do_start <= 0;
@@ -397,6 +415,14 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 					i2c_running <= 1;
 				end
 				CMD_DATA_READ_STOP: begin
+					i2c_write_byte[7] <= 0;
+					i2c_write_byte[6] <= 0;
+					i2c_write_byte[5] <= 0;
+					i2c_write_byte[4] <= 0;
+					i2c_write_byte[3] <= 0;
+					i2c_write_byte[2] <= 0;
+					i2c_write_byte[1] <= 0;
+					i2c_write_byte[0] <= 0;
 					i2c_clock <= 0;
 					i2c_read <= 1;
 					i2c_do_start <= 0;
@@ -405,7 +431,14 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 					i2c_running <= 1;
 				end
 				CMD_DATA_WRITE: begin
-					i2c_write_byte <= data_buffer;
+					i2c_write_byte[7] <= data_buffer[7];
+					i2c_write_byte[6] <= data_buffer[6];
+					i2c_write_byte[5] <= data_buffer[5];
+					i2c_write_byte[4] <= data_buffer[4];
+					i2c_write_byte[3] <= data_buffer[3];
+					i2c_write_byte[2] <= data_buffer[2];
+					i2c_write_byte[1] <= data_buffer[1];
+					i2c_write_byte[0] <= data_buffer[0];
 					i2c_clock <= 0;
 					i2c_read <= 0;
 					i2c_do_start <= 0;
@@ -414,7 +447,14 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 					i2c_running <= 1;
 				end
 				CMD_DATA_WRITE_STOP: begin
-					i2c_write_byte <= data_buffer;
+					i2c_write_byte[7] <= data_buffer[7];
+					i2c_write_byte[6] <= data_buffer[6];
+					i2c_write_byte[5] <= data_buffer[5];
+					i2c_write_byte[4] <= data_buffer[4];
+					i2c_write_byte[3] <= data_buffer[3];
+					i2c_write_byte[2] <= data_buffer[2];
+					i2c_write_byte[1] <= data_buffer[1];
+					i2c_write_byte[0] <= data_buffer[0];
 					i2c_clock <= 0;
 					i2c_read <= 0;
 					i2c_do_start <= 0;
