@@ -187,8 +187,8 @@ class Chip_m24cXXdip8_common(Chip):
 		self.__busyWait()
 
 	def __isBusy(self):
-		(busy0, busy1, ack) = self.__getStatusFlags()
-		return busy0 != busy1
+		(busy, ack) = self.__getStatusFlags()
+		return busy
 
 	def __busyWait(self):
 		for i in range(0, 100):
@@ -200,11 +200,10 @@ class Chip_m24cXXdip8_common(Chip):
 	def __getStatusFlags(self):
 		self.top.cmdFPGARead(1)
 		stat = self.top.cmdReadBufferReg8()
-		busy0 = bool(stat & 0x01)
-		busy1 = bool(stat & 0x02)
-		ack = not bool(stat & 0x04)
+		busy = bool(stat & 0x01)
+		ack = not bool(stat & 0x02)
 		self.lastAck = ack
-		return (busy0, busy1, ack)
+		return (busy, ack)
 
 	def __expectACK(self):
 		if not self.lastAck:

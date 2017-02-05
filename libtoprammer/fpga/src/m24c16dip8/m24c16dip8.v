@@ -24,30 +24,8 @@
 `include "common.vh"
 `include "i2c.v"
 
-/* The runtime ID and revision. */
-`define RUNTIME_ID	16'h000B
-`define RUNTIME_REV	16'h01
-
-module m24c16dip8(data, ale_in, write, read, osc_in, zif);
-	inout [7:0] data;
-	input ale_in;
-	input write;
-	input read;
-	input osc_in; /* 24MHz oscillator */
-	inout [48:1] zif;
-
-	/* Interface to the microcontroller */
-	wire read_oe;		/* Read output-enable */
-	reg [7:0] address;	/* Cached address value */
-	reg [7:0] read_data;	/* Cached read data */
-
-	/* Programmer API and statemachine */
-	reg [1:0] cmd_busy;	/* bit0 != bit1 >= busy */
-	reg [2:0] command;
+`BOTTOMHALF_BEGIN(m24c16dip8, 11, 1)
 	reg [7:0] data_buffer;
-
-	`define IS_BUSY		(cmd_busy[0] != cmd_busy[1])	/* Is running command? */
-	`define SET_FINISHED	cmd_busy[1] <= cmd_busy[0]	/* Set command-finished */
 
 	/* Chip signals */
 	reg chip_e0;		/* E0 */
@@ -63,10 +41,6 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 	wire chip_sda_out_en;	/* I2C SDA out enable */
 	parameter ZIF_SDA	= 25;
 	parameter ZIF_SCL	= 26;
-
-	wire low, high;		/* Constant lo/hi */
-	assign low = 0;
-	assign high = 1;
 
 	/* I2C interface */
 	reg i2c_clock;
@@ -98,18 +72,7 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 		.finished(i2c_finished)
 	);
 
-	/* The delay counter. Based on the 24MHz input clock. */
-	reg [15:0] delay_count;
-	wire osc;
-	IBUF osc_ibuf(.I(osc_in), .O(osc));
-
-	initial begin
-		address <= 0;
-		read_data <= 0;
-		delay_count <= 0;
-
-		cmd_busy <= 0;
-		command <= 0;
+	`INITIAL_BEGIN
 		data_buffer <= 0;
 
 		chip_e0 <= 0;
@@ -127,138 +90,76 @@ module m24c16dip8(data, ale_in, write, read, osc_in, zif);
 		i2c_do_start <= 0;
 		i2c_do_stop <= 0;
 		i2c_running <= 0;
-	end
+	`INITIAL_END
 
-	always @(posedge osc) begin
-		if (delay_count == 0 && `IS_BUSY) begin
+	`ASYNCPROC_BEGIN
+		if (`CMD_IS_RUNNING) begin
 			if (i2c_running) begin
 				if (i2c_finished && i2c_clock) begin
 					i2c_running <= 0;
-//					i2c_nreset	<= 0;
-//TODO					i2c_nreset <= !i2c_do_stop;
-					`SET_FINISHED;
+	//					i2c_nreset	<= 0;
+	//TODO					i2c_nreset <= !i2c_do_stop;
+					`CMD_FINISH
 				end else begin
 					i2c_clock <= ~i2c_clock;
-					delay_count <= 2000;
+					`UDELAY(250)
 				end
 			end else begin
 				i2c_write_byte	<= data_buffer;
-				i2c_read	<= command[0];
-				i2c_do_start	<= command[1];
-				i2c_do_stop	<= command[2];
+				i2c_read	<= `CMD_NR[0];
+				i2c_do_start	<= `CMD_NR[1];
+				i2c_do_stop	<= `CMD_NR[2];
 				i2c_clock	<= 0;
 				i2c_running	<= 1;
 				i2c_nreset	<= 1;
 			end
-		end else begin
-			if (delay_count != 0) begin
-				delay_count <= delay_count - 1;
-			end
 		end
-	end
+	`ASYNCPROC_END
 
-	always @(posedge write) begin
-		case (address)
-		8'h10: begin /* Run command */
-			command <= data;
-			cmd_busy[0] <= ~cmd_busy[1];
+	`DATAWRITE_BEGIN
+		`ADDR(0): begin /* Run command */
+			`CMD_RUN(in_data)
 		end
-		8'h11: begin /* Write to data buffer */
-			data_buffer[7:0] <= data[7:0];
+		`ADDR(1): begin /* Write to data buffer */
+			data_buffer[7:0] <= in_data[7:0];
 		end
-		8'h12: begin /* Set control pins */
-			chip_e0 <= data[0];
-			chip_e0_en <= data[1];
-			chip_e1 <= data[2];
-			chip_e1_en <= data[3];
-			chip_e2 <= data[4];
-			chip_e2_en <= data[5];
-			chip_wc <= data[6];
+		`ADDR(2): begin /* Set control pins */
+			chip_e0 <= in_data[0];
+			chip_e0_en <= in_data[1];
+			chip_e1 <= in_data[2];
+			chip_e1_en <= in_data[3];
+			chip_e2 <= in_data[4];
+			chip_e2_en <= in_data[5];
+			chip_wc <= in_data[6];
 		end
-		endcase
-	end
+	`DATAWRITE_END
 
-	always @(negedge read) begin
-		case (address)
-		8'h10: begin /* Read data buffer */
-			read_data <= i2c_read_byte;
+	`DATAREAD_BEGIN
+		`ADDR(0): begin /* Read data buffer */
+			out_data <= i2c_read_byte;
 		end
-		8'h11: begin /* Status read */
-			read_data[0] <= cmd_busy[0];
-			read_data[1] <= cmd_busy[1];
-			read_data[2] <= i2c_ack;
+		`ADDR(1): begin /* Status read */
+			out_data[0] <= `CMD_IS_RUNNING;
+			out_data[1] <= i2c_ack;
 		end
+	`DATAREAD_END
 
-		8'hFD: read_data <= `RUNTIME_ID & 16'hFF;
-		8'hFE: read_data <= (`RUNTIME_ID >> 8) & 16'hFF;
-		8'hFF: read_data <= `RUNTIME_REV;
-		endcase
-	end
-
-	wire ale;
-	IBUFG ale_ibufg(.I(ale_in), .O(ale));
-
-	always @(negedge ale) begin
-		address <= data;
-	end
-
-	assign read_oe = !read && address[4];
-
-	bufif0(zif[1], low, low);
-	bufif0(zif[2], low, low);
-	bufif0(zif[3], low, low);
-	bufif0(zif[4], low, low);
-	bufif0(zif[5], low, low);
-	bufif0(zif[6], low, low);
-	bufif0(zif[7], low, low);
-	bufif0(zif[8], low, low);
-	bufif0(zif[9], low, low);
-	bufif0(zif[10], low, low);
-	bufif0(zif[11], low, low);
-	bufif0(zif[12], low, low);
-	bufif0(zif[13], low, low);
-	bufif0(zif[14], low, low);
-	bufif0(zif[15], low, low);
-	bufif0(zif[16], low, low);
-	bufif0(zif[17], low, low);
-	bufif0(zif[18], low, low);
-	bufif0(zif[19], low, low);
-	bufif0(zif[20], low, low);
-	bufif0(zif[21], chip_e0, !chip_e0_en);			/* E0 */
-	bufif0(zif[22], chip_e1, !chip_e1_en);			/* E1 */
-	bufif0(zif[23], chip_e2, !chip_e2_en);			/* E2 */
-	bufif0(zif[24], low, low);				/* VSS */
-	bufif0(zif[25], chip_sda_out, !chip_sda_out_en);	/* SDA */
-	bufif0(zif[26], chip_scl_out, !chip_scl_out_en);	/* SCL */
-	bufif0(zif[27], chip_wc, low);				/* /WC */
-	bufif0(zif[28], high, low);				/* VCC */
-	bufif0(zif[29], low, low);
-	bufif0(zif[30], low, low);
-	bufif0(zif[31], low, low);
-	bufif0(zif[32], low, low);
-	bufif0(zif[33], low, low);
-	bufif0(zif[34], low, low);
-	bufif0(zif[35], low, low);
-	bufif0(zif[36], low, low);
-	bufif0(zif[37], low, low);
-	bufif0(zif[38], low, low);
-	bufif0(zif[39], low, low);
-	bufif0(zif[40], low, low);
-	bufif0(zif[41], low, low);
-	bufif0(zif[42], low, low);
-	bufif0(zif[43], low, low);
-	bufif0(zif[44], low, low);
-	bufif0(zif[45], low, low);
-	bufif0(zif[46], low, low);
-	bufif0(zif[47], low, low);
-	bufif0(zif[48], low, low);
-
-	bufif1(data[0], read_data[0], read_oe);
-	bufif1(data[1], read_data[1], read_oe);
-	bufif1(data[2], read_data[2], read_oe);
-	bufif1(data[3], read_data[3], read_oe);
-	bufif1(data[4], read_data[4], read_oe);
-	bufif1(data[5], read_data[5], read_oe);
-	bufif1(data[6], read_data[6], read_oe);
-	bufif1(data[7], read_data[7], read_oe);
-endmodule
+	`ZIF_UNUSED(1) `ZIF_UNUSED(2) `ZIF_UNUSED(3) `ZIF_UNUSED(4)
+	`ZIF_UNUSED(5) `ZIF_UNUSED(6) `ZIF_UNUSED(7) `ZIF_UNUSED(8)
+	`ZIF_UNUSED(9) `ZIF_UNUSED(10) `ZIF_UNUSED(11) `ZIF_UNUSED(12)
+	`ZIF_UNUSED(13) `ZIF_UNUSED(14) `ZIF_UNUSED(15) `ZIF_UNUSED(16)
+	`ZIF_UNUSED(17) `ZIF_UNUSED(18) `ZIF_UNUSED(19) `ZIF_UNUSED(20)
+	`ZIF_BUF1(21, chip_e0, chip_e0_en)		/* E0 */
+	`ZIF_BUF1(22, chip_e1, chip_e1_en)		/* E1 */
+	`ZIF_BUF1(23, chip_e2, chip_e2_en)		/* E2 */
+	`ZIF_BUF1(24, low, high)			/* VSS */
+	`ZIF_BUF1(25, chip_sda_out, chip_sda_out_en)	/* SDA */
+	`ZIF_BUF1(26, chip_scl_out, chip_scl_out_en)	/* SCL */
+	`ZIF_BUF1(27, chip_wc, high)			/* /WC */
+	`ZIF_BUF1(28, high, high)			/* VCC */
+	`ZIF_UNUSED(29) `ZIF_UNUSED(30) `ZIF_UNUSED(31) `ZIF_UNUSED(32)
+	`ZIF_UNUSED(33) `ZIF_UNUSED(34) `ZIF_UNUSED(35) `ZIF_UNUSED(36)
+	`ZIF_UNUSED(37) `ZIF_UNUSED(38) `ZIF_UNUSED(39) `ZIF_UNUSED(40)
+	`ZIF_UNUSED(41) `ZIF_UNUSED(42) `ZIF_UNUSED(43) `ZIF_UNUSED(44)
+	`ZIF_UNUSED(45) `ZIF_UNUSED(46) `ZIF_UNUSED(47) `ZIF_UNUSED(48)
+`BOTTOMHALF_END
