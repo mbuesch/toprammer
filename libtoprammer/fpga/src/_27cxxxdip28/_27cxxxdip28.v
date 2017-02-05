@@ -51,7 +51,7 @@
 
 	`define CMD_PPULSE		0
 
-	initial begin
+	`INITIAL_BEGIN
 		cdata <= 0;
 		cdata_en <= 0;
 		caddr <= 0;
@@ -62,7 +62,7 @@
 		prog_en <= 0;
 		oe <= 1;
 		ctype <= 0;
-	end
+	`INITIAL_END
 
 	wire prog_pulse;
 	assign prog_pulse = prog_en ? prog_pulse_reg : high;

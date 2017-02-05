@@ -34,7 +34,7 @@
 	reg vcc_en;
 	reg vcc;
 
-	initial begin
+	`INITIAL_BEGIN
 		oe <= 0;
 		wr <= 0;
 		xtal <= 0;
@@ -48,7 +48,7 @@
 		vpp <= 0;
 		vcc_en <= 0;
 		vcc <= 0;
-	end
+	`INITIAL_END
 
 	`ASYNCPROC_NONE
 

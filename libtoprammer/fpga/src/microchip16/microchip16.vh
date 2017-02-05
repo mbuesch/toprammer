@@ -54,7 +54,7 @@
     reg [3:0] dly5;                         \
     reg [7:0] tdly;                                                  \
                                 \
-    initial begin                           \
+    `INITIAL_BEGIN                           \
         prog_count <= 0;                    \
         dut_sci_manual <= 0;                    \
         dut_sci_auto <= 0;                  \
@@ -69,7 +69,7 @@
         enterpm_seq <= `ENTERPM_SEQ ;\
         tdly <= 24;                         \
         dly5 <= 5;                                 \
-    end                             \
+    `INITIAL_END                             \
                                 \
     `ASYNCPROC_BEGIN                        \
         if (`CMD_IS_RUNNING) begin              \

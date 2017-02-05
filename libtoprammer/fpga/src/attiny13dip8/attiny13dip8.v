@@ -41,7 +41,7 @@
 	reg [10:0] sii_buf;
 	reg [10:0] sdo_buf;
 
-	initial begin
+	`INITIAL_BEGIN
 		prog_count <= 0;
 		dut_sdi <= 0;
 		dut_sii <= 0;
@@ -54,7 +54,7 @@
 		sdi_buf <= 0;
 		sii_buf <= 0;
 		sdo_buf <= 0;
-	end
+	`INITIAL_END
 
 	`ASYNCPROC_BEGIN
 		if (`CMD_IS(`CMD_SENDINSTR)) begin

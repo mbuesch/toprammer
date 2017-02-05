@@ -70,15 +70,6 @@
 
 /** BOTTOMHALF_END - End bottom-half module */
 `define BOTTOMHALF_END							\
-		initial begin						\
-			__addr_latch <= 0;				\
-			out_data <= 0;					\
-			__delay_count <= 0;				\
-			__cmd_running <= 0;				\
-			__cmd <= 0;					\
-			__cmd_state <= 0;				\
-		end							\
-									\
 		always @(negedge __ale_signal) begin			\
 			__addr_latch <= __data;				\
 		end							\
@@ -95,6 +86,25 @@
 		bufif0(__data[6], out_data[6], !__data_oe);		\
 		bufif0(__data[7], out_data[7], !__data_oe);		\
 	endmodule
+
+/** INITIAL_BEGIN - Begin initialization section. */
+`define INITIAL_BEGIN							\
+	initial begin							\
+		__addr_latch <= 0;					\
+		out_data <= 0;						\
+		__delay_count <= 0;					\
+		__cmd_running <= 0;					\
+		__cmd <= 0;						\
+		__cmd_state <= 0;
+
+/** INITIAL_END - End initialization section. */
+`define INITIAL_END							\
+	end /* initial */
+
+/** INITIAL_NONE - Defines a dummy initial section. */
+`define INITIAL_NONE							\
+	`INITIAL_BEGIN							\
+	`INITIAL_END
 
 /** ASYNCPROC_BEGIN - Begin asynchronous OSC-based processing section. */
 `define ASYNCPROC_BEGIN							\
@@ -148,12 +158,28 @@
 		endcase							\
 	end /* always */
 
+/** ZIF_BUF0 - Declare a ZIF buffer with negative outen.
+ * @PIN: The pin number.
+ * @OUT: The output signal.
+ * @NOUTEN: The output enable signal, active low.
+ */
+`define ZIF_BUF0(PIN, OUT, NOUTEN)					\
+	bufif0(zif[PIN], OUT, NOUTEN);
+
+/** ZIF_BUF1 - Declare a ZIF buffer with positive outen.
+ * @PIN: The pin number.
+ * @OUT: The output signal.
+ * @OUTEN: The output enable signal, active high.
+ */
+`define ZIF_BUF1(PIN, OUT, OUTEN)					\
+	bufif1(zif[PIN], OUT, OUTEN);
+
 /** ZIF_UNUSED - Declare a ZIF pin as unused.
  * @PIN: The pin number.
  * The ZIF pin is tied low.
  */
 `define ZIF_UNUSED(PIN)							\
-	bufif0(zif[PIN], low, low);
+	`ZIF_BUF0(PIN, low, low)
 
 /** CMD_RUN - Run a command.
  * @NR: The command number.
