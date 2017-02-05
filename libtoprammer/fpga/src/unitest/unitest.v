@@ -32,6 +32,8 @@
 	reg [23:0] osc_divider;
 	reg [23:0] osc_div_cnt;
 
+	`INITIAL_NONE
+
 	always @(posedge osc_signal) begin
 		if (osc_div_cnt + 1 >= osc_divider) begin
 			osc_div_cnt <= 0;

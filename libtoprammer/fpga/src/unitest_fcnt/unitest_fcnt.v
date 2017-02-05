@@ -39,6 +39,8 @@
 	reg [27:0] fcnt_count;
 	reg [27:0] fcnt_saved_count;
 
+	`INITIAL_NONE
+
 	always @(posedge osc_signal) begin
 		if (osc_div_cnt + 1 >= osc_divider) begin
 			osc_div_cnt <= 0;

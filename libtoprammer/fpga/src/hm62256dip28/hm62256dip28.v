@@ -30,6 +30,8 @@
 	reg dut_oe;
 	reg dut_we;
 
+	`INITIAL_NONE
+
 	`ASYNCPROC_NONE
 
 	`DATAWRITE_BEGIN

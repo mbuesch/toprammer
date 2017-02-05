@@ -51,7 +51,7 @@
     	reg sdio_auto;							\
     	wire is_command;						\
 									\
-    	initial begin							\
+    	`INITIAL_BEGIN							\
     		prog_count <= 0;					\
     		dut_sci_manual <= 0;					\
     		dut_sci_auto <= 0;					\
@@ -66,7 +66,7 @@
     		tdly <=	24;							\
     		dly5 <=	5;							\
 		sdio_auto <= 1;						\
-    	end								\
+    	`INITIAL_END							\
 									\
     	`ASYNCPROC_BEGIN						\
     		if (`CMD_IS_RUNNING) begin				\

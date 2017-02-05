@@ -33,7 +33,7 @@
 	reg dut_vcc_en;
 	reg dut_vcc;
 
-	initial begin
+	`INITIAL_BEGIN
 		dut_oe <= 0;
 		dut_wr <= 0;
 		dut_xtal <= 0;
@@ -47,7 +47,7 @@
 		dut_vpp <= 0;
 		dut_vcc_en <= 0;
 		dut_vcc <= 0;
-	end
+	`INITIAL_END
 
 	`ASYNCPROC_NONE
 

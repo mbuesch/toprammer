@@ -26,9 +26,9 @@
 `BOTTOMHALF_BEGIN(template, 16'hCAFE, 42) /* TODO: <<< Adjust IDs here */
 	reg examplereg;
 
-	initial begin
+	`INITIAL_BEGIN
 		examplereg <= 0;
-	end
+	`INITIAL_END
 
 	`ASYNCPROC_BEGIN
 		/* TODO */
@@ -51,52 +51,52 @@
 		end
 	`DATAREAD_END
 
-	bufif0(zif[1], examplereg, low);
-	bufif0(zif[2], low, low);
-	bufif0(zif[3], low, low);
-	bufif0(zif[4], low, low);
-	bufif0(zif[5], low, low);
-	bufif0(zif[6], low, low);
-	bufif0(zif[7], low, low);
-	bufif0(zif[8], low, low);
-	bufif0(zif[9], low, low);
-	bufif0(zif[10], low, low);
-	bufif0(zif[11], low, low);
-	bufif0(zif[12], low, low);
-	bufif0(zif[13], low, low);
-	bufif0(zif[14], low, low);
-	bufif0(zif[15], low, low);
-	bufif0(zif[16], low, low);
-	bufif0(zif[17], low, low);
-	bufif0(zif[18], low, low);
-	bufif0(zif[19], low, low);
-	bufif0(zif[20], low, low);
-	bufif0(zif[21], low, low);
-	bufif0(zif[22], low, low);
-	bufif0(zif[23], low, low);
-	bufif0(zif[24], low, low);
-	bufif0(zif[25], low, low);
-	bufif0(zif[26], low, low);
-	bufif0(zif[27], low, low);
-	bufif0(zif[28], low, low);
-	bufif0(zif[29], low, low);
-	bufif0(zif[30], low, low);
-	bufif0(zif[31], low, low);
-	bufif0(zif[32], low, low);
-	bufif0(zif[33], low, low);
-	bufif0(zif[34], low, low);
-	bufif0(zif[35], low, low);
-	bufif0(zif[36], low, low);
-	bufif0(zif[37], low, low);
-	bufif0(zif[38], low, low);
-	bufif0(zif[39], low, low);
-	bufif0(zif[40], low, low);
-	bufif0(zif[41], low, low);
-	bufif0(zif[42], low, low);
-	bufif0(zif[43], low, low);
-	bufif0(zif[44], low, low);
-	bufif0(zif[45], low, low);
-	bufif0(zif[46], low, low);
-	bufif0(zif[47], low, low);
-	bufif0(zif[48], low, low);
+	`ZIF_BUF0(1, examplereg, low);
+	`ZIF_BUF0(2, low, low);
+	`ZIF_BUF0(3, low, low);
+	`ZIF_BUF0(4, low, low);
+	`ZIF_BUF0(5, low, low);
+	`ZIF_BUF0(6, low, low);
+	`ZIF_BUF0(7, low, low);
+	`ZIF_BUF0(8, low, low);
+	`ZIF_BUF0(9, low, low);
+	`ZIF_BUF0(10, low, low);
+	`ZIF_BUF0(11, low, low);
+	`ZIF_BUF0(12, low, low);
+	`ZIF_BUF0(13, low, low);
+	`ZIF_BUF0(14, low, low);
+	`ZIF_BUF0(15, low, low);
+	`ZIF_BUF0(16, low, low);
+	`ZIF_BUF0(17, low, low);
+	`ZIF_BUF0(18, low, low);
+	`ZIF_BUF0(19, low, low);
+	`ZIF_BUF0(20, low, low);
+	`ZIF_BUF0(21, low, low);
+	`ZIF_BUF0(22, low, low);
+	`ZIF_BUF0(23, low, low);
+	`ZIF_BUF0(24, low, low);
+	`ZIF_BUF0(25, low, low);
+	`ZIF_BUF0(26, low, low);
+	`ZIF_BUF0(27, low, low);
+	`ZIF_BUF0(28, low, low);
+	`ZIF_BUF0(29, low, low);
+	`ZIF_BUF0(30, low, low);
+	`ZIF_BUF0(31, low, low);
+	`ZIF_BUF0(32, low, low);
+	`ZIF_BUF0(33, low, low);
+	`ZIF_BUF0(34, low, low);
+	`ZIF_BUF0(35, low, low);
+	`ZIF_BUF0(36, low, low);
+	`ZIF_BUF0(37, low, low);
+	`ZIF_BUF0(38, low, low);
+	`ZIF_BUF0(39, low, low);
+	`ZIF_BUF0(40, low, low);
+	`ZIF_BUF0(41, low, low);
+	`ZIF_BUF0(42, low, low);
+	`ZIF_BUF0(43, low, low);
+	`ZIF_BUF0(44, low, low);
+	`ZIF_BUF0(45, low, low);
+	`ZIF_BUF0(46, low, low);
+	`ZIF_BUF0(47, low, low);
+	`ZIF_BUF0(48, low, low);
 `BOTTOMHALF_END
