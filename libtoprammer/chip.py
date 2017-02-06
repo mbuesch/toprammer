@@ -3,7 +3,7 @@
 #
 #    Chip support
 #
-#    Copyright (c) 2009-2012 Michael Buesch <m@bues.ch>
+#    Copyright (c) 2009-2017 Michael Buesch <m@bues.ch>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -117,9 +117,12 @@ class Chip(object):
 		self.top.printDebug(self.chipDescription.chipID +\
 				    ": Debug - " + message)
 
-	def throwError(self, message):
-		raise TOPException(self.chipDescription.chipID +\
-				   ": " + message)
+	def throwError(self, message, always=False):
+		message = self.chipDescription.chipID + ": " + message
+		if self.top.getForceLevel() >= 1 and not always:
+			self.printWarning(message)
+		else:
+			raise TOPException(message)
 
 	def generateVoltageLayouts(self):
 		if self.__chipPackage:
@@ -141,7 +144,8 @@ class Chip(object):
 			try:
 				generator = self.generator
 			except (AttributeError), e:
-				self.throwError("BUG: Using auto-layout, but did not initialize it.")
+				self.throwError("BUG: Using auto-layout, but did not initialize it.",
+						always=True)
 			generator.applyVCCLayout(self.top)
 		else:
 			self.top.vcc.setLayoutMask(0)
@@ -155,7 +159,8 @@ class Chip(object):
 			try:
 				generator = self.generator
 			except (AttributeError), e:
-				self.throwError("BUG: Using auto-layout, but did not initialize it.")
+				self.throwError("BUG: Using auto-layout, but did not initialize it.",
+						always=True)
 			generator.applyVPPLayout(self.top, packagePinsToTurnOn)
 		else:
 			self.top.vpp.setLayoutMask(0)
@@ -166,7 +171,8 @@ class Chip(object):
 			try:
 				generator = self.generator
 			except (AttributeError), e:
-				self.throwError("BUG: Using auto-layout, but did not initialize it.")
+				self.throwError("BUG: Using auto-layout, but did not initialize it.",
+						always=True)
 			generator.applyGNDLayout(self.top)
 		else:
 			self.top.gnd.setLayoutMask(0)
@@ -204,63 +210,78 @@ class Chip(object):
 
 	def readSignature(self):
 		# Override me in the subclass, if required.
-		self.throwError("Signature reading not supported")
+		self.throwError("Signature reading not supported",
+				always=True)
 
 	def erase(self):
 		# Override me in the subclass, if required.
-		self.throwError("Chip erasing not supported")
+		self.throwError("Chip erasing not supported",
+				always=True)
 
 	def test(self):
 		# Override me in the subclass, if required.
-		self.throwError("Chip testing not supported")
+		self.throwError("Chip testing not supported",
+				always=True)
 
 	def readProgmem(self):
 		# Override me in the subclass, if required.
-		self.throwError("Program memory reading not supported")
+		self.throwError("Program memory reading not supported",
+				always=True)
 
 	def writeProgmem(self, image):
 		# Override me in the subclass, if required.
-		self.throwError("Program memory writing not supported")
+		self.throwError("Program memory writing not supported",
+				always=True)
 
 	def readEEPROM(self):
 		# Override me in the subclass, if required.
-		self.throwError("EEPROM reading not supported")
+		self.throwError("EEPROM reading not supported",
+				always=True)
 
 	def writeEEPROM(self, image):
 		# Override me in the subclass, if required.
-		self.throwError("EEPROM writing not supported")
+		self.throwError("EEPROM writing not supported",
+				always=True)
 
 	def readFuse(self):
 		# Override me in the subclass, if required.
-		self.throwError("Fuse reading not supported")
+		self.throwError("Fuse reading not supported",
+				always=True)
 
 	def writeFuse(self, image):
 		# Override me in the subclass, if required.
-		self.throwError("Fuse writing not supported")
+		self.throwError("Fuse writing not supported",
+				always=True)
 
 	def readLockbits(self):
 		# Override me in the subclass, if required.
-		self.throwError("Lockbit reading not supported")
+		self.throwError("Lockbit reading not supported",
+				always=True)
 
 	def writeLockbits(self, image):
 		# Override me in the subclass, if required.
-		self.throwError("Lockbit writing not supported")
+		self.throwError("Lockbit writing not supported",
+				always=True)
 
 	def readRAM(self):
 		# Override me in the subclass, if required.
-		self.throwError("RAM reading not supported")
+		self.throwError("RAM reading not supported",
+				always=True)
 
 	def writeRAM(self, image):
 		# Override me in the subclass, if required.
-		self.throwError("RAM writing not supported")
+		self.throwError("RAM writing not supported",
+				always=True)
 		
 	def readUserIdLocation(self):
 		# Override me in the subclass, if required.
-		self.throwError("User ID Location reading not supported")
+		self.throwError("User ID Location reading not supported",
+				always=True)
 
 	def writeUserIdLocation(self, image):
 		# Override me in the subclass, if required.
-		self.throwError("User ID Location writing not supported")		
+		self.throwError("User ID Location writing not supported",
+				always=True)
 
 __registeredChips = []
 
