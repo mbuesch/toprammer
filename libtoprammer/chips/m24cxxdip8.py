@@ -218,7 +218,7 @@ class Chip_m24c16dip8(Chip_m24cXXdip8_common):
 		Chip_m24cXXdip8_common.__init__(self, eepromSize = 1024 * 16 // 8)
 
 class ChipDescription_m24cXX(ChipDescription):
-	def __init__(self, chipImplClass, chipID, description, broken=False):
+	def __init__(self, chipImplClass, chipID, description):
 		ChipDescription.__init__(self,
 			chipImplClass = chipImplClass,
 			bitfile = "m24c16dip8",
@@ -232,40 +232,34 @@ class ChipDescription_m24cXX(ChipDescription):
 				("SO8", "With 1:1 adapter"),
 				("TSSOP8", "With 1:1 adapter"),
 			),
-			broken = broken,
 		)
 
 ChipDescription_m24cXX(
 	Chip_m24c01dip8,
 	chipID = "m24c01dip8",
 	description = "M24C01 I2C EEPROM",
-	broken = True,
 )
 
 ChipDescription_m24cXX(
 	Chip_m24c02dip8,
 	chipID = "m24c02dip8",
 	description = "M24C02 I2C EEPROM",
-	broken = True,
 )
 
 ChipDescription_m24cXX(
 	Chip_m24c04dip8,
 	chipID = "m24c04dip8",
 	description = "M24C04 I2C EEPROM",
-	broken = True,
 )
 
 ChipDescription_m24cXX(
 	Chip_m24c08dip8,
 	chipID = "m24c08dip8",
 	description = "M24C08 I2C EEPROM",
-	broken = True,
 )
 
 ChipDescription_m24cXX(
 	Chip_m24c16dip8,
 	chipID = "m24c16dip8",
 	description = "M24C16 I2C EEPROM",
-	broken = True,
 )
