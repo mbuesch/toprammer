@@ -125,37 +125,20 @@ class Chip_m24cXXdip8_common(Chip):
 	def __setAddressExtension(self, address, writeMode):
 		sizeMask = self.eepromSize - 1
 		assert(sizeMask & ~0x7FF == 0)
-		addrExt = address & 0x700 & sizeMask
-		if self.currentAddrExt != addrExt or\
-		   self.currentWriteMode != writeMode:
-			self.currentAddrExt = addrExt
-			self.currentWriteMode = writeMode
-			if sizeMask & 0x0100:
-				E0 = addrExt & 0x0100
-				E0_en = 0
-			else:
-				E0 = 0
-				E0_en = 1
-			if sizeMask & 0x0200:
-				E1 = addrExt & 0x0200
-				E1_en = 0
-			else:
-				E1 = 0
-				E1_en = 1
-			if sizeMask & 0x0400:
-				E2 = addrExt & 0x0400
-				E2_en = 0
-			else:
-				E2 = 0
-				E2_en = 1
-			if writeMode:
-				WC = 0
-			else:
-				WC = 1
+		addrExt = ((address & 0x700 & sizeMask) >> 8) << 1
+
+		if self.currentWriteMode != writeMode:
+			E0 = E1 = E2 = 0
+			E0_en = not (sizeMask & 0x0100)
+			E1_en = not (sizeMask & 0x0200)
+			E2_en = not (sizeMask & 0x0400)
+			WC = not writeMode
 			self.__setControlPins(E0=E0, E0_en=E0_en,
 					      E1=E1, E1_en=E1_en,
 					      E2=E2, E2_en=E2_en,
 					      WC=WC)
+		self.currentAddrExt = addrExt
+		self.currentWriteMode = writeMode
 
 	def __runI2C(self, data=None, read=False, do_start=False, do_stop=False, drive_ack=False):
 		if data is not None:
