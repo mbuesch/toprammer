@@ -1,5 +1,8 @@
 Signal\s<__cmd_state>\sis\snever\sused\sor\sassigned
+Signal\s<__cmd_state>\sis\sassigned\sbut\snever\sused
 Signal\s<__cmd_running>\sis\snever\sused\sor\sassigned
 Signal\s<__cmd>\sis\snever\sused\sor\sassigned
+Node\s<__cmd_[0-9]+>\sof\ssequential\stype\sis\sunconnected\sin\sblock
+Signal\s<__cmd<[0-9]+:[0-9]+>>\sis\sassigned\sbut\snever\sused
 Include\sdirectory\s../../../common\sdoes\snot\sexist
 Include\sdirectory\s../../common\sdoes\snot\sexist
