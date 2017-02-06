@@ -100,8 +100,6 @@
 			if (i2c_running) begin
 				if (i2c_finished && i2c_clock) begin
 					i2c_running <= 0;
-	//					i2c_nreset	<= 0;
-	//TODO					i2c_nreset <= !i2c_do_stop;
 					`CMD_FINISH
 				end else begin
 					i2c_clock <= ~i2c_clock;
