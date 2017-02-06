@@ -53,58 +53,34 @@ class Chip_m24cXXdip8_common(Chip):
 		self.__chipTurnOn()
 
 		image = ""
-		count = 0
 		prevAddr = None
 		self.progressMeterInit("Reading EEPROM", self.eepromSize)
-		begin = True
 		for addr in range(0, self.eepromSize):
 			self.progressMeter(addr)
-#			if prevAddr is None or (prevAddr & 0xFF00) != (addr & 0xFF00):
-			if 1:
-				print("setAddr %X" % addr)#XXX
+			if prevAddr is None or (prevAddr & 0xFF00) != (addr & 0xFF00):
 				self.__setAddressExtension(addr, writeMode=False)
-				print("ADRWRDEVSEL")
+				# Begin sequential random read
 				self.__runI2C(data=self.I2C_BASE_ADDR | self.currentAddrExt | self.I2C_WRITE,
 					      read=False, do_start=True, do_stop=False)
 				self.__expectACK()
-				print("ADRWR")
 				self.__runI2C(data=addr & 0xFF,
 					      read=False, do_start=False, do_stop=False)
 				self.__expectACK()
-				print("DATADEVSEL")
 				self.__runI2C(data=self.I2C_BASE_ADDR | self.currentAddrExt | self.I2C_READ,
 					      read=False, do_start=True, do_stop=False)
 				self.__expectACK()
-				print("DATAREAD")
+				prevAddr = addr
+			# Sequential random read
+			if addr >= self.eepromSize - 1:
+				# Last byte
 				self.__runI2C(read=True, do_start=False, do_stop=True)
 				self.__expectNACK()
-				begin = True
-				prevAddr = addr
-#			else:
-#				if begin:
-#					self.__runI2C(data=self.I2C_BASE_ADDR | self.currentAddrExt | self.I2C_WRITE,
-#						      read=False, do_start=True, do_stop=False)
-#					self.__expectACK()
-#					self.__runI2C(data=addr & 0xFF,
-#						      read=False, do_start=False, do_stop=False)
-#					self.__expectACK()
-#					self.__runI2C(data=self.I2C_BASE_ADDR | self.currentAddrExt | self.I2C_READ,
-#						      read=False, do_start=True, do_stop=False)
-#					self.__expectACK()
-#					self.__runI2C(read=True, do_start=False, do_stop=False)
-#					self.__expectACK()
-#					begin = False
-#				else:
-#	#				self.__runI2C(data=self.I2C_BASE_ADDR | self.currentAddrExt | self.I2C_READ,
-#	#					      read=False, do_start=True, do_stop=False)
-#					self.__runI2C(read=True, do_start=False, do_stop=False)
-#					self.__expectACK()
+			else:
+				self.__runI2C(read=True, do_start=False, do_stop=False,
+					      drive_ack=True)
+				self.__expectACK()
 			self.__readData()
-			count += 1
-			if count == self.top.getBufferRegSize():
-				image += self.top.cmdReadBufferReg(count)
-				count = 0
-		image += self.top.cmdReadBufferReg(count)
+			image += self.top.cmdReadBufferReg(1)
 		self.progressMeterFinish()
 
 		return image
@@ -121,17 +97,23 @@ class Chip_m24cXXdip8_common(Chip):
 			self.progressMeter(addr)
 			if prevAddr is None or (prevAddr & 0xFFF0) != (addr & 0xFFF0):
 				self.__setAddressExtension(addr, writeMode=True)
-				self.__runCommand(self.CMD_DEVSEL_WRITE, busyWait=True)
-				self.__runCommand(self.CMD_SETADDR, busyWait=True)
-				self.__setData(byte2int(image[addr]))
-				self.__runCommand(self.CMD_DATA_WRITE, busyWait=True)
+				self.__runI2C(data=self.I2C_BASE_ADDR | self.currentAddrExt | self.I2C_WRITE,
+					      read=False, do_start=True, do_stop=False)
+				self.__expectACK()
+				self.__runI2C(data=addr & 0xFF,
+					      read=False, do_start=False, do_stop=False)
+				self.__expectACK()
 				prevAddr = addr
+			if (addr & 0xF) == 0xF:
+				self.__runI2C(data=byte2int(image[addr]),
+					      read=False, do_start=False, do_stop=True)
+				self.__expectACK()
+				self.top.cmdDelay(0.005) # Max write time
 			else:
-				self.__setData(byte2int(image[addr]))
-				if (addr & 0xF) == 0xF:
-					self.__runCommand(self.CMD_DATA_WRITE_STOP, busyWait=True)
-				else:
-					self.__runCommand(self.CMD_DATA_WRITE, busyWait=True)
+				self.__runI2C(data=byte2int(image[addr]),
+					      read=False, do_start=False, do_stop=False)
+				self.__expectACK()
+
 		self.progressMeterFinish()
 
 	def __readData(self):
@@ -175,14 +157,15 @@ class Chip_m24cXXdip8_common(Chip):
 					      E2=E2, E2_en=E2_en,
 					      WC=WC)
 
-	def __runI2C(self, data=None, read=False, do_start=False, do_stop=False):
+	def __runI2C(self, data=None, read=False, do_start=False, do_stop=False, drive_ack=False):
 		if data is not None:
 			self.__setData(data)
 		else:
 			self.__setData(0)
 		command = (0x01 if read else 0) |\
 			  (0x02 if do_start else 0) |\
-			  (0x04 if do_stop else 0)
+			  (0x04 if do_stop else 0) |\
+			  (0x08 if drive_ack else 0)
 		self.top.cmdFPGAWrite(0, command)
 		self.__busyWait()
 

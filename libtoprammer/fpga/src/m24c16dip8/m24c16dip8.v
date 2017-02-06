@@ -49,6 +49,7 @@
 	wire [7:0] i2c_read_byte;
 	reg i2c_read;			/* 1=> Read mode */
 	wire i2c_ack;
+	reg i2c_drive_ack;
 	reg i2c_do_start;
 	reg i2c_do_stop;
 	wire i2c_finished;
@@ -67,6 +68,7 @@
 		.read_byte(i2c_read_byte),
 		.read_mode(i2c_read),
 		.ack(i2c_ack),
+		.drive_ack(i2c_drive_ack),
 		.do_start(i2c_do_start),
 		.do_stop(i2c_do_stop),
 		.finished(i2c_finished)
@@ -87,6 +89,7 @@
 		i2c_nreset <= 0;
 		i2c_write_byte <= 0;
 		i2c_read <= 0;
+		i2c_drive_ack <= 0;
 		i2c_do_start <= 0;
 		i2c_do_stop <= 0;
 		i2c_running <= 0;
@@ -109,6 +112,7 @@
 				i2c_read	<= `CMD_NR[0];
 				i2c_do_start	<= `CMD_NR[1];
 				i2c_do_stop	<= `CMD_NR[2];
+				i2c_drive_ack	<= `CMD_NR[3];
 				i2c_clock	<= 0;
 				i2c_running	<= 1;
 				i2c_nreset	<= 1;
