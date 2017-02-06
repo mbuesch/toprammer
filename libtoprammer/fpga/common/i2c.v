@@ -24,7 +24,7 @@ module i2c_module(clock, nreset,
 		  scl_out, scl_out_en, scl_in,
 		  sda_out, sda_out_en, sda_in,
 		  write_byte, read_byte, read_mode,
-		  ack,
+		  ack, drive_ack,
 		  do_start, do_stop,
 		  finished);
 	input clock;
@@ -39,6 +39,7 @@ module i2c_module(clock, nreset,
 	output [7:0] read_byte;
 	input read_mode;
 	output ack;
+	input drive_ack;
 	input do_start;
 	input do_stop;
 	output finished;
@@ -193,7 +194,8 @@ module i2c_module(clock, nreset,
 				case (ack_state)
 				0: begin
 					if (scl_pos == SCL_LO) begin
-						sda_out_en_reg <= 0;
+						sda_out_en_reg <= drive_ack;
+						sda_out_reg <= 0;
 					end else if (scl_pos == SCL_HI) begin
 						ack_reg <= sda_in;
 						ack_state <= 1;
