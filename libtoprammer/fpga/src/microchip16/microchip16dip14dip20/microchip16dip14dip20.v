@@ -24,6 +24,7 @@
 `include "common.vh"
 `include "microchip16.vh"
 
+`undef DUT_SDIO
 `define DUT_SDIO    17
 
 `define DELAY42NSEC(D42NSEC)    __delay_count <= (D42NSEC) - 1;//41.666 ns wait cycle if D42NSEC = 1

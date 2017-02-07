@@ -21,8 +21,8 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-`define DUT_SDIO	27
 `include "microchip16.vh"
+
 `ALL_WITHOUT_ZIF(microchip16sip6, 32'hDF05, 1)
 
 	`ZIF_UNUSED(1)	`ZIF_UNUSED(2)	`ZIF_UNUSED(3)
