@@ -1,0 +1,14 @@
+#!/bin/sh
+
+test_init()
+{
+	request_DUT "m24c01dip8" || return 1
+	return 0
+}
+
+test_run()
+{
+	toprammer --write-eeprom "$testfile_128"
+	toprammer --read-eeprom "$tmpfile"
+	compare_files "$testfile_128" "$tmpfile" || die "EEPROM mismatch"
+}
