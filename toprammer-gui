@@ -1218,6 +1218,7 @@ class HexEditWidget(QWidget):
 		self.scrollArea = scrollArea
 
 		self.bgColor = QColor("#FFFFFF")
+		self.fgColor = QColor("#000000")
 		self.cursor0Color = QColor("#A0A07F")
 		self.cursor1Color = QColor("#D0D0AF")
 
@@ -1443,6 +1444,7 @@ class HexEditWidget(QWidget):
 					   self.cursor0Color)
 
 		# Text
+		p.setPen(QPen(self.fgColor))
 		y = self.charHeight
 		for line in self.textLines:
 			p.drawText(0, y, line)
