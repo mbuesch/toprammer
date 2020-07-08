@@ -20,7 +20,7 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from microchip8_splittedPMarea_hasResetPC import *
+from .microchip8_splittedPMarea_hasResetPC import *
 
 class Chip_Pic10F322dip8(microchip8_splittedPMarea_hasResetPC):
 	
@@ -30,8 +30,8 @@ class Chip_Pic10F322dip8(microchip8_splittedPMarea_hasResetPC):
 	logicalFlashProgramMemorySize = 0x2000
 	logicalFlashConfigurationMemorySize = 0x2000
 
-    	def __init__(self):
-	    	microchip8_splittedPMarea_hasResetPC.__init__(self,
+	def __init__(self):
+		microchip8_splittedPMarea_hasResetPC.__init__(self,
 			chipPackage="DIP8",
 			chipPinVCC=2,
 			chipPinsVPP=8,

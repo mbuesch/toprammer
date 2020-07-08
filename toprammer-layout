@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 #    TOP2049 Open Source programming suite
 #
@@ -36,26 +36,26 @@ class FakeTOP(object):
 		return self.topType
 
 def usage():
-	print "Toprammer ZIF socket layout generator v%s" % VERSION
-	print ""
-	print "Usage: %s [OPTIONS]" % sys.argv[0]
-	print ""
-	print "Mandatory options:"
-	print " -d|--device TOPxxxx    The TOPxxxx device that is used."
-	print "                        Possible choices are: TOP2049"
-	print " -p|--package DIPxx     The package type of the DUT."
-	print "                        Package may also be the name of a supported chip."
-	print "                        In this case, --vcc, --vpp and --gnd are ignored."
-	print " -v|--vcc PIN           Set VCC pin number, relative to the package."
-	print " -P|--vpp PIN(s)        Set VPP pin number(s), relative to the package."
-	print "                        May be one pin number or a comma separated list of pin numbers."
-	print "                        May be omitted or NONE, if no VPP pin is required."
-	print " -g|--gnd PIN           Set GND pin number, relative to the package."
-	print ""
-	print "Optional:"
-	print " -h|--help              Print this help text"
-	print " -I|--only-insert       Only show insert-layout"
-	print " -S|--only-supply       Only show supply-layout"
+	print("Toprammer ZIF socket layout generator v%s" % VERSION)
+	print("")
+	print("Usage: %s [OPTIONS]" % sys.argv[0])
+	print("")
+	print("Mandatory options:")
+	print(" -d|--device TOPxxxx    The TOPxxxx device that is used.")
+	print("                        Possible choices are: TOP2049")
+	print(" -p|--package DIPxx     The package type of the DUT.")
+	print("                        Package may also be the name of a supported chip.")
+	print("                        In this case, --vcc, --vpp and --gnd are ignored.")
+	print(" -v|--vcc PIN           Set VCC pin number, relative to the package.")
+	print(" -P|--vpp PIN(s)        Set VPP pin number(s), relative to the package.")
+	print("                        May be one pin number or a comma separated list of pin numbers.")
+	print("                        May be omitted or NONE, if no VPP pin is required.")
+	print(" -g|--gnd PIN           Set GND pin number, relative to the package.")
+	print("")
+	print("Optional:")
+	print(" -h|--help              Print this help text")
+	print(" -I|--only-insert       Only show insert-layout")
+	print(" -S|--only-supply       Only show supply-layout")
 
 def main(argv):
 	package = None
@@ -96,10 +96,10 @@ def main(argv):
 				showInsert = False
 				showSupply = True
 		if not programmer:
-			print "-d|--device is mandatory!\n"
+			print("-d|--device is mandatory!\n")
 			raise ValueError()
 		if not package:
-			print "-p|--package is mandatory!\n"
+			print("-p|--package is mandatory!\n")
 			raise ValueError()
 
 		generator = None
@@ -108,27 +108,27 @@ def main(argv):
 				package, allowBroken=True)
 			chip = chipDesc.chipImplClass.createInstance(
 				FakeTOP(programmer), chipDesc)
-		except (TOPException), e:
+		except (TOPException) as e:
 			chip = None
 			if vccPin is None or gndPin is None:
-				print "-v|--vcc and  -g|--gnd  " +\
-					"are mandatory, if a package type is specified.\n"
+				print("-v|--vcc and  -g|--gnd  " +\
+					"are mandatory, if a package type is specified.\n")
 				raise ValueError()
 
-	except (getopt.GetoptError, ValueError, KeyError), e:
+	except (getopt.GetoptError, ValueError, KeyError) as e:
 		usage()
 		return 1
-	except (TOPException), e:
-		print e
+	except (TOPException) as e:
+		print(e)
 		return 1
 	try:
 		if chip:
 			try:
 				generator = chip.generator
-			except (AttributeError), e:
-				print "The chip %s does not have a layout autogenerator. "\
+			except (AttributeError) as e:
+				print("The chip %s does not have a layout autogenerator. "\
 					"You must specify the package type, -v, -P and -g manually." %\
-					package
+					package)
 				return 1
 		else:
 			generator = createLayoutGenerator(package)
@@ -136,13 +136,13 @@ def main(argv):
 			generator.setPins(vccPin, vppPins, gndPin)
 			generator.recalculate()
 		if showInsert:
-			print "Chip insert layout:\n"
-			print generator.zifLayoutAsciiArt()
+			print("Chip insert layout:\n")
+			print(generator.zifLayoutAsciiArt())
 		if showSupply:
-			print "\nSupply voltage pins on the ZIF:\n"
-			print generator.zifPinAssignments()
-	except (TOPException), e:
-		print e
+			print("\nSupply voltage pins on the ZIF:\n")
+			print(generator.zifPinAssignments())
+	except (TOPException) as e:
+		print(e)
 		return 1
 	return 0
 

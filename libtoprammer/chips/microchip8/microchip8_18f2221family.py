@@ -28,7 +28,7 @@ class microchip8_18f2221family(Chip_Microchip8_18_common):
 	voltageVPP				 = 11
 	
 	delayP2A = 0.0000008  # Serial clock low time 
-  	delayP5 = 0.0000015  # Delay between 4-bit command and command operand
+	delayP5 = 0.0000015  # Delay between 4-bit command and command operand
   	
 	def __init__(self,
 			chipPackage, chipPinVCC, chipPinsVPP, chipPinGND,

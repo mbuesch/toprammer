@@ -20,11 +20,11 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from util import *
-from layout_generator import *
-from user_interface import *
-from generic_algorithms import *
-from ihex import *
+from .util import *
+from .layout_generator import *
+from .user_interface import *
+from .generic_algorithms import *
+from .ihex import *
 
 
 class Chip(object):
@@ -143,7 +143,7 @@ class Chip(object):
 		if turnOn:
 			try:
 				generator = self.generator
-			except (AttributeError), e:
+			except (AttributeError) as e:
 				self.throwError("BUG: Using auto-layout, but did not initialize it.",
 						always=True)
 			generator.applyVCCLayout(self.top)
@@ -158,7 +158,7 @@ class Chip(object):
 		if turnOn:
 			try:
 				generator = self.generator
-			except (AttributeError), e:
+			except (AttributeError) as e:
 				self.throwError("BUG: Using auto-layout, but did not initialize it.",
 						always=True)
 			generator.applyVPPLayout(self.top, packagePinsToTurnOn)
@@ -170,7 +170,7 @@ class Chip(object):
 		if turnOn:
 			try:
 				generator = self.generator
-			except (AttributeError), e:
+			except (AttributeError) as e:
 				self.throwError("BUG: Using auto-layout, but did not initialize it.",
 						always=True)
 			generator.applyGNDLayout(self.top)
@@ -350,7 +350,7 @@ class ChipOptionInt(ChipOption):
 	def castValue(self, string):
 		try:
 			value = int(string)
-		except (ValueError), e:
+		except (ValueError) as e:
 			return None
 		if (self.minVal is not None and value < self.minVal) or\
 		   (self.maxVal is not None and value > self.maxVal):
@@ -371,7 +371,7 @@ class ChipOptionFloat(ChipOption):
 	def castValue(self, string):
 		try:
 			value = float(string)
-		except (ValueError), e:
+		except (ValueError) as e:
 			return None
 		if (self.minVal is not None and value < self.minVal) or\
 		   (self.maxVal is not None and value > self.maxVal):

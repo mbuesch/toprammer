@@ -20,7 +20,7 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from microchip8_splittedPMarea import *
+from .microchip8_splittedPMarea import *
 
 class Chip_Pic16F84adip18(microchip8_splittedPMarea):
 	CMD_BEGIN_ERASE_PROGRAMMING_CYCLE = 0x8

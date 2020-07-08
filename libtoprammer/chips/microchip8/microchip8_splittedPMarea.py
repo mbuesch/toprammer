@@ -104,10 +104,10 @@ class microchip8_splittedPMarea(Chip_Microchip8_common):
 	def setPC(self, address):
 		if(self.isInsideProgramMemoryArea):
 			if(address >= self.logicalFlashProgramMemorySize):
-				raise(TOPException('Cannot set PC to address inside PM {:x}'.format(address)))
+				raise TOPException('Cannot set PC to address inside PM {:x}'.format(address))
 		else:
 			if(address < self.logicalFlashProgramMemorySize):
-				raise(TOPException('Cannot set PC to address outside PM {:x}'.format(address)))
+				raise TOPException('Cannot set PC to address outside PM {:x}'.format(address))
 		while(self.PC != address):
 			self.incrementPC(1)
 	

@@ -29,24 +29,22 @@ import random
 class TOPException(Exception): pass
 
 
-if sys.version_info[0] == 2: # Python 2.x
-	def byte2int(byte):
-		return ord(byte)
+def byte2int(byte):
+	if isinstance(byte, int):
+		return byte
+	assert isinstance(byte, (bytes, bytearray))
+	return byte[0]
 
-	def int2byte(integer):
-		return chr(integer)
-else: # Python 3.x
-	def byte2int(byte):
-		return int(byte[0])
-
-	def int2byte(integer):
-		return bytes( (integer, ) )
+def int2byte(integer):
+	if isinstance(integer, (bytes, bytearray)):
+		return bytes(integer)
+	assert isinstance(integer, int)
+	return bytes( (integer, ) )
 
 def hex2bin(hexdata):
 	assert(len(hexdata) % 2 == 0)
-	bindata = map(lambda i: int2byte(int(hexdata[i:i+2], 16)),
-		      range(0, len(hexdata), 2))
-	return b"".join(bindata)
+	return b"".join(int2byte(int(hexdata[i:i+2], 16))
+			for i in range(len(hexdata), 2))
 
 def byte2hex(byte):
 	return "%02X" % byte2int(byte)
@@ -54,7 +52,7 @@ def byte2hex(byte):
 def bytes2hex(bindata):
 	if not bindata:
 		return ""
-	return "".join(map(byte2hex, bindata))
+	return "".join(byte2hex(b) for b in bindata)
 
 def byte2ascii(c):
 	ci = byte2int(c)
@@ -65,7 +63,7 @@ def byte2ascii(c):
 def bytes2ascii(bindata):
 	if not bindata:
 		return ""
-	return "".join(map(byte2ascii, bindata))
+	return "".join(byte2ascii(b) for b in bindata)
 
 def str2bool(string):
 	string = str(string).lower().strip()
@@ -75,14 +73,13 @@ def str2bool(string):
 		return True
 	try:
 		return bool(int(string, 10))
-	except (ValueError), e:
+	except (ValueError) as e:
 		pass
 	return None
 
 def genRandomBlob(size):
-	blob = map(lambda x: int2byte(random.randint(0, 0xFF)),
-		   range(0, size))
-	return b"".join(blob)
+	return b"".join(int2byte(random.randint(0, 0xFF))
+			for x in range(size))
 
 def bit(bitNr):
 	return 1 << bitNr
@@ -117,7 +114,7 @@ def parseHexdump(dump):
 				byte = int(bytes[i:i+2], 16)
 				bin.append(int2byte(byte))
 		return b"".join(bin)
-	except (ValueError), e:
+	except (ValueError) as e:
 		raise TOPException("Invalid hexdump format (Integer error)")
 
 def generateHexdump(mem):
@@ -151,7 +148,7 @@ class IO_ihex(object):
 	def autodetect(self, data):
 		try:
 			self.toBinary(data)
-		except (TOPException), e:
+		except (TOPException) as e:
 			return False
 		return True
 
@@ -188,7 +185,7 @@ class IO_ihex(object):
 				checksum = checksum & 0xFF
 				if checksum != 0 and not checksumWarned:
 					checksumWarned = True
-					print "WARNING: Invalid IHEX format (checksum error)"
+					print("WARNING: Invalid IHEX format (checksum error)")
 
 				if type == self.TYPE_EOF:
 					break
@@ -218,7 +215,7 @@ class IO_ihex(object):
 						if bin[offset] != defaultBytes[offset % len(defaultBytes)] and \
 						   not doublewriteWarned:
 							doublewriteWarned = True
-							print "Invalid IHEX format (Wrote twice to same location)"
+							print("Invalid IHEX format (Wrote twice to same location)")
 						bin[offset] = byte
 					continue
 				raise TOPException("Invalid IHEX format (unsup type %d)" % type)
@@ -258,7 +255,7 @@ class IO_ahex(object):
 	def autodetect(self, data):
 		try:
 			self.toBinary(data)
-		except (TOPException), e:
+		except (TOPException) as e:
 			return False
 		return True
 

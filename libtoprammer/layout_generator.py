@@ -20,8 +20,8 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from util import *
-from top_devices import *
+from .util import *
+from .top_devices import *
 
 
 class LayoutGenerator:
@@ -35,13 +35,13 @@ class LayoutGenerator:
 	def setProgrammerType(self, programmer="TOP2049"):
 		supportedDevices = {
 			# Map  deviceName : layoutModules, ZIF-pin-count
-			"TOP2049"	: (top2049.vcc_layouts, top2049.vpp_layouts,
-					   top2049.gnd_layouts, 48)
+			"TOP2049"	: (top2049_vcc_layouts, top2049_vpp_layouts,
+					   top2049_gnd_layouts, 48)
 		}
 		try:
 			(vcc_layouts, vpp_layouts, gnd_layouts, zifPins) = \
 				supportedDevices[programmer.upper()]
-		except (KeyError), e:
+		except (KeyError) as e:
 			raise TOPException("Programmer " + programmer + " not supported")
 		self.vccLayout = vcc_layouts.VCCLayout()
 		self.vppLayout = vpp_layouts.VPPLayout()
@@ -153,7 +153,7 @@ class LayoutGenerator:
 			while offset >= 0:
 				try:
 					self.mapToZIF(offset, upsideDown)
-				except (LayoutGenerator.MapError), e:
+				except (LayoutGenerator.MapError) as e:
 					offset -= 1
 					continue
 				return
@@ -334,5 +334,5 @@ def createLayoutGenerator(package):
 		if package.upper() == "PLCC44": # 1:1 adapter
 			return LayoutGeneratorDIP(44)
 		raise ValueError()
-	except (ValueError), e:
+	except (ValueError) as e:
 		raise TOPException("Unknown package type " + package)

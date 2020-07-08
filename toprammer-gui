@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 #    TOP2049 Open Source programming suite
 #
@@ -26,13 +26,13 @@ from libtoprammer.util import *
 import sys
 import time
 import cgi
-import ConfigParser
+import configparser
 try:
 	from PySide.QtCore import *
 	from PySide.QtGui import *
-except (ImportError), e:
-	print "Failed to import PySide modules: %s" % str(e)
-	print "Please install PySide. On Debian Linux run: aptitude install python-pyside"
+except (ImportError) as e:
+	print("Failed to import PySide modules: %s" % str(e))
+	print("Please install PySide. On Debian Linux run: aptitude install python-pyside")
 	sys.exit(1)
 
 
@@ -158,7 +158,7 @@ class ZifWidget(QGroupBox):
 	def readInputs(self):
 		try:
 			inputMask = self.unitest.queryTop("top.getChip().getInputs()")
-		except (TOPException), e:
+		except (TOPException) as e:
 			QMessageBox.critical(self, "TOP communication failed",
 				"Failed to fetch input states:\n" +\
 				str(e))
@@ -194,7 +194,7 @@ class ZifWidget(QGroupBox):
 		try:
 			self.unitest.queryTop("top.getChip().setOutputEnableMask(...)",
 					      outEnMask)
-		except (TOPException), e:
+		except (TOPException) as e:
 			QMessageBox.critical(self, "TOP communication failed",
 				"Failed to set output-enable states:\n" +\
 				str(e))
@@ -208,7 +208,7 @@ class ZifWidget(QGroupBox):
 		try:
 			self.unitest.queryTop("top.getChip().setOutputs(...)",
 					      outMask)
-		except (TOPException), e:
+		except (TOPException) as e:
 			QMessageBox.critical(self, "TOP communication failed",
 				"Failed to set output states:\n" +\
 				str(e))
@@ -285,7 +285,7 @@ class UnitestDialog(QDialog):
 		self.param_oscFreq = self.queryTop("top.getOscillatorHz()")
 
 		assert(self.param_nrZifPins % 2 == 0)
-		self.param_vppLayouts.sort(key=lambda (layId, layMask): layMask)
+		self.param_vppLayouts.sort(key=lambda layId_layMask: layId_layMask[1])
 
 		self.menuBar = QMenuBar(self)
 		self.menuBar.addAction("&Load settings...", self.loadSettings)
@@ -433,7 +433,7 @@ class UnitestDialog(QDialog):
 	def __readFcntValue(self):
 		try:
 			self.fcntValue = self.queryTop("top.getChip().getFreqCount()")
-		except (TOPException), e:
+		except (TOPException) as e:
 			QMessageBox.critical(self, "TOP communication failed",
 				"Failed to read frequency counter value:\n" +\
 				str(e))
@@ -483,7 +483,7 @@ class UnitestDialog(QDialog):
 
 	def __loadFile(self, filename):
 		try:
-			p = ConfigParser.SafeConfigParser()
+			p = configparser.SafeConfigParser()
 			p.read((filename,))
 
 			sect = "TOPRAMMER-UNITEST-SETTINGS"
@@ -515,7 +515,7 @@ class UnitestDialog(QDialog):
 			self.vccVoltage.setValue(voltage)
 
 			layouts = p.get(sect, "vppLayout").split(",")
-			for layId in self.vppLayouts.keys():
+			for layId in list(self.vppLayouts.keys()):
 				if layId in layouts:
 					self.vppLayouts[layId].setCheckState(Qt.Checked)
 				else:
@@ -567,7 +567,7 @@ class UnitestDialog(QDialog):
 					raise TOPException("Invalid fcntPin")
 				self.fcntPin.setCurrentIndex(idx)
 
-		except (ConfigParser.Error, TOPException, ValueError), e:
+		except (configparser.Error, TOPException, ValueError) as e:
 			QMessageBox.critical(self, "Failed to load settings",
 					     "Failed to load settings: %s" % str(e))
 
@@ -593,7 +593,7 @@ class UnitestDialog(QDialog):
 			fd.write("vccLayout=%d\r\n" % self.vccLayout.itemData(idx))
 			fd.write("vccVoltage=%f\r\n" % self.vccVoltage.value())
 			vppLayouts = ""
-			for layId in self.vppLayouts.keys():
+			for layId in list(self.vppLayouts.keys()):
 				if self.vppLayouts[layId].checkState() == Qt.Checked:
 					if vppLayouts:
 						vppLayouts += ","
@@ -616,7 +616,7 @@ class UnitestDialog(QDialog):
 			fd.write("oscillatorDiv=%d\r\n" % self.oscDiv.value())
 			fd.write("zifOutEnMask=%X\r\n" % self.zifWidget.getOutEnMask())
 			fd.write("zifOutMask=%X\r\n" % self.zifWidget.getOutMask())
-		except (IOError), e:
+		except (IOError) as e:
 			QMessageBox.critical(self, "Failed to save settings",
 					     "Failed to write settings to file: %s" % str(e))
 
@@ -666,7 +666,7 @@ class UnitestDialog(QDialog):
 		lay = self.vccLayout.itemData(idx)
 		blockedPins.extend(self.queryTop("top.vcc.ID2pinlist(...)", lay))
 		# VPP
-		for key in self.vppLayouts.keys():
+		for key in list(self.vppLayouts.keys()):
 			if self.vppLayouts[key].checkState() == Qt.Checked:
 				blockedPins.extend(self.queryTop("top.vpp.ID2pinlist(...)", key))
 		# OSC
@@ -690,7 +690,7 @@ class UnitestDialog(QDialog):
 		selLayout = self.gndLayout.itemData(idx)
 		try:
 			self.queryTop("top.getChip().setGND(...)", selLayout)
-		except (TOPException), e:
+		except (TOPException) as e:
 			QMessageBox.critical(self, "TOP communication failed",
 				"Failed to set GND layout:\n" +\
 				str(e))
@@ -705,7 +705,7 @@ class UnitestDialog(QDialog):
 		selLayout = self.vccLayout.itemData(idx)
 		try:
 			self.queryTop("top.getChip().setVCC(...)", selVoltage, selLayout)
-		except (TOPException), e:
+		except (TOPException) as e:
 			QMessageBox.critical(self, "TOP communication failed",
 				"Failed to set VCC layout:\n" +\
 				str(e))
@@ -717,12 +717,12 @@ class UnitestDialog(QDialog):
 			return
 		selVoltage = self.vppVoltage.value()
 		selLayouts = []
-		for key in self.vppLayouts.keys():
+		for key in list(self.vppLayouts.keys()):
 			if self.vppLayouts[key].checkState() == Qt.Checked:
 				selLayouts.append(key)
 		try:
 			self.queryTop("top.getChip().setVPP(...)", selVoltage, selLayouts)
-		except (TOPException), e:
+		except (TOPException) as e:
 			QMessageBox.critical(self, "TOP communication failed",
 				"Failed to set VPP layout:\n" +\
 				str(e))
@@ -781,7 +781,7 @@ class UnitestDialog(QDialog):
 				self.switchMode(Chip_Unitest.MODE_UNITEST)
 				self.__updateFcntValueLabel()
 				self.inputPollEn.setEnabled(True)
-		except (TOPException), e:
+		except (TOPException) as e:
 			QMessageBox.critical(self, "TOP communication failed",
 				"Failed configure frequency counter:\n" +\
 				str(e))
@@ -797,7 +797,7 @@ class UnitestDialog(QDialog):
 			idx = self.oscPin.currentIndex()
 			mask = self.oscPin.itemData(idx).obj
 			self.queryTop("top.getChip().setOscMask(...)", mask)
-		except (TOPException), e:
+		except (TOPException) as e:
 			QMessageBox.critical(self, "TOP communication failed",
 				"Failed configure oscillator:\n" +\
 				str(e))
@@ -942,7 +942,7 @@ class HwThread(QThread):
 		# Make sure the device is in a consistent state.
 		self.__blockCancellation()
 		if self.top:
-			print "Operation cancelled. Resetting chip."
+			print("Operation cancelled. Resetting chip.")
 			self.top.resetChip()
 		self.__unblockCancellation()
 
@@ -962,12 +962,12 @@ class HwThread(QThread):
 			self.cancellationBlocked = 0
 			result = self.__runTask(self.task)
 			failed = False
-		except (TOPException), e:
+		except (TOPException) as e:
 			result = e
-		except (HwThread.CancelException), e:
+		except (HwThread.CancelException) as e:
 			self.__doCancelTask()
 			result = e
-		except (Exception), e:
+		except (Exception) as e:
 			result = e
 		self.appendMessage("finished", (self.opaqueId, failed, result),
 				   nocancel=True)
@@ -1130,7 +1130,7 @@ class Console(QDockWidget):
 		if running:
 			self.setStatus(Console.STAT_PROGRESS)
 			# Set progress meters to "busy"
-			for meterId in self.idToProgressBar.keys():
+			for meterId in list(self.idToProgressBar.keys()):
 				self.progressMeterInit(meterId, 0)
 		else:
 			if success:
@@ -1138,7 +1138,7 @@ class Console(QDockWidget):
 			else:
 				self.setStatus(Console.STAT_ERROR)
 			# Reset progress meters to 0%
-			for meterId in self.idToProgressBar.keys():
+			for meterId in list(self.idToProgressBar.keys()):
 				self.progressMeterInit(meterId, 2)
 
 	def setStatus(self, status):
@@ -1565,7 +1565,7 @@ class InfoBufferWidget(BufferWidget):
 			return text
 
 		if packages:
-			pckgs = map(p2str, packages)
+			pckgs = list(map(p2str, packages))
 			self.packages.setText("\n".join(pckgs))
 		else:
 			self.packages.setText("Unknown")
@@ -1637,8 +1637,7 @@ class BitBufferWidget(BufferWidget):
 				      self.bitDescriptionsAttr, None)
 		if not bitDescList:
 			return ""
-		bitDesc = filter(lambda x: x.bitNr == bitNr,
-				 bitDescList)
+		bitDesc = [x for x in bitDescList if x.bitNr == bitNr]
 		if not bitDesc:
 			return ""
 		return bitDesc[0].description
@@ -1940,14 +1939,12 @@ class ChipSelectDialog(QDialog):
 		vendors = getRegisteredVendors()
 		self.vendorList.clear()
 		QListWidgetItem(self.ALL_VENDORS, self.vendorList)
-		for vendorName in vendors.keys():
+		for vendorName in list(vendors.keys()):
 			descriptors = vendors[vendorName]
 			if self.showBroken.checkState() != Qt.Checked:
-				descriptors = filter(lambda d: not d.broken,
-						     descriptors)
-			descriptors = filter(lambda d: (d.chipType == selType or selType == -1) and\
-						       (d.chipType != ChipDescription.TYPE_INTERNAL),
-					     descriptors)
+				descriptors = [d for d in descriptors if not d.broken]
+			descriptors = [d for d in descriptors if (d.chipType == selType or selType == -1) and\
+						       (d.chipType != ChipDescription.TYPE_INTERNAL)]
 			if not descriptors:
 				continue
 			item = QListWidgetItem(vendorName, self.vendorList)
@@ -2450,7 +2447,7 @@ class MainWindow(QMainWindow):
 		try:
 			dlg = UnitestDialog(self)
 			dlg.exec_()
-		except (TOPException), e:
+		except (TOPException) as e:
 			self.console.showMessage("Failed to start Unitest: %s\n" % str(e),
 						 bold=True)
 		self.console.unblockStatusUpdate()
@@ -2525,7 +2522,7 @@ class MainWindow(QMainWindow):
 				 split(")")[0].replace("*", "").strip().split()
 		try:
 			dataIn = open(fn, "rb").read()
-		except (IOError), e:
+		except (IOError) as e:
 			QMessageBox.critical(self, "Failed to read file",
 				"Failed to read %s:\n%s" %\
 				(str(fn), str(e.strerror)))
@@ -2568,7 +2565,7 @@ class MainWindow(QMainWindow):
 			if not ok:
 				QMessageBox.critical(self, "Failed to load data",
 					"Failed to load the file into the buffer")
-		except (TOPException), e:
+		except (TOPException) as e:
 			QMessageBox.critical(self, "Failed to convert data",
 				"Failed to convert the input file data to binary\n%s" % str(e))
 			return
@@ -2605,7 +2602,7 @@ class MainWindow(QMainWindow):
 			assert(0)
 		try:
 			open(fn, "wb").write(data)
-		except (IOError), e:
+		except (IOError) as e:
 			QMessageBox.critical(self, "Failed to write file",
 				"Failed to write %s:\n%s" %\
 				(str(fn), str(e.strerror)))
@@ -2861,7 +2858,7 @@ class MainWindow(QMainWindow):
 		elif op.op == Operation.OP_RAWCOMMAND:
 			self.console.showMessage("Successfully sent raw command\n", bold=True)
 		else:
-			print "ERROR: No handler for op %d task %d" % (op.op, op.hwTask)
+			print("ERROR: No handler for op %d task %d" % (op.op, op.hwTask))
 		self.setOperationFinished(op.failed)
 
 	def hardwareTaskFinished(self, opaqueId, failed, returnValue):

@@ -25,28 +25,27 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from microchip8_singlePMarea import *
+from .microchip8_singlePMarea import *
 
 class Chip_Pic10F200sip6(microchip8_singlePMarea):
     
-    # CONFIGURATION WORD FOR PIC10F200/202/204/206
-    # X X X X   X X X MCLRE     /CP WDT X X
-    logicalFlashSize = 0x200
+	# CONFIGURATION WORD FOR PIC10F200/202/204/206
+	# X X X X   X X X MCLRE     /CP WDT X X
+	logicalFlashSize = 0x200
 
-    def __init__(self):
-	microchip8_singlePMarea.__init__(self,
-		  chipPackage = "DIP10",
-		  chipPinVCC = 9,
-		  chipPinsVPP = 10,
-		  chipPinGND = 8,
-		  signature="\x09\x18\x24\x35",
-		  flashPageSize=0x100,
-		  flashPages=1,
-		  eepromPageSize=0,
-		  eepromPages=0,
-		  fuseBytes=2
-		  )
-	
+	def __init__(self):
+		microchip8_singlePMarea.__init__(self,
+			chipPackage = "DIP10",
+			chipPinVCC = 9,
+			chipPinsVPP = 10,
+			chipPinGND = 8,
+			signature="\x09\x18\x24\x35",
+			flashPageSize=0x100,
+			flashPages=1,
+			eepromPageSize=0,
+			eepromPages=0,
+			fuseBytes=2
+		)
     
 fuseDesc = (
 	BitDescription(0, "Unused"),

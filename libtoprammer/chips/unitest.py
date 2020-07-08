@@ -114,8 +114,7 @@ class Chip_Unitest(Chip):
 		assert(not packagePinsToTurnOn) # Not supported, yet.
 		layouts = []
 		if turnOn:
-			layouts = map(lambda (layoutID, layoutMask): layoutID,
-				      self.generator.getVPPLayouts())
+			layouts = [layoutID_layoutMask[0] for layoutID_layoutMask in self.generator.getVPPLayouts()]
 		self.setVPP(self.autogenVPPVoltage, layouts)
 
 	# Overloaded layout generator interface.

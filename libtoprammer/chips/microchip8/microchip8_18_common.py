@@ -49,16 +49,16 @@ class Chip_Microchip8_18_common(Chip):
 
 	# default delays - can be overridden
 	delayP2A = 400e-9  # Serial clock low time 
-  	delayP5 = 2.2e-6  # Delay between 4-bit command and command operand
-  	delayP5A = 2.2e-6  # Delay between 4-bit command operand and next 4-bit command 
-  	delayP6 = 2.2e-6  # Delay between last SCK fall of command byte to first SCK rise of read data word
-  	delayP9 = 1e-3  # SCK High time (minimum programming time)
-  	delayP10 = 30e-6  # SCK Low time after programming (high-voltage discharge time)
-  	delayP11 = 0.01  # Delay to allow self-timed data write or bulk erase to occur
-  	delayP12 = 0.000002  # Input data hold time from nMCLR/Vpp rise
-  	delayP13 = 0.0000001  # Vdd rise setup time to nMCLR/Vpp rise
-  	delayP14 = 0.00000001  # Data out Valid from SCK rise
-  	delayP15 = 0.000002  # PGM rise setup time to nMCLR/Vpp rise
+	delayP5 = 2.2e-6  # Delay between 4-bit command and command operand
+	delayP5A = 2.2e-6  # Delay between 4-bit command operand and next 4-bit command 
+	delayP6 = 2.2e-6  # Delay between last SCK fall of command byte to first SCK rise of read data word
+	delayP9 = 1e-3  # SCK High time (minimum programming time)
+	delayP10 = 30e-6  # SCK Low time after programming (high-voltage discharge time)
+	delayP11 = 0.01  # Delay to allow self-timed data write or bulk erase to occur
+	delayP12 = 0.000002  # Input data hold time from nMCLR/Vpp rise
+	delayP13 = 0.0000001  # Vdd rise setup time to nMCLR/Vpp rise
+	delayP14 = 0.00000001  # Data out Valid from SCK rise
+	delayP15 = 0.000002  # PGM rise setup time to nMCLR/Vpp rise
   	
 	userIDLocationSize		 = 8
 	userIDLocationAddr  	 = 0x200000
@@ -388,7 +388,7 @@ class Chip_Microchip8_18_common(Chip):
 		for i in range(0, 100):
 			if not self.isBusy():
 				return
-		       	self.top.hostDelay(0.000001)
+			self.top.hostDelay(0.000001)
 		self.throwError("Timeout in busywait.")
 
 	def getCodeAddrToTBLPTR(self, addr):

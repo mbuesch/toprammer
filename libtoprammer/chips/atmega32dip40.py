@@ -20,7 +20,7 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from atmega_common import *
+from .atmega_common import *
 
 
 class Chip_ATMega32DIP40(Chip_ATMega_common):

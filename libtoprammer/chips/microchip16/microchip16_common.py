@@ -60,7 +60,7 @@ class Chip_Microchip16_common(Chip):
 	delayP18 = 0.001  # delay between first nMCLR fall and first PGCx rise
 	delayP19 = 0.001  # delay between last PGC fall for key sequence on PGDx and second nMCLR rise
   
-  	deviceIDAddr = 0xFF0000
+	deviceIDAddr = 0xFF0000
 	deviceIDLength = 1
 	
 	deviceIdMapDict = {
@@ -388,7 +388,7 @@ class Chip_Microchip16_common(Chip):
 		# another bug in Microchip's doc  - s/0x200F86/0x200F80/
 		self.executeCode((0x200F80, 0x880190))
 		for configWord16 in listConfigWord16:
-			print ("write CW 0x{:x}".format(configWord16))
+			print("write CW 0x{:x}".format(configWord16))
 			# Load the Config reg data to W6
 			self.executeCode(((0x200006 | (configWord16 << 4)),))
 			# Write the Config. reg. data to the write latch and increment Write Pointer
@@ -505,11 +505,13 @@ class Chip_Microchip16_common(Chip):
 
 	def isBusy(self):
 		return bool(self.getStatusFlags() & self.STAT_BUSY)
+
 	def setTopProgrammerDelays(self):
 		# print("tdel5:{:d}".format(int(math.ceil(self.delayP3 / 42e-9))))
 		# print("tdly:{:d}".format(int(math.ceil(self.delayCommandDataREGOUT / 42e-9))))
 		self.top.cmdFPGAWrite(0x10, int(math.ceil(self.delayP3 / 42e-9)))
 		self.top.cmdFPGAWrite(0x11, int(math.ceil(self.delayCommandDataREGOUT / 42e-9)))
+
 	def busyWait(self):
 		# We do not poll the busy flag, because that would result
 		# in a significant slowdown. We delay long enough for the
@@ -519,8 +521,8 @@ class Chip_Microchip16_common(Chip):
 		for i in range(0, 100):
 			if not self.isBusy():
 				return
-		       	self.top.hostDelay(0.000001)
-	       	self.throwError("Timeout in busywait.")	
+			self.top.hostDelay(0.000001)
+		self.throwError("Timeout in busywait.")	
 
 	def getCodeInitializeTBLPAG(self, addr, wIdx=0):
 		mlw = (addr & 0xFFFF) << 4

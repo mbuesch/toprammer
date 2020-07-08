@@ -20,8 +20,8 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from microchip16_common import *
-from configWords import klx0x_fuseDesc
+from .microchip16_common import *
+from .configWords import klx0x_fuseDesc
 
 class Chip_Pic24f08kl401dip20(Chip_Microchip16_common):
 	
@@ -32,21 +32,21 @@ class Chip_Pic24f08kl401dip20(Chip_Microchip16_common):
 	logicalFlashConfigurationMemorySize = 0x800000
 	
 	def __init__(self):
-	 	Chip_Microchip16_common.__init__(self,
-		chipPackage="DIP20",
-		chipPinVCC=20,
-		chipPinsVPP=1,
-		chipPinGND=19,
-		signature="\x0e\x4b",
-		# flashPageSize (in number of 24bit words)
-		flashPageSize=0x2bfe / 2 + 2,
-		# flashPageSize=0x40,
-		flashPages=1,
-		# eepromPageSize (in 16bit words)
-		eepromPageSize=0x100,
-		eepromPages=1,
-		# all 7 words uses lowest byte only
-		fuseBytes=2 * 9
+		Chip_Microchip16_common.__init__(self,
+			chipPackage="DIP20",
+			chipPinVCC=20,
+			chipPinsVPP=1,
+			chipPinGND=19,
+			signature="\x0e\x4b",
+			# flashPageSize (in number of 24bit words)
+			flashPageSize=0x2bfe / 2 + 2,
+			# flashPageSize=0x40,
+			flashPages=1,
+			# eepromPageSize (in 16bit words)
+			eepromPageSize=0x100,
+			eepromPages=1,
+			# all 7 words uses lowest byte only
+			fuseBytes=2 * 9
 		)
 		self.configWordAddr = 0xF80000
 		# self.osccalBackupAddr = self.userIDLocationAddr + self.userIDLocationSize

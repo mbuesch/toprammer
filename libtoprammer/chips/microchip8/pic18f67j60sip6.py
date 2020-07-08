@@ -20,7 +20,7 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from microchip8_18f97j60family import *
+from .microchip8_18f97j60family import *
 
 class Chip_PIC18F67J60sip6(microchip8_18f97j60family):
 

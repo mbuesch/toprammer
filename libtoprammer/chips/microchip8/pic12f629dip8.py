@@ -20,7 +20,7 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from microchip8_splittedPMarea import *
+from .microchip8_splittedPMarea import *
 
 class Chip_Pic12F629dip8(microchip8_splittedPMarea):
 	voltageVDD = 5
@@ -33,8 +33,8 @@ class Chip_Pic12F629dip8(microchip8_splittedPMarea):
 	delayTinternalProgPM = 0.002
 	delayTinternalProgDM = 0.005
 	
-    	def __init__(self):
-	    	microchip8_splittedPMarea.__init__(self,
+	def __init__(self):
+		microchip8_splittedPMarea.__init__(self,
 			chipPackage="DIP8",
 			chipPinVCC=1,
 			chipPinsVPP=4,

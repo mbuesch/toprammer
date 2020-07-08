@@ -62,7 +62,7 @@ def dumpInstr(instr, description):
 
 def parseBulkIn(data):
 	if len(data) == 64:
-		print "Read buffer register"
+		print("Read buffer register")
 		dumpMem(data)
 
 def parseBulkOut(data):
@@ -144,10 +144,10 @@ def parseBulkOut(data):
 			dumpInstr(data[i:i+2], "Unknown 0x4B")
 			i += 1
 		else:
-			print "UNKNOWN INSTRUCTION 0x%02X. Aborting..." % data[i]
+			print("UNKNOWN INSTRUCTION 0x%02X. Aborting..." % data[i])
 			for j in range(i, len(data)):
 				sys.stdout.write("%02X " % data[j])
-			print ""
+			print("")
 			sys.exit(1)
 		i += 1
 
@@ -189,7 +189,7 @@ def parseDumpFile(fd):
 			length = int(m.group(6))
 
 def usage():
-	print "dump-parser.py file.dump"
+	print("dump-parser.py file.dump")
 
 def main(argv):
 	if len(argv) != 2:

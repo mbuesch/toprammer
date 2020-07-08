@@ -150,5 +150,5 @@ class VCCLayout(ShiftregLayout):
 		self.top.cmdLoadVCCLayout(id)
 
 if __name__ == "__main__":
-	print "ZIF socket VCC layouts"
-	print VCCLayout()
+	print("ZIF socket VCC layouts")
+	print(VCCLayout())

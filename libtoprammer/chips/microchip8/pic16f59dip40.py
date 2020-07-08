@@ -20,27 +20,27 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from microchip8_singlePMarea import *
+from .microchip8_singlePMarea import *
 
 
 class Chip_Pic16F59dip40(microchip8_singlePMarea):
 
-    logicalFlashSize = 0x1000
+	logicalFlashSize = 0x1000
     
 
-    def __init__(self):
-	microchip8_singlePMarea.__init__(self,
-		  chipPackage="DIP40",
-		  chipPinVCC=15,
-		  chipPinsVPP=14,
-		  chipPinGND=5,
-		  signature="",
-		  flashPageSize=0x200,
-		  flashPages=4,
-		  eepromPageSize=0,
-		  eepromPages=0,
-		  fuseBytes=2
-		  )
+	def __init__(self):
+		microchip8_singlePMarea.__init__(self,
+			chipPackage="DIP40",
+			chipPinVCC=15,
+			chipPinsVPP=14,
+			chipPinGND=5,
+			signature="",
+			flashPageSize=0x200,
+			flashPages=4,
+			eepromPageSize=0,
+			eepromPages=0,
+			fuseBytes=2
+			)
     
 fuseDesc = (
 	BitDescription(0, "FOSC0"),

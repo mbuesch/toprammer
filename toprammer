@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 #    TOP2049 Open Source programming suite
 #
@@ -27,66 +27,66 @@ import getopt
 
 
 def usage():
-	print "TOP2049 Open Source programming suite v%s" % VERSION
-	print ""
-	print "Usage: %s [OPTIONS] [ACTIONS]" % sys.argv[0]
-	print ""
-	print " -c|--chip-id            The ID of the handled chip. (mandatory)"
-	print "                         See -t|--list for a list of supported chips."
-	print ""
-	print "Optional:"
-	print " -C|--chip-opt NAME=VAL  Set a chip-id specific option."
-	print "                         Use  -c CHIPID -t  to get a list of options."
-	print ""
-	print "Actions:"
-	print " -s|--read-sig FILE      Read the signature bytes"
-	print " -x|--erase              Erase the chip"
-	print " -T|--test               Run chip unit-test"
-	print ""
-	print " -p|--read-prog FILE     Read the program memory"
-	print " -P|--write-prog FILE    Write the program memory"
-	print ""
-	print " -e|--read-eeprom FILE   Read the EEPROM"
-	print " -E|--write-eeprom FILE  Write the EEPROM"
-	print ""
-	print " -f|--read-fuse FILE     Read the fuse bits"
-	print " -F|--write-fuse FILE    Write the fuse bits"
-	print ""
-	print " -l|--read-lock FILE     Read the lock bits"
-	print " -L|--write-lock FILE    Write the lock bits"
-	print ""
-	print " -r|--read-ram FILE      Read the RAM"
-	print " -R|--write-ram FILE     Write the RAM"
-	print ""
-	print " -a|--read-uil FILE      Read the User ID Location"
-	print " -A|--write-uil FILE     Write the User ID Location"
-	print ""
-	print "Other options:"
-	print " -t|--list               Print a list of supported chips and exit."
-	print "                         Use -V|--verbose to control the list verbosity (0-4)"
-	print " -d|--device DEVID       Use a specific programmer. Example for USB:"
-	print "                         usb:TOP2049:0"
-	print "                         First found programmer is used, if not given."
-	print " -V|--verbose LEVEL      Set the verbosity level:"
-	print "                         0 => show warnings"
-	print "                         1 => also show informational messages (default)"
-	print "                         2 => also show debugging messages"
-	print "                         3 => also dump all USB commands"
-	print " -o|--force LEVEL        Set the force level. Default = 0"
-	print "                         Note that any value greater than 0 may brick devices"
-	print " -U|--force-upload       Force upload the bitfile, even if it already appears"
-	print "                         to be uploaded."
-	print " -Q|--noqueue            Disable command queuing. Really slow!"
-	print " -B|--broken             Also use broken algorithms"
-	print " -I|--in-format FMT      Input file format. Default = autodetect"
-	print " -O|--out-format FMT     Output file format. Default = bin"
-	print ""
-	print "File formats (FMT):"
-	print " auto                    Autodetect. (input only)"
-	print " bin                     Raw binary data"
-	print " ihex                    Intel hex"
-	print " ihex-raw                Raw Intel hex (don't interpret sections)"
-	print " ahex                    Hex with ASCII dump"
+	print("TOP2049 Open Source programming suite v%s" % VERSION)
+	print("")
+	print("Usage: %s [OPTIONS] [ACTIONS]" % sys.argv[0])
+	print("")
+	print(" -c|--chip-id            The ID of the handled chip. (mandatory)")
+	print("                         See -t|--list for a list of supported chips.")
+	print("")
+	print("Optional:")
+	print(" -C|--chip-opt NAME=VAL  Set a chip-id specific option.")
+	print("                         Use  -c CHIPID -t  to get a list of options.")
+	print("")
+	print("Actions:")
+	print(" -s|--read-sig FILE      Read the signature bytes")
+	print(" -x|--erase              Erase the chip")
+	print(" -T|--test               Run chip unit-test")
+	print("")
+	print(" -p|--read-prog FILE     Read the program memory")
+	print(" -P|--write-prog FILE    Write the program memory")
+	print("")
+	print(" -e|--read-eeprom FILE   Read the EEPROM")
+	print(" -E|--write-eeprom FILE  Write the EEPROM")
+	print("")
+	print(" -f|--read-fuse FILE     Read the fuse bits")
+	print(" -F|--write-fuse FILE    Write the fuse bits")
+	print("")
+	print(" -l|--read-lock FILE     Read the lock bits")
+	print(" -L|--write-lock FILE    Write the lock bits")
+	print("")
+	print(" -r|--read-ram FILE      Read the RAM")
+	print(" -R|--write-ram FILE     Write the RAM")
+	print("")
+	print(" -a|--read-uil FILE      Read the User ID Location")
+	print(" -A|--write-uil FILE     Write the User ID Location")
+	print("")
+	print("Other options:")
+	print(" -t|--list               Print a list of supported chips and exit.")
+	print("                         Use -V|--verbose to control the list verbosity (0-4)")
+	print(" -d|--device DEVID       Use a specific programmer. Example for USB:")
+	print("                         usb:TOP2049:0")
+	print("                         First found programmer is used, if not given.")
+	print(" -V|--verbose LEVEL      Set the verbosity level:")
+	print("                         0 => show warnings")
+	print("                         1 => also show informational messages (default)")
+	print("                         2 => also show debugging messages")
+	print("                         3 => also dump all USB commands")
+	print(" -o|--force LEVEL        Set the force level. Default = 0")
+	print("                         Note that any value greater than 0 may brick devices")
+	print(" -U|--force-upload       Force upload the bitfile, even if it already appears")
+	print("                         to be uploaded.")
+	print(" -Q|--noqueue            Disable command queuing. Really slow!")
+	print(" -B|--broken             Also use broken algorithms")
+	print(" -I|--in-format FMT      Input file format. Default = autodetect")
+	print(" -O|--out-format FMT     Output file format. Default = bin")
+	print("")
+	print("File formats (FMT):")
+	print(" auto                    Autodetect. (input only)")
+	print(" bin                     Raw binary data")
+	print(" ihex                    Intel hex")
+	print(" ihex-raw                Raw Intel hex (don't interpret sections)")
+	print(" ahex                    Hex with ASCII dump")
 
 IO_handlers = {
 	"bin"		: IO_binary,
@@ -169,8 +169,8 @@ def main(argv):
 				try:
 					v = v.split('=')
 					name, value = v[0], v[1]
-				except (IndexError, ValueError), e:
-					print "-C|--chip-opt invalid parameter"
+				except (IndexError, ValueError) as e:
+					print("-C|--chip-opt invalid parameter")
 					return 1
 				copt = AssignedChipOption(name, value)
 				opt_chipOptions.append(copt)
@@ -235,17 +235,17 @@ def main(argv):
 			if o in ("-A", "--write-uil"):
 				opt_action = "write-uil"
 				opt_file = v				
-	except (getopt.GetoptError, ValueError), e:
+	except (getopt.GetoptError, ValueError) as e:
 		usage()
 		return 1
 	if opt_action != "print-list" and not opt_chipID:
-		print "-c|--chip-id is mandatory!"
+		print("-c|--chip-id is mandatory!")
 		return 1
 	if not opt_informat in ("auto", "bin", "ihex", "ihex-raw", "ahex"):
-		print "Invalid -I|--in-format"
+		print("Invalid -I|--in-format")
 		return 1
 	if not opt_outformat in ("bin", "ihex", "ihex-raw", "ahex"):
-		print "Invalid -O|--out-format"
+		print("Invalid -O|--out-format")
 		return 1
 
 	try:
@@ -298,10 +298,10 @@ def main(argv):
 			top.writeUserIdLocation(fileIn(top, opt_action, opt_file, opt_informat))
 		else:
 			if opt_verbose >= 1:
-				print "No action specified"
+				print("No action specified")
 		top.shutdownChip()
-	except (TOPException, BitfileException, IOError), e:
-		print e
+	except (TOPException, BitfileException, IOError) as e:
+		print(e)
 		return 1
 	return 0
 

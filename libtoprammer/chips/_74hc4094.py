@@ -20,7 +20,7 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from unitest import *
+from .unitest import *
 
 class Chip_74hc4094(Chip_Unitest):
 	def __init__(self):

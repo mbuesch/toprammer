@@ -20,12 +20,12 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from util import *
-from command_queue import *
+from .util import *
+from .command_queue import *
 try:
 	import usb.core
 	import usb.util
-except (ImportError), e:
+except (ImportError) as e:
 	print("Python USB (PyUSB) support module not found.\n"
 	      "Please install python-usb.")
 	sys.exit(1)
@@ -82,14 +82,14 @@ class HardwareAccessUSB(CommandQueue):
 			self.bulkIn.clear_halt()
 			self.bulkOut.clear_halt()
 
-		except (usb.core.USBError), e:
+		except (usb.core.USBError) as e:
 			raise TOPException("USB error: " + str(e))
 
 	def shutdown(self):
 		"Shutdown the USB connection"
 		try:
 			usb.util.dispose_resources(self.usbdev)
-		except (usb.core.USBError), e:
+		except (usb.core.USBError) as e:
 			raise TOPException("USB error: " + str(e))
 
 	def send(self, data):
@@ -105,7 +105,7 @@ class HardwareAccessUSB(CommandQueue):
 			if nrWritten != len(data):
 				raise TOPException("USB bulk write error: "
 					"short write")
-		except (usb.core.USBError), e:
+		except (usb.core.USBError) as e:
 			raise TOPException("USB bulk write error: " + str(e))
 
 	def receive(self, size):
@@ -123,6 +123,6 @@ class HardwareAccessUSB(CommandQueue):
 			if self.doRawDump:
 				print("Received data:")
 				dumpMem(data)
-		except (usb.core.USBError), e:
+		except (usb.core.USBError) as e:
 			raise TOPException("USB bulk read error: " + str(e))
 		return data

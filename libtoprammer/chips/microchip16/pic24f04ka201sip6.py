@@ -25,8 +25,8 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from microchip16_common import *
-from configWords import ka200_fuseDesc
+from .microchip16_common import *
+from .configWords import ka200_fuseDesc
 
 class Chip_Pic24f04ka201sip6(Chip_Microchip16_common):
 	
@@ -39,21 +39,21 @@ class Chip_Pic24f04ka201sip6(Chip_Microchip16_common):
 	hasEEPROM = False
 	
 	def __init__(self):
-	 	Chip_Microchip16_common.__init__(self,
-		chipPackage = "DIP10",
-		chipPinVCC = 9,
-		chipPinsVPP = 10,
-		chipPinGND = 8,
-		signature="\x00\x0d",
-		# flashPageSize (in number of 24bit words)
-		flashPageSize=0xAFE / 2 + 2,
-		# flashPageSize=0x40,
-		flashPages=1,
-		# eepromPageSize (in 16bit words)
-		eepromPageSize=0,
-		eepromPages=0,
-		# all 7 words uses lowest byte only
-		fuseBytes=2 * 9
+		Chip_Microchip16_common.__init__(self,
+			chipPackage = "DIP10",
+			chipPinVCC = 9,
+			chipPinsVPP = 10,
+			chipPinGND = 8,
+			signature="\x00\x0d",
+			# flashPageSize (in number of 24bit words)
+			flashPageSize=0xAFE / 2 + 2,
+			# flashPageSize=0x40,
+			flashPages=1,
+			# eepromPageSize (in 16bit words)
+			eepromPageSize=0,
+			eepromPages=0,
+			# all 7 words uses lowest byte only
+			fuseBytes=2 * 9
 		)
 		self.configWordAddr = 0xF80000
 		# self.osccalBackupAddr = self.userIDLocationAddr + self.userIDLocationSize

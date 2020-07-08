@@ -19,12 +19,9 @@
 """
 
 import sys
-__pymajor = sys.version_info[0]
-__pyminor = sys.version_info[1]
-if __pymajor < 2 or (__pymajor == 2 and __pyminor < 6):
-	print "FATAL: TOPrammer requires Python version 2.6. Please install Python 2.6"
+if sys.version_info[0] < 3:
+	print("FATAL: TOPrammer requires Python version 3.x. Please install Python 3.x")
 	sys.exit(1)
-
 
 # TOPrammer version stamp
 VERSION_MAJOR	= 0
@@ -32,16 +29,16 @@ VERSION_MINOR	= 17
 VERSION = "%d.%d" % (VERSION_MAJOR, VERSION_MINOR)
 
 
-from bitfile import *
-from util import *
+from .bitfile import *
+from .util import *
 
 import time
 import re
 
-from hardware_access_usb import *
-from top_devices import *
-from chips import *
-from user_interface import *
+from .hardware_access_usb import *
+from .top_devices import *
+from .chips import *
+from .user_interface import *
 
 
 class FoundDev(object):
@@ -159,7 +156,7 @@ class TOP(object):
 			toptype = {
 				(0x2471, 0x0853):	TOP.TYPE_TOP2049,
 			}[ (usbdev.idVendor, usbdev.idProduct) ]
-		except (KeyError), e:
+		except (KeyError) as e:
 			return None
 		return toptype
 
@@ -184,13 +181,13 @@ class TOP(object):
 		self.shutdownProgrammer()
 
 		if foundDev.toptype == self.TYPE_TOP2049:
-			self.hw = top2049.hardware_access.HardwareAccess(
+			self.hw = top2049_hardware_access.HardwareAccess(
 					foundUSBDev = foundDev.busdata,
 					noQueue = noQueue,
 					doRawDump = (self.verbose >= 3))
-			self.vcc = top2049.vcc_layouts.VCCLayout(self)
-			self.vpp = top2049.vpp_layouts.VPPLayout(self)
-			self.gnd = top2049.gnd_layouts.GNDLayout(self)
+			self.vcc = top2049_vcc_layouts.VCCLayout(self)
+			self.vpp = top2049_vpp_layouts.VPPLayout(self)
+			self.gnd = top2049_gnd_layouts.GNDLayout(self)
 		else:
 			assert(0)
 		self.topType = foundDev.toptype
@@ -204,7 +201,7 @@ class TOP(object):
 			try:
 				versionString = self.hw.readVersionString()
 				break
-			except TOPException, e:
+			except TOPException as e:
 				time.sleep(0.05)
 		else:
 			raise TOPException("Could not read version string from hardware")

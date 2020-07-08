@@ -51,5 +51,5 @@ class GNDLayout(GenericLayout):
 		self.top.cmdLoadGNDLayout(id)
 
 if __name__ == "__main__":
-	print "ZIF socket GND layouts"
-	print GNDLayout()
+	print("ZIF socket GND layouts")
+	print(GNDLayout())

@@ -22,12 +22,12 @@ import sys
 try:
 	import pkg_resources
 except ImportError:
-	print "Failed to import the 'pkg_resources' Python module."
-	print "'pkg_resources' is part of the Python 'setuptools' package."
-	print "On Debian Linux run:  apt-get install python-pkg-resources"
+	print("Failed to import the 'pkg_resources' Python module.")
+	print("'pkg_resources' is part of the Python 'setuptools' package.")
+	print("On Debian Linux run:  apt-get install python-pkg-resources")
 	sys.exit(1)
 
-from util import *
+from .util import *
 
 
 class BitfileException(Exception): pass
@@ -73,7 +73,7 @@ class Bitfile:
 			fd = open(filename, "rb")
 			data = fd.read()
 			fd.close()
-		except (IOError), e:
+		except (IOError) as e:
 			raise BitfileException("Failed to read \"" + filename + "\": " + e.strerror)
 		self.filename = filename
 		self.__parse(data)
@@ -86,7 +86,7 @@ class Bitfile:
 			i = len(self.MAGIC)
 			while i < len(data):
 				i += self.__parseNextField(data, i)
-		except (IndexError), e:
+		except (IndexError) as e:
 			raise BitfileException("Failed to parse BIT file")
 		if not self.fpga:
 			raise BitfileException("No FPGA ID string found")
@@ -128,7 +128,7 @@ class Bitfile:
 def __probeFile(fullpath):
 	try:
 		open(fullpath, "rb").close()
-	except (IOError), e:
+	except (IOError) as e:
 		return False
 	return True
 
@@ -152,14 +152,14 @@ def bitfileFind(filename):
 
 if __name__ == "__main__":
 	if len(sys.argv) != 3:
-		print "Usage: %s file.bit ACTION"
-		print ""
-		print "Actions:"
-		print " GETSRC       - print the src-file field to stdout"
-		print " GETFPGA      - print the fpga-type field to stdout"
-		print " GETDATE      - print the date field to stdout"
-		print " GETTIME      - print the time field to stdout"
-		print " GETPAYLOAD   - print the payload field to stdout"
+		print("Usage: %s file.bit ACTION")
+		print("")
+		print("Actions:")
+		print(" GETSRC       - print the src-file field to stdout")
+		print(" GETFPGA      - print the fpga-type field to stdout")
+		print(" GETDATE      - print the date field to stdout")
+		print(" GETTIME      - print the time field to stdout")
+		print(" GETPAYLOAD   - print the payload field to stdout")
 		sys.exit(1)
 	filename = sys.argv[1]
 	action = sys.argv[2].upper()

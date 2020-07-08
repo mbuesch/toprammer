@@ -55,7 +55,7 @@ class ConsoleUserInterface(AbstractUserInterface):
 		if meterId != self.PROGRESSMETER_CHIPACCESS:
 			return
 		self.progressNrSteps = nrSteps
-		self.progress = range(0, 100)
+		self.progress = list(range(0, 100))
 		self.__genericConsoleMessage(message + " [0%", newline=False)
 
 	def progressMeterFinish(self, meterId):
@@ -87,7 +87,7 @@ class ConsoleUserInterface(AbstractUserInterface):
 
 	def __genericConsoleMessage(self, message, newline=True):
 		if newline:
-			print message
+			print(message)
 		else:
 			sys.stdout.write(message)
 			sys.stdout.flush()

@@ -20,13 +20,14 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from microchip8_splittedPMarea_hasResetPC import *
+from .microchip8_splittedPMarea_hasResetPC import *
 
 class Chip_Pic16LF1906dip28(microchip8_splittedPMarea_hasResetPC):
 		
 	nLatches = 8	
-    	def __init__(self):
-	    	microchip8_splittedPMarea_hasResetPC.__init__(self,
+
+	def __init__(self):
+		microchip8_splittedPMarea_hasResetPC.__init__(self,
 			chipPackage="dip28",
 			chipPinVCC=20,
 			chipPinsVPP=1,

@@ -20,17 +20,17 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from microchip8_18f2221family import *
+from .microchip8_18f2221family import *
 
 class Chip_PIC18F2321dip28(microchip8_18f2221family):
 
 	hasEEPROM = True
 
-     	writeBufferSize			 = 8
-     	eraseBufferSize			 = 64
+	writeBufferSize			 = 8
+	eraseBufferSize			 = 64
      	
-     	def __init__(self):
-     		microchip8_18f2221family.__init__(self,
+	def __init__(self):
+		microchip8_18f2221family.__init__(self,
 			chipPackage="DIP28",
 			chipPinVCC=20,
 			chipPinsVPP=1,

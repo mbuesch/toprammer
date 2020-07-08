@@ -159,5 +159,5 @@ class VPPLayout(ShiftregLayout):
 		self.top.cmdLoadVPPLayout(id)
 
 if __name__ == "__main__":
-	print "ZIF socket VPP layouts"
-	print VPPLayout(None)
+	print("ZIF socket VPP layouts")
+	print(VPPLayout(None))
