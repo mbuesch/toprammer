@@ -105,7 +105,9 @@ hexdump_re = re.compile(r"0x[0-9a-fA-F]+:\s+([0-9a-fA-F\s]+)\s*.*")
 
 def parseHexdump(dump):
 	try:
-		bin = []
+		if isinstance(dump, (bytes, bytearray)):
+			dump = dump.decode("ASCII")
+		binData = []
 		for line in dump.splitlines():
 			line = line.strip()
 			if not line:
@@ -113,14 +115,18 @@ def parseHexdump(dump):
 			m = hexdump_re.match(line)
 			if not m:
 				raise TOPException("Invalid hexdump format (regex failure)")
-			bytes = m.group(1).replace(" ", "")
-			if len(bytes) % 2 != 0:
+			data = m.group(1)
+			idx = data.find("  ")
+			if idx >= 0:
+				data = data[:idx] # Strip ascii section
+			data = data.replace(" ", "")
+			if len(data) % 2 != 0:
 				raise TOPException("Invalid hexdump format (odd bytestring len)")
-			for i in range(0, len(bytes), 2):
-				byte = int(bytes[i:i+2], 16)
-				bin.append(int2byte(byte))
-		return b"".join(bin)
-	except (ValueError) as e:
+			for i in range(0, len(data), 2):
+				byte = int(data[i:i+2], 16)
+				binData.append(int2byte(byte))
+		return b"".join(binData)
+	except (ValueError, UnicodeError) as e:
 		raise TOPException("Invalid hexdump format (Integer error)")
 
 def generateHexdump(mem):
@@ -159,11 +165,13 @@ class IO_ihex(object):
 		return True
 
 	def toBinary(self, ihexData, addressRange=None, defaultBytes=b"\xFF"):
-		bin = []
+		binData = []
 		checksumWarned = False
 		doublewriteWarned = False
 		addrBias = addressRange.startAddress if addressRange else 0
 		try:
+			if isinstance(ihexData, (bytes, bytearray)):
+				ihexData = ihexData.decode("ASCII")
 			lines = ihexData.splitlines()
 			hiAddr = 0
 			segment = 0
@@ -210,24 +218,24 @@ class IO_ihex(object):
 				if addressRange and addr > addressRange.endAddress:
 					continue
 				if type == self.TYPE_DATA:
-					if len(bin) < addr - addrBias + count: # Reallocate
-						bytesToAdd = addr - addrBias + count - len(bin)
+					if len(binData) < addr - addrBias + count: # Reallocate
+						bytesToAdd = addr - addrBias + count - len(binData)
 						for i in range(bytesToAdd):
-							defOffs = len(bin) % len(defaultBytes)
-							bin += [ defaultBytes[defOffs], ]
+							defOffs = len(binData) % len(defaultBytes)
+							binData += [ defaultBytes[defOffs], ]
 					for i in range(9, 9 + count * 2, 2):
 						byte = int2byte(int(line[i:i+2], 16))
 						offset = (i - 9) // 2 + addr - addrBias
-						if bin[offset] != defaultBytes[offset % len(defaultBytes)] and \
+						if binData[offset] != defaultBytes[offset % len(defaultBytes)] and \
 						   not doublewriteWarned:
 							doublewriteWarned = True
 							print("Invalid IHEX format (Wrote twice to same location)")
-						bin[offset] = byte
+						binData[offset] = byte
 					continue
 				raise TOPException("Invalid IHEX format (unsup type %d)" % type)
-		except ValueError:
+		except (ValueError, UnicodeError) as e:
 			raise TOPException("Invalid IHEX format (digit format)")
-		return b"".join(bin)
+		return b"".join(binData)
 
 	def fromBinary(self, binData):
 		ihex = []

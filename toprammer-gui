@@ -25,14 +25,16 @@ from libtoprammer.main import *
 from libtoprammer.util import *
 import sys
 import time
-import cgi
+import html
 import configparser
 try:
-	from PySide.QtCore import *
-	from PySide.QtGui import *
+	from PyQt5.QtCore import *
+	from PyQt5.QtGui import *
+	from PyQt5.QtWidgets import *
+	Signal = pyqtSignal
 except (ImportError) as e:
-	print("Failed to import PySide modules: %s" % str(e))
-	print("Please install PySide. On Debian Linux run: aptitude install python-pyside")
+	print("Failed to import PyQt5 modules: %s" % str(e))
+	print("Please install PyQt5. On Debian Linux run: apt install python3-pyqt5")
 	sys.exit(1)
 
 
@@ -47,7 +49,7 @@ def stringRemoveChars(string, chars):
 	return "".join(ret)
 
 def htmlEscape(plaintext):
-	return cgi.escape(plaintext)
+	return html.escape(plaintext, True)
 
 def getIconPath(name):
 	return pkg_resources.resource_filename("libtoprammer",
@@ -582,7 +584,7 @@ class UnitestDialog(QDialog):
 
 	def __saveFile(self, filename):
 		try:
-			fd = open(filename, "w+b")
+			fd = open(filename, "w", encoding="UTF-8")
 
 			fd.write("[TOPRAMMER-UNITEST-SETTINGS]\r\n")
 			fd.write("fileVersion=%d\r\n" % 1)
@@ -616,7 +618,7 @@ class UnitestDialog(QDialog):
 			fd.write("oscillatorDiv=%d\r\n" % self.oscDiv.value())
 			fd.write("zifOutEnMask=%X\r\n" % self.zifWidget.getOutEnMask())
 			fd.write("zifOutMask=%X\r\n" % self.zifWidget.getOutMask())
-		except (IOError) as e:
+		except (IOError, UnicodeError) as e:
 			QMessageBox.critical(self, "Failed to save settings",
 					     "Failed to write settings to file: %s" % str(e))
 
@@ -1223,11 +1225,14 @@ class HexEditWidget(QWidget):
 		self.cursor1Color = QColor("#D0D0AF")
 
 		font = self.font()
-		font.setFamily("monospace")
-		font.setFixedPitch(True)
+		font.setFamily("Courier")
+		font.setStyleHint(QFont.Courier)
+		font.setWeight(QFont.Normal)
 		font.setPointSize(10)
+		font.setBold(False)
+		font.setFixedPitch(True)
 		self.setFont(font)
-		self.charWidth = self.fontMetrics().width("x")
+		self.charWidth = self.fontMetrics().width("X" * 100) / 100
 		self.charHeight = self.fontMetrics().height()
 
 		self.bytesPerLine = 16
@@ -1259,15 +1264,14 @@ class HexEditWidget(QWidget):
 						nrLeft = self.bytesPerLine - (len(data) % self.bytesPerLine)
 						text.append("   " * nrLeft)
 					text.append("  |")
-					for byte in data:
-						text.append(bytes2ascii(byte))
+					text.append(bytes2ascii(data))
 					text.append("|")
 					lines.append("".join(text))
 		else:
 			lines = [ "<The buffer is empty>", ]
 		self.textLines = lines
 		self.nrLines = len(lines)
-		self.previousData = self.data
+		self.previousData = self.getData()
 
 		width = self.fontMetrics().width(self.textLines[0])
 		height = self.nrLines * self.charHeight
@@ -1275,25 +1279,25 @@ class HexEditWidget(QWidget):
 		self.repaint()
 
 	def getData(self):
-		return self.data
+		return bytes(self.data)
 
 	def setData(self, data):
 		if not data:
-			data = ""
-		self.data = data
+			data = b""
+		assert isinstance(data, (bytes, bytearray))
+		self.data = bytearray(data)
 		self.updateText()
 		self.__setCursor(0, False)
 
 	def charInput(self, char):
 		if not self.data:
 			return
-		data = list(self.data)
-		assert(self.cursorByte < len(data))
+		assert(self.cursorByte < len(self.data))
 		if self.cursorOnAscii:
-			data[self.cursorByte] = char
+			self.data[self.cursorByte] = ord(char)
 			self.__setCursor(self.cursorByte + 1, True)
 		else:
-			dataByte = byte2int(data[self.cursorByte])
+			dataByte = self.data[self.cursorByte]
 			char = ord(char.upper())
 			if char >= ord("0") and char <= ord("9"):
 				nibble = char - ord("0")
@@ -1305,12 +1309,11 @@ class HexEditWidget(QWidget):
 				dataByte = (dataByte & 0xF0) | nibble
 			else:
 				dataByte = (dataByte & 0x0F) | (nibble << 4)
-			data[self.cursorByte] = chr(dataByte)
+			self.data[self.cursorByte] = dataByte
 			if self.cursorNibble == 1:
 				self.cursorNibble = 0
 			else:
 				self.__setCursor(self.cursorByte + 1, False)
-		self.data = "".join(data)
 		self.updateText()
 
 	def keyPressEvent(self, e):
@@ -1381,31 +1384,31 @@ class HexEditWidget(QWidget):
 	def mousePressEvent(self, e):
 		x = e.pos().x()
 		y = e.pos().y()
-		byteAreaX = self.charWidth * 13
+		byteAreaX = round(self.charWidth * 13)
 		byteAreaY = 3
-		asciiAreaX = self.charWidth * (13 + 3 * self.bytesPerLine + 3 - 1)
+		asciiAreaX = round(self.charWidth * (13 + 3 * self.bytesPerLine + 3 - 1))
 		asciiAreaY = 3
 		if x >= byteAreaX and\
 		   y >= byteAreaY and\
-		   x <= byteAreaX + self.charWidth * 3 * self.bytesPerLine and\
+		   x <= round(byteAreaX + self.charWidth * 3 * self.bytesPerLine) and\
 		   y <= byteAreaY + self.charHeight * self.nrLines:
 			# Click in byte area.
 			x -= byteAreaX
 			y -= byteAreaY
 			line = y // self.charHeight
-			column = x // (self.charWidth * 3)
+			column = round(x // (self.charWidth * 3))
 			self.__setCursor(line * self.bytesPerLine + column,
 					 False)
 			return
 		if x >= asciiAreaX and\
 		   y >= asciiAreaY and\
-		   x <= asciiAreaX + self.charWidth * self.bytesPerLine and\
+		   x <= round(asciiAreaX + self.charWidth * self.bytesPerLine) and\
 		   y <= asciiAreaY + self.charHeight * self.nrLines:
 			# Click on ascii area.
 			x -= asciiAreaX
 			y -= asciiAreaY
 			line = y // self.charHeight
-			column = x // self.charWidth
+			column = round(x // self.charWidth)
 			self.__setCursor(line * self.bytesPerLine + column,
 					 True)
 			return
@@ -1417,11 +1420,10 @@ class HexEditWidget(QWidget):
 			y = self.charHeight * (self.cursorByte // self.bytesPerLine)
 			y += 3
 		else:
-			x = self.charWidth * 13
-			x += self.charWidth * 3 * (self.cursorByte % self.bytesPerLine)
+			x = self.charWidth * (13 + 3 * (self.cursorByte % self.bytesPerLine))
 			y = self.charHeight * (self.cursorByte // self.bytesPerLine)
 			y += 3
-		return (x, y)
+		return (round(x), round(y))
 
 	def paintEvent(self, e):
 		p = QPainter(self)
@@ -1433,14 +1435,14 @@ class HexEditWidget(QWidget):
 		if self.data and self.hasFocus():
 			(x, y) = self.__cursorUpperLeftEdge()
 			if self.cursorOnAscii:
-				p.fillRect(x, y, self.charWidth, self.charHeight,
+				p.fillRect(x, y, round(self.charWidth), self.charHeight,
 					   self.cursor0Color)
 			else:
-				p.fillRect(x, y, self.charWidth * 2, self.charHeight,
+				p.fillRect(x, y, round(self.charWidth * 2), self.charHeight,
 					   self.cursor1Color)
 				if self.cursorNibble == 0:
-					x += self.charWidth
-				p.fillRect(x, y, self.charWidth, self.charHeight,
+					x = round(x + self.charWidth)
+				p.fillRect(x, y, round(self.charWidth), self.charHeight,
 					   self.cursor0Color)
 
 		# Text
@@ -2601,8 +2603,10 @@ class MainWindow(QMainWindow):
 		else:
 			assert(0)
 		try:
+			if isinstance(data, str):
+				data = data.encode("UTF-8")
 			open(fn, "wb").write(data)
-		except (IOError) as e:
+		except (IOError, UnicodeError) as e:
 			QMessageBox.critical(self, "Failed to write file",
 				"Failed to write %s:\n%s" %\
 				(str(fn), str(e.strerror)))
