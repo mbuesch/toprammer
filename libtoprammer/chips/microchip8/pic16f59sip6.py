@@ -39,7 +39,7 @@ class Chip_Pic16F59sip6(microchip8_singlePMarea):
 			chipPinVCC = 9,
 			chipPinsVPP = 10,
 			chipPinGND = 8,
-			signature="",
+			signature=b"",
 			flashPageSize=0x200,
 			flashPages=4,
 			eepromPageSize=0,

@@ -39,7 +39,7 @@ class Chip_Pic24f08kl302dip28(Chip_Microchip16_common):
 			chipPinVCC=28,
 			chipPinsVPP=1,
 			chipPinGND=27,
-			signature="\x00\x4b",
+			signature=b"\x00\x4b",
 			# flashPageSize (in number of 24bit words)
 			flashPageSize=0x15fe / 2 + 2,
 			# flashPageSize=0x40,

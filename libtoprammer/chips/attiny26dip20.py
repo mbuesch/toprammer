@@ -30,7 +30,7 @@ class Chip_ATTiny26DIP20(Chip_ATMega_common):
 			chipPinVCC = 5,
 			chipPinsVPP = 10,
 			chipPinGND = 6,
-			signature = "\x1E\x91\x09",
+			signature = b"\x1E\x91\x09",
 			flashPageSize = 16,
 			flashPages = 64,
 			eepromPageSize = 4,

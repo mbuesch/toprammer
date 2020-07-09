@@ -102,7 +102,7 @@ class Chip_Microchip16_common(Chip):
 		self.fuseBytes = fuseBytes  # Nr of fuse bytes
 		self.isInPmMode = False
 		self.BufferedBytes = 0
-		self.Image = ""
+		self.Image = b""
 		
 	def enterPM(self, lowVoltageIcspEntry=True):
 		if self.isInPmMode:
@@ -150,7 +150,7 @@ class Chip_Microchip16_common(Chip):
 	def old_readSignature(self):
 		self.progressMeterInit("Reading signature", 0)
 		self.enterPM()
-		self.Image = ""
+		self.Image = b""
 		self.BufferedBytes = 0
 		self.executeCode(self.codeExitResetVector)
 		self.executeCode(self.getCodeInitializeTBLPAG(self.deviceIDAddr, 6))
@@ -184,10 +184,10 @@ class Chip_Microchip16_common(Chip):
 
 	def readProgmem(self):	
 		def unpackImage():
-			out = ""
+			out = b""
 			for halfPackAddr in range(0, len(self.Image), 6):
-				out += self.Image[halfPackAddr:halfPackAddr + 3] + "\0"
-				out += self.Image[halfPackAddr + 4:halfPackAddr + 6] + self.Image[halfPackAddr + 3] + "\0"
+				out += self.Image[halfPackAddr:halfPackAddr + 3] + b"\0"
+				out += self.Image[halfPackAddr + 4:halfPackAddr + 6] + self.Image[halfPackAddr + 3] + b"\0"
 			return out
 	
 		nrWords = self.flashPages * self.flashPageSize
@@ -196,7 +196,7 @@ class Chip_Microchip16_common(Chip):
 		self.enterPM()
 		self.progressMeterInit("Reading flash", nrWords / 2)
 		self.BufferedBytes = 0
-		self.Image = ""
+		self.Image = b""
 		self.executeCode(self.codeExitResetVector)
 		self.executeCode(self.getCodeInitializeTBLPAG(0, 6))
 		self.executeCode(self.codeInitializeW7toVISI)
@@ -223,7 +223,7 @@ class Chip_Microchip16_common(Chip):
 		self.enterPM()
 		self.progressMeterInit("Reading EEPROM", nrWords)
 		self.BufferedBytes = 0
-		self.Image = ""
+		self.Image = b""
 		self.executeCode(self.codeExitResetVector)
 		self.executeCode(self.getCodeInitializeTBLPAG(0x7F0000 | 0, 6))
 		self.executeCode((0x207847, 0x0))
@@ -242,12 +242,12 @@ class Chip_Microchip16_common(Chip):
 	
 	def readFuse(self):
 		return self.readSequentialBlock(self.configWordAddr, self.fuseBytes / 2, "Reading Config Words")
-	6402
+
 	def tmp_readSignature(self):
 		self.enterPM()
 		self.executeCode(self.codeExitResetVector)
 		self.executeCode((0x200FF0, 0x880190, 0x200006, 0x0, 0x0, 0x207847, 0x0, 0xBA0BB6, 0x0, 0x0, 0x0))
-		self.Image = ""
+		self.Image = b""
 		self.readREGOUTword()
 		self.executeCode(self.codeExitResetVector)
 		self.flushBufferToImage()
@@ -273,7 +273,7 @@ class Chip_Microchip16_common(Chip):
 		self.enterPM()
 		self.progressMeterInit(infoText, nWords)
 		self.BufferedBytes = 0
-		self.Image = ""
+		self.Image = b""
 		self.executeCode(self.codeExitResetVector)
 		self.executeCode(self.getCodeInitializeTBLPAG(startAddr, 6))
 		self.executeCode(self.codeInitializeW7toVISI)		
@@ -536,7 +536,7 @@ class Chip_Microchip16_common(Chip):
 		self.executeCode(self.codeExitResetVectorSimple)
 		self.executeCode((0x803B02, 0x883C22, 0x000000))
 		self.BufferedBytes = 0
-		self.Image = ""
+		self.Image = b""
 		self.readREGOUTword()
 		self.flushBufferToImage()
 		self.executeCode((0x000000,))

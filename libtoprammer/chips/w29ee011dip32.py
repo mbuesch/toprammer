@@ -80,7 +80,7 @@ class Chip_w29ee011dip32(Chip):
 		return image
 
 	def __readRange(self, baseAddress, size, progress=False):
-		image = ""
+		image = b""
 		byteCount = 0
 		prevAddr = baseAddress
 		self.__loadReadAddrLo(baseAddress)

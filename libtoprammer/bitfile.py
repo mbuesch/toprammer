@@ -34,7 +34,7 @@ class BitfileException(Exception): pass
 
 class Bitfile:
 	# Magic header
-	MAGIC		= "\x00\x09\x0f\xf0\x0f\xf0\x0f\xf0\x0f\xf0\x00\x00\x01"
+	MAGIC		= b"\x00\x09\x0f\xf0\x0f\xf0\x0f\xf0\x0f\xf0\x00\x00\x01"
 	# Field IDs
 	FIELD_SRCFILE	= 0x61
 	FIELD_FPGA	= 0x62

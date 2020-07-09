@@ -30,7 +30,7 @@ class Chip_ATMega8DIP28(Chip_ATMega_common):
 			chipPinVCC = 7,
 			chipPinsVPP = 1,
 			chipPinGND = 8,
-			signature = "\x1E\x93\x07",
+			signature = b"\x1E\x93\x07",
 			flashPageSize = 32,
 			flashPages = 128,
 			eepromPageSize = 4,

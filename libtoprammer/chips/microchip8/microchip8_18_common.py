@@ -89,7 +89,7 @@ class Chip_Microchip8_18_common(Chip):
 		self.fuseBytes = fuseBytes  # Nr of fuse bytes
 		self.isInPmMode = False
 		self.BufferedBytes = 0
-		self.Image = ""
+		self.Image = b""
 
 	def getIHexInterpreter(self):
 		inter = IHexInterpreter()
@@ -135,7 +135,7 @@ class Chip_Microchip8_18_common(Chip):
 		self.enterPM()
 		self.progressMeterInit(infoText, nBytes)
 		self.BufferedBytes = 0
-		self.Image = ""
+		self.Image = b""
 		self.executeCode(self.getCodeAddrToTBLPTR(startAddr))
 		for byteAddr in range(0, nBytes):
 			self.send4bitReadInstruction(self.CMD_TRI)
@@ -167,7 +167,7 @@ class Chip_Microchip8_18_common(Chip):
 		self.enterPM()
 		self.progressMeterInit("Reading EEPROM", nrBytes)
 		self.BufferedBytes = 0
-		self.Image = ""
+		self.Image = b""
 		self.executeCode((0x9EA6, 0x9CA6))
 		for byteAddr in range(0, nrBytes):
 			# print("set addr to {:x}\n".format(byteAddr))
@@ -204,8 +204,8 @@ class Chip_Microchip8_18_common(Chip):
 		#N = (pN, len(image))[len(image) < pN]
 		for idx in range(0, N):
 			if idx == len(image):
-				image += '\xFF'
-			elif image[idx] != '\xFF':
+				image += b'\xFF'
+			elif byte2int(image[idx]) != 0xFF:
 				isEmpty = False
 		if(not isEmpty):
 			for wordAddr in range(0, N-2, 2):

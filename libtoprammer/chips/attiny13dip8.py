@@ -35,7 +35,7 @@ class Chip_AtTiny13dip8(Chip):
 			      chipPinVCC = 8,
 			      chipPinsVPP = 1,
 			      chipPinGND = 4)
-		self.signature = "\x1E\x90\x07"
+		self.signature = b"\x1E\x90\x07"
 		self.flashPageSize = 16
 		self.flashPages = 32
 		self.eepromPageSize = 4
@@ -60,7 +60,7 @@ class Chip_AtTiny13dip8(Chip):
 
 	def readProgmem(self):
 		nrWords = self.flashPages * self.flashPageSize
-		image = ""
+		image = b""
 		self.__enterPM()
 		self.progressMeterInit("Reading flash", nrWords)
 		self.__sendReadFlashInstr()
@@ -119,7 +119,7 @@ class Chip_AtTiny13dip8(Chip):
 
 	def readEEPROM(self):
 		nrBytes = self.eepromPages * self.eepromPageSize
-		image = ""
+		image = b""
 		self.__enterPM()
 		self.progressMeterInit("Reading EEPROM", nrBytes)
 		self.__sendReadEEPROMInstr()

@@ -30,7 +30,7 @@ class Chip_ATMega32DIP40(Chip_ATMega_common):
 			chipPinVCC = 10,
 			chipPinsVPP = 9,
 			chipPinGND = 11,
-			signature = "\x1E\x95\x02",
+			signature = b"\x1E\x95\x02",
 			flashPageSize = 64,
 			flashPages = 256,
 			eepromPageSize = 4,

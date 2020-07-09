@@ -44,7 +44,7 @@ class Chip_Pic12F629sip6(microchip8_splittedPMarea):
 			chipPinVCC = 9,
 			chipPinsVPP = 10,
 			chipPinGND = 8,
-			signature="\xCB\x0F",
+			signature=b"\xCB\x0F",
 			flashPageSize=0x400,  # 1024 words
 			flashPages=1,
 			eepromPageSize=128,

@@ -40,7 +40,7 @@ class Chip_PIC18F1220sip6(microchip8_18f1220family):
 			chipPinVCC = 9,
 			chipPinsVPP = 10,
 			chipPinGND = 8,
-			signature="\xE7\x07",
+			signature=b"\xE7\x07",
 			flashPageSize=0x1000,
 			flashPages=1,
 			eepromPageSize=0x100,

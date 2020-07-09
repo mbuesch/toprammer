@@ -32,7 +32,7 @@ class Chip_Pic16LF1902dip28(microchip8_splittedPMarea_hasResetPC):
 			chipPinVCC=20,
 			chipPinsVPP=1,
 			chipPinGND=19,
-			signature="\x22\x2c",
+			signature=b"\x22\x2c",
 			flashPageSize=0x800,
 			flashPages=1,
 			eepromPageSize=0,

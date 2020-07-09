@@ -35,7 +35,7 @@ class Chip_PIC18F2320dip28(microchip8_18f1220family):
 			chipPinVCC=20,
 			chipPinsVPP=1,
 			chipPinGND=19,
-			signature="\x80\x05",
+			signature=b"\x80\x05",
 			flashPageSize=0x2000,
 			flashPages=1,
 			eepromPageSize=0x100,

@@ -55,16 +55,16 @@ class Chip_AT89S51dip40(Chip):
 		self.__loadCommand(1) # set nPROG
 		self.__loadAddress(0x0100)
 		self.__setPx()
-		data = ""
+		data = b""
 		self.top.cmdFPGARead(0x10)
 		self.__loadAddress(0x0200)
 		self.top.cmdFPGARead(0x10)		
 		data += self.top.cmdReadBufferReg()
 		self.applyVPP(False)
 		self.__loadCommand(6) # VPP off
-		signature = ""
-		signature += data[0]
-		signature += data[1]
+		signature = b""
+		signature += int2byte(data[0])
+		signature += int2byte(data[1])
 		self.top.printInfo("Signature: %X, %X"  % (byte2int(signature[0]), byte2int(signature[1])))
 		return signature
 
@@ -105,7 +105,7 @@ class Chip_AT89S51dip40(Chip):
 		self.__setPx(P36=1, P37=1)
 		#self.__setPx(P26=1, P27=1, P36=1)
 		#self.__setPx()
-		image = ""
+		image = b""
 		byteCount = 0
 		self.progressMeterInit("Reading Flash", self.flashPageSize*self.flashPages)
 		for addr in range(0, self.flashPageSize*self.flashPages):
@@ -162,7 +162,7 @@ class Chip_AT89S51dip40(Chip):
 			self.top.printInfo("{chipid}: Write flash done.".format(chipid = self.chipDescription.chipID))
 		else:
 			self.top.printInfo("{chipid}: Write flash failed!".format(chipid = self.chipDescription.chipID))
-			
+
 	def readLockbits(self):
 		self.__initChip()
 		self.top.cmdEnableZifPullups(True)		
@@ -173,13 +173,13 @@ class Chip_AT89S51dip40(Chip):
 		self.applyVPP(True)
 		self.__loadCommand(1) # set nPROG
 		self.__setPx(P26=1, P27=1, P36=1)
-		data = ""
+		data = b""
 		self.top.cmdFPGARead(0x10)
 		data += self.top.cmdReadBufferReg()
 		self.applyVPP(False)
 		self.__loadCommand(6) # VPP off
-		lockbits = ""
-		lockbits += data[0]
+		lockbits = b""
+		lockbits += int2byte(data[0])
 		return lockbits
 
 	def writeLockbits(self, image):

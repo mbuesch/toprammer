@@ -35,7 +35,7 @@ class Chip_Pic16F1827dip18(microchip8_splittedPMarea_hasResetPC):
 			chipPinVCC=14,
 			chipPinsVPP=4,
 			chipPinGND=5,
-			signature="\x43\x27",
+			signature=b"\x43\x27",
 			flashPageSize=0x1000,  # 4kWords
 			flashPages=1,
 			eepromPageSize=256,

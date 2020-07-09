@@ -34,7 +34,7 @@ class Chip_Pic10F202dip8(microchip8_singlePMarea):
 			chipPinVCC=2,
 			chipPinsVPP=8,
 			chipPinGND=7,
-			signature="\x09\x18\x24\x35",
+			signature=b"\x09\x18\x24\x35",
 			flashPageSize=0x200,
 			flashPages=1,
 			eepromPageSize=0,

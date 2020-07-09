@@ -30,16 +30,22 @@ class TOPException(Exception): pass
 
 
 def byte2int(byte):
-	if isinstance(byte, int):
+	if isinstance(byte, int): # It's already int
+		assert 0 <= byte <= 0xFF
 		return byte
+	if isinstance(byte, str): # Compat for old code
+		assert len(byte) == 1
+		return ord(byte)
 	assert isinstance(byte, (bytes, bytearray))
+	assert len(byte) == 1
 	return byte[0]
 
 def int2byte(integer):
-	if isinstance(integer, (bytes, bytearray)):
+	if isinstance(integer, (bytes, bytearray)): # It's already bytes
 		return bytes(integer)
 	assert isinstance(integer, int)
-	return bytes( (integer, ) )
+	assert 0 <= integer <= 0xFF
+	return b"%c" % integer
 
 def hex2bin(hexdata):
 	assert(len(hexdata) % 2 == 0)
@@ -55,9 +61,9 @@ def bytes2hex(bindata):
 	return "".join(byte2hex(b) for b in bindata)
 
 def byte2ascii(c):
-	ci = byte2int(c)
-	if ci >= 32 and ci <= 126:
-		return c.decode("ASCII")
+	c = byte2int(c)
+	if c >= 32 and c <= 126:
+		return "%c" % c
 	return "."
 
 def bytes2ascii(bindata):

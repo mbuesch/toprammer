@@ -34,6 +34,10 @@ class CommandQueue(object):
 
 	def queueCommand(self, command):
 		"""Queue a raw command for transmission."""
+		if isinstance(command, str):
+			# Compat for old code
+			command = b"".join(int2byte(ord(c)) for c in command)
+		assert isinstance(command, (bytes, bytearray))
 		assert(len(command) <= self.maxPacketBytes)
 		if self.synchronous:
 			self.send(command)

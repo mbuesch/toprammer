@@ -50,7 +50,7 @@ class Chip_Microchip8_common(Chip):
 	delayTprog = 0.001
 	delayTdly = 0.000001
 	delayTera = 0.01
-	nLatches =1
+	nLatches = 1
 
 	@classmethod
 	def getSupportFlags(cls):
@@ -157,7 +157,7 @@ class Chip_Microchip8_common(Chip):
 		
 	def readProgmem(self):	
 		nrWords = self.flashPages * self.flashPageSize
-		image = ""
+		image = b""
 		self.enterPM()
 		self.setPC(0)
 		self.progressMeterInit("Reading flash", nrWords)
@@ -183,7 +183,7 @@ class Chip_Microchip8_common(Chip):
 	
 	def readEEPROM(self):	
 		nrWords = self.eepromPages * self.eepromPageSize
-		image = ""
+		image = b""
 		self.enterPM()
 		self.progressMeterInit("Reading eeprom", nrWords)
 		bufferedBytes = 0
@@ -205,7 +205,7 @@ class Chip_Microchip8_common(Chip):
 	def writeEEPROM(self, image):	
 		nrWords = self.eepromPages * self.eepromPageSize
 		if len(image) > nrWords:
-			self.throwError("Invalid flash image size %d (expected <=%d)" % 	len(image))
+			self.throwError("Invalid flash image size %d (expected <=%d)" % len(image))
 		self.enterPM()
 		self.progressMeterInit("Writing eeprom", nrWords)
 		bufferedBytes = 0

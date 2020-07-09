@@ -47,12 +47,12 @@ class Chip_m24cXXdip8_common(Chip):
 		self.currentWriteMode = None
 
 	def erase(self):
-		self.writeEEPROM("\xFF" * self.eepromSize)
+		self.writeEEPROM(b"\xFF" * self.eepromSize)
 
 	def readEEPROM(self):
 		self.__chipTurnOn()
 
-		image = ""
+		image = b""
 		prevAddr = None
 		self.progressMeterInit("Reading EEPROM", self.eepromSize)
 		for addr in range(0, self.eepromSize):

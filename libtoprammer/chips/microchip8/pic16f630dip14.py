@@ -39,7 +39,7 @@ class Chip_Pic16F630dip14(microchip8_splittedPMarea):
 			chipPinVCC=1,
 			chipPinsVPP=4,
 			chipPinGND=14,
-			signature="\x08\x27",
+			signature=b"\x08\x27",
 			flashPageSize=0x400,  # 1024 words
 			flashPages=1,
 			eepromPageSize=128,

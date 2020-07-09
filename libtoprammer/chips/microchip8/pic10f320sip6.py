@@ -41,7 +41,7 @@ class Chip_Pic10F320sip6(microchip8_splittedPMarea_hasResetPC):
 			chipPinVCC = 9,
 			chipPinsVPP = 10,
 			chipPinGND = 8,
-			signature="\xA1\x29",
+			signature=b"\xA1\x29",
 			flashPageSize=0x100,
 			flashPages=1,
 			eepromPageSize=0,

@@ -33,7 +33,7 @@ class Chip_Pic16F1509dip20(microchip8_splittedPMarea_hasResetPC):
 			chipPinVCC=1,
 			chipPinsVPP=4,
 			chipPinGND=20,
-			signature="\x00\x2E",
+			signature=b"\x00\x2E",
 			flashPageSize=0x2000,
 			flashPages=1,
 			eepromPageSize=256,

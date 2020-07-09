@@ -40,7 +40,7 @@ class Chip_PIC16F1826sip6(microchip8_splittedPMarea_hasResetPC):
 			chipPinVCC = 9,
 			chipPinsVPP = 10,
 			chipPinGND = 8,
-			signature="\x43\x27",
+			signature=b"\x43\x27",
 			flashPageSize=0x800,
 			flashPages=1,
 			eepromPageSize=256,

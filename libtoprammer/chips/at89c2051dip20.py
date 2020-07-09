@@ -50,7 +50,7 @@ class Chip_AT89C2051dip20(Chip):
 		self.__loadCommand(5) # VPP on
 		self.__loadCommand(1) # set P3.2
 		self.__setP3x(P33=0, P34=0, P35=0, IA=0)
-		data = ""
+		data = b""
 		self.top.cmdFPGARead(0x10)
 		self.__setP3x(P33=0, P34=0, P35=0, IA=1)
 		self.__setP3x(P33=0, P34=0, P35=0, IA=0)
@@ -61,9 +61,9 @@ class Chip_AT89C2051dip20(Chip):
 		data += self.top.cmdReadBufferReg()
 		self.__setP3x(P33=0, P34=1, P35=0, IA=0)
 		self.__loadCommand(6) # VPP off
-		signature = ""
-		signature += data[0]
-		signature += data[1]
+		signature = b""
+		signature += int2byte(data[0])
+		signature += int2byte(data[1])
 		self.top.printInfo("Signature: %X, %X"  % (byte2int(signature[0]), byte2int(signature[1])))
 		return signature
 
@@ -99,7 +99,7 @@ class Chip_AT89C2051dip20(Chip):
 		self.applyVPP(True)
 		self.__loadCommand(5) # VPP on
 		self.__setP3x(P33=0, P34=0, P35=1, IA=0)
-		image = ""
+		image = b""
 		byteCount = 0
 		self.progressMeterInit("Reading Flash", 0x800)
 		for addr in range(0, 0x800):

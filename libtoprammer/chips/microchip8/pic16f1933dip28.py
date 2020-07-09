@@ -33,7 +33,7 @@ class Chip_Pic16F1933dip28(microchip8_splittedPMarea_hasResetPC):
 			chipPinVCC=20,
 			chipPinsVPP=1,
 			chipPinGND=19,
-			signature="\x68\x23",
+			signature=b"\x68\x23",
 			flashPageSize=0x1000,
 			flashPages=1,
 			eepromPageSize=256,

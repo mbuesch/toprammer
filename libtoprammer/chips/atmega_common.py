@@ -74,7 +74,7 @@ class Chip_ATMega_common(Chip):
 		self.__enterPM()
 
 		self.progressMeterInit("Reading Flash", self.flashPages)
-		image = ""
+		image = b""
 		for page in range(0, self.flashPages):
 			self.progressMeter(page)
 			readWords = 0
@@ -121,7 +121,7 @@ class Chip_ATMega_common(Chip):
 
 		assert(self.eepromPageSize <= self.top.getBufferRegSize())
 		self.progressMeterInit("Reading EEPROM", self.eepromPages)
-		image = ""
+		image = b""
 		for page in range(0, self.eepromPages):
 			self.progressMeter(page)
 			for byte in range(0, self.eepromPageSize):
@@ -147,8 +147,7 @@ class Chip_ATMega_common(Chip):
 				self.__loadCommand(self.CMD_WRITEEEPROM)
 				addr = (page * self.eepromPageSize) + byte
 				self.__loadAddr(addr)
-				data = image[addr]
-				self.__loadDataLow(byte2int(data[0]))
+				self.__loadDataLow(image[addr])
 				self.__pulsePAGEL()
 			self.__setBS1(0)
 			self.__pulseWR()
@@ -223,16 +222,16 @@ class Chip_ATMega_common(Chip):
 	def __readSigAndCalib(self):
 		"""Reads the signature and calibration bytes and returns them.
 		This function expects a DUT present and pins initialized."""
-		signature = ""
-		calibration = ""
+		signature = b""
+		calibration = b""
 		for addr in range(0, 3):
 			self.__loadCommand(self.CMD_READSIG)
 			self.__loadAddr(addr)
 			self.__readWordToStatusReg()
 			data = self.top.cmdReadBufferReg()
 			if addr == 0:
-				calibration += data[1]
-			signature += data[0]
+				calibration += int2byte(data[1])
+			signature += int2byte(data[0])
 		return (signature, calibration)
 
 	def __readFuseAndLockBits(self):
@@ -247,13 +246,13 @@ class Chip_ATMega_common(Chip):
 		data = self.top.cmdReadBufferReg()
 		if self.fuseBytes == 2:
 			# fuseLow, fuseHigh
-			fuses = data[0] + data[3]
+			fuses = int2byte(data[0]) + int2byte(data[3])
 		elif self.fuseBytes == 3:
 			# fuseLow, fuseHigh, fuseExt
-			fuses = data[0] + data[3] + data[2]
+			fuses = int2byte(data[0]) + int2byte(data[3]) + int2byte(data[2])
 		else:
 			assert(0)
-		lock = data[1]
+		lock = int2byte(data[1])
 		return (fuses, lock)
 
 	def __enterPM(self):
@@ -373,9 +372,9 @@ class Chip_ATMega_common(Chip):
 
 	def __loadCommand(self, command):
 		"""Load a command into the device."""
-#		self.top.queueCommand("\x34")
+#		self.top.queueCommand(b"\x34")
 		self.__setBS1(0)
-#		self.top.queueCommand("\x34")
+#		self.top.queueCommand(b"\x34")
 		self.__setXA0(0)
 		self.__setXA1(1)
 		self.top.cmdFPGAWrite(0x10, command)

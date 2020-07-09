@@ -78,7 +78,7 @@ class HardwareAccess(HardwareAccessUSB):
 		"Returns the device ID and versioning string."
 		self.queueCommand(b"\x0E\x11\x00\x00")
 		data = self.readBufferReg(16)
-		return data.strip()
+		return data.decode("ASCII", "ignore").strip()
 
 	def getFPGAType(self):
 		"Get the FPGA architecture."

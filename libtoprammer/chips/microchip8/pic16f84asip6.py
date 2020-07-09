@@ -45,7 +45,7 @@ class Chip_Pic16F84asip6(microchip8_splittedPMarea):
 		chipPinVCC = 9,
 		chipPinsVPP = 10,
 		chipPinGND = 8,
-		signature="\x60\x05",
+		signature=b"\x60\x05",
 		flashPageSize=0x200,
 		flashPages=1,
 		eepromPageSize=64,

@@ -34,7 +34,7 @@ class Chip_Pic12F1822dip8(microchip8_splittedPMarea_hasResetPC):
 			chipPinVCC=1,
 			chipPinsVPP=4,
 			chipPinGND=8,
-			signature="\x08\x27",
+			signature=b"\x08\x27",
 			flashPageSize=0x800,
 			flashPages=1,
 			eepromPageSize=256,

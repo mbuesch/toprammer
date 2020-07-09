@@ -40,7 +40,7 @@ class Chip_PIC18F2321sip6(microchip8_18f2221family):
 			chipPinVCC = 9,
 			chipPinsVPP = 10,
 			chipPinGND = 8,
-			signature="\x22\x21",
+			signature=b"\x22\x21",
 			flashPageSize=0x2000,
 			flashPages=1,
 			eepromPageSize=0x100,

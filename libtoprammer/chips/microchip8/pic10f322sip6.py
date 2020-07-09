@@ -41,7 +41,7 @@ class Chip_Pic10F322sip6(microchip8_splittedPMarea_hasResetPC):
 			chipPinVCC = 9,
 			chipPinsVPP = 10,
 			chipPinGND = 8,
-			signature="\x82\x29",
+			signature=b"\x82\x29",
 			flashPageSize=0x200,
 			flashPages=1,
 			eepromPageSize=0,

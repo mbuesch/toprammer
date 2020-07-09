@@ -42,7 +42,7 @@ class Chip_Pic24f16kl401sip6(Chip_Microchip16_common):
 			chipPinVCC = 9,
 			chipPinsVPP = 10,
 			chipPinGND = 8,
-			signature="\x1e\x4b",
+			signature=b"\x1e\x4b",
 			# flashPageSize (in number of 24bit words)
 			flashPageSize=0x2bfe / 2 + 2,
 			# flashPageSize=0x40,

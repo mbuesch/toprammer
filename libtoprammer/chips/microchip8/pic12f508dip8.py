@@ -32,7 +32,7 @@ class Chip_Pic12F508dip8(microchip8_singlePMarea):
 		chipPinVCC=1,
 		chipPinsVPP=4,
 		chipPinGND=8,
-		signature="",
+		signature=b"",
 		flashPageSize=0x200,
 		flashPages=1,
 		eepromPageSize=0,
