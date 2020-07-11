@@ -1,0 +1,37 @@
+#!/bin/sh
+
+test_init()
+{
+	request_DUT "attiny85dip8" || return 1
+	return 0
+}
+
+test_run()
+{
+	# Check signature
+	toprammer --read-sig "$tmpfile"
+	compare_file_to_hex "$tmpfile" "1E930B" || die "signature mismatch"
+
+	toprammer --erase
+
+	# Check progmem
+	toprammer --write-prog "$testfile_8k"
+	toprammer --read-prog "$tmpfile"
+	compare_files "$testfile_8k" "$tmpfile" || die "progmem mismatch"
+
+	# Check EEPROM
+	toprammer --write-eeprom "$testfile_512"
+	toprammer --read-eeprom "$tmpfile"
+	compare_files "$testfile_512" "$tmpfile" || die "EEPROM mismatch"
+
+	# Check fuses
+	testfuses="E4DDFF"
+	echo "0x0000: $testfuses" | toprammer -I ahex --write-fuse -
+	toprammer --read-fuse "$tmpfile"
+	compare_file_to_hex "$tmpfile" "$testfuses" || die "fuses mismatch"
+
+	# Check lockbits
+	toprammer --read-lock "$tmpfile"
+	compare_file_to_hex "$tmpfile" "FF" || die "lockbits mismatch"
+	toprammer --write-lock "$tmpfile"
+}
