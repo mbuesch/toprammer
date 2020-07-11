@@ -1,0 +1,115 @@
+Megawin MPC89x5x - serial bootloader protocol
+---------------------------------------------
+
+
+Serial parameters:
+------------------
+
+FIXME baud, 8bit, 1 stopbit, no parity
+
+
+Initialization:
+---------------
+
+o  TX PATTERN / FIXME
+o  RX byte: 0x5A
+o  RX byte: retry count low
+o  RX byte: retry count high
+o  RX byte: 0x69
+o  TX byte: 0x5A
+   (If 0x80 is sent here, it is ignored.)
+o  TX byte: 0x69
+o  RX byte: SCMD value (with IFADRL = 0)
+o  RX byte: SCMD value (with IFADRL = 1)
+o  RX byte: 0x02
+o  RX byte: 0x10
+o  RX byte: OR1 value (or 0xFF on error)
+
+
+Send command:
+-------------
+
+o  TX 8 byte command struct
+
+struct boot_command {
+	uint8_t magic;		/* Always 0x5A */
+	uint8_t command;	/* 3 bit command ID. Upper 5 bit clear. */
+	uint8_t command_payload[5];
+	uint8_t end_magic;	/* Always 0x69 */
+};
+
+
+Command: SETUP (ID = 0)
+-----------------------
+
+struct setup_command_payload {
+	uint8_t ispcr;		/* ISPCR value */
+	uint8_t reg_BF_val;	/* FIXME */
+	uint8_t val0;		/* th1 or rcap2l */
+	uint8_t val1;		/* rcap2h */
+	uint8_t reg_BF_ormask;	/* OR mask for register BF */
+};
+
+
+Command: AP FLASH ERASE (ID = 1)
+--------------------------------
+
+struct aperase_command_payload {
+	uint8_t pagecount;	/* Number of pages to erase */
+	uint8_t _unused[4];
+};
+
+o  On finished operation, a 0x00 byte is received.
+
+
+Command: AP FLASH WRITE (ID = 2)
+--------------------------------
+
+struct apwrite_command_payload {
+	uint8_t addrlo;		/* Start address, low */
+	uint8_t addrhi;		/* Start address, high */
+	uint8_t checksum;
+	uint8_t _unused[2];
+};
+
+o  After the 'boot_command' packet, a 64 byte data payload is sent.
+o  RX status byte:
+	0 -> write ok
+	1 -> write error
+
+Throws an error, if the flash is not erased.
+
+
+Command: MASKSET (ID = 3)
+-------------------------
+
+struct maskset_command_payload {
+	union {
+		struct or1 {
+			uint8_t or1_set;
+			uint8_t or1_mask0;
+			uint8_t or1_mask1;
+			uint8_t _or1_unused;
+		};
+		struct ap {
+			uint8_t ap_addrlo;
+			uint8_t ap_addrhi;
+			uint8_t ap_mask;
+			uint8_t ap_set;
+		};
+	};
+	uint8_t select;		/* 0 -> OR1,  1 -> AP */
+};
+
+select = 0:
+	o  OR1 is written as:
+		OR1 = (OR1 & or1_mask1) | or1_set
+	o  The modified OR1 is returned as:
+		TX-byte = OR1 & or1_mask0
+
+select != 0:
+	o  The AP page(!) is erased.
+	o  AP is written as:
+		AP[addr] = (AP[addr] & ap_mask) | ap_set
+	o  The modified byte is returned as:
+		TX-byte = AP[addr] & ap_set
