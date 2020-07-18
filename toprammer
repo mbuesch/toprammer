@@ -98,16 +98,20 @@ IO_handlers = {
 def fileOut(filename, fmtString, data):
 	handler = IO_handlers[fmtString]()
 	data = handler.fromBinary(data)
+	if isinstance(data, str):
+		data = data.encode("UTF-8")
 	if filename == "-":
-		sys.stdout.write(data)
+		sys.stdout.buffer.write(data)
 	else:
-		open(filename, "w+b").write(data)
+		with open(filename, "w+b") as f:
+			f.write(data)
 
 def fileIn(top, action, filename, fmtString):
 	if filename == "-":
-		data = sys.stdin.read()
+		data = sys.stdin.buffer.read()
 	else:
-		data = open(filename, "rb").read()
+		with open(filename, "rb") as f:
+			data = f.read()
 	if fmtString == "auto":
 		handler = IO_autodetect(data)()
 	else:
