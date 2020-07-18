@@ -142,7 +142,8 @@ compare_files() # $1=file1 $2=file2
 compare_file_to_hex() # $1=file $2=hex_string
 {
 	local filehex="$(hexdump -v -e '/1 "%02X"' $1)"
-	[ "$filehex" = "$2" ]
+	local stringhex="$(printf '%s' "$2" | tr -d " \t")"
+	[ "$filehex" = "$stringhex" ]
 }
 
 usage()
