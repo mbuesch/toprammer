@@ -94,10 +94,10 @@ class microchip8_18f97j60family(Chip_Microchip8_18_common):
 				(len(image), self.userIDLocationSize))
 		self.enterPM()
 		self.executeCode((0x8EA6, 0x9CA6))
-		self.progressMeterInit(infoText, len(image) / 8)
+		self.progressMeterInit(infoText, len(image) // 8)
 		self.executeCode(self.getCodeAddrToTBLPTR(startAddr))
 		for blockAddr in range(0, len(image), 8):
 			self.write8bytes(image[blockAddr:])
 			self.progressMeter(blockAddr)
 		self.progressMeterFinish()
-		self.exitPM()		
+		self.exitPM()

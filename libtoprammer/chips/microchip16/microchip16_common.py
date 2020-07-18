@@ -194,13 +194,13 @@ class Chip_Microchip16_common(Chip):
 		# return self.readSequentialBlock(0x0 , nrWords/2, "Reading Progmem")
 		# something wrong for packed PM reading below
 		self.enterPM()
-		self.progressMeterInit("Reading flash", nrWords / 2)
+		self.progressMeterInit("Reading flash", nrWords // 2)
 		self.BufferedBytes = 0
 		self.Image = b""
 		self.executeCode(self.codeExitResetVector)
 		self.executeCode(self.getCodeInitializeTBLPAG(0, 6))
 		self.executeCode(self.codeInitializeW7toVISI)
-		for wordAddrHalf in range(0, nrWords / 2):
+		for wordAddrHalf in range(0, nrWords // 2):
 			self.executeCode((0xBA0B96, 0x0, 0x0))
 			self.readREGOUTword()
 			# Microchip's bug in the documentation
@@ -241,7 +241,7 @@ class Chip_Microchip16_common(Chip):
 		return self.readSequentialBlock(self.eepromStartAddress , nrWords, "Reading EEPROM")
 	
 	def readFuse(self):
-		return self.readSequentialBlock(self.configWordAddr, self.fuseBytes / 2, "Reading Config Words")
+		return self.readSequentialBlock(self.configWordAddr, self.fuseBytes // 2, "Reading Config Words")
 
 	def tmp_readSignature(self):
 		self.enterPM()
@@ -347,10 +347,10 @@ class Chip_Microchip16_common(Chip):
 		if len(image) > nrWords * 2:
 			self.throwError("Invalid flash image size {:d} (expected <={:d})".format(len(image), 2 * nrWords))
 		self.enterPM()
-		self.progressMeterInit("Writing eeprom", len(image) / 2)
+		self.progressMeterInit("Writing eeprom", len(image) // 2)
 		self.executeCode(self.codeExitResetVector)
 		self.executeCode(self.getCodeSetNVMCON(0x4004))
-		for addr in range(0, len(image) / 2):
+		for addr in range(0, len(image) // 2):
 			self.progressMeter(addr)
 			WD = (byte2int(image[addr * 2 + 1]) << 8) | byte2int(image[addr * 2 + 0])
 			if WD != 0xFFFF:

@@ -41,7 +41,7 @@ class Chip_Pic24f08kl302dip28(Chip_Microchip16_common):
 			chipPinGND=27,
 			signature=b"\x00\x4b",
 			# flashPageSize (in number of 24bit words)
-			flashPageSize=0x15fe / 2 + 2,
+			flashPageSize=0x15fe // 2 + 2,
 			# flashPageSize=0x40,
 			flashPages=1,
 			# eepromPageSize (in 16bit words)

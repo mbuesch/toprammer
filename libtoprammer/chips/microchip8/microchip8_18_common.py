@@ -150,7 +150,7 @@ class Chip_Microchip8_18_common(Chip):
 				(len(image), self.userIDLocationSize))
 		self.enterPM()
 		self.executeCode((0x8EA6, 0x9CA6))
-		self.progressMeterInit(infoText, len(image) / 8)
+		self.progressMeterInit(infoText, len(image) // 8)
 		for blockAddr in range(0, len(image), self.writeBufferSize):
 			#print("addr:{:x}".format(startAddr+blockAddr))
 			self.executeCode(self.getCodeAddrToTBLPTR(startAddr+blockAddr))

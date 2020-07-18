@@ -39,7 +39,7 @@ class Chip_Pic24f16kl401dip20(Chip_Microchip16_common):
 			chipPinGND=19,
 			signature=b"\x1e\x4b",
 			# flashPageSize (in number of 24bit words)
-			flashPageSize=0x2bfe / 2 + 2,
+			flashPageSize=0x2bfe // 2 + 2,
 			# flashPageSize=0x40,
 			flashPages=1,
 			# eepromPageSize (in 16bit words)
