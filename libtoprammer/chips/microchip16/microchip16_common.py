@@ -23,7 +23,6 @@
 from libtoprammer.chip import *
 
 class Chip_Microchip16_common(Chip):
-	
 	STAT_BUSY = 0x01
 	STAT_SDIO = 0x02
 
@@ -31,7 +30,7 @@ class Chip_Microchip16_common(Chip):
 	PROGCMD_SENDREGOUTINSTR	 = 1
 	PROGCMD_ENTERPM 	 = 2
 	PROGCMD_SEND9SIXINSTR	 = 3
-	
+
 	codeExitResetVector = (0x000000, 0x040200, 0x000000)
 	codeExitResetVectorSimple = (0x040200, 0x000000)
 	codeInitializeW7toVISI = (0x207847, 0x000000)
@@ -40,7 +39,7 @@ class Chip_Microchip16_common(Chip):
 	# EEPROM access: default on, if does not exist override it
 	hasEEPROM = True
 	eepromStartAddress = 0x7FFE00
-	
+
 	# default delays - can be overridden
 	delayTdis = 0.0001
 	delayTprog = 0.001
@@ -59,21 +58,22 @@ class Chip_Microchip16_common(Chip):
 	delayP17 = 0.000000100  # nMCLR fall to Vdd fall
 	delayP18 = 0.001  # delay between first nMCLR fall and first PGCx rise
 	delayP19 = 0.001  # delay between last PGC fall for key sequence on PGDx and second nMCLR rise
-  
+
 	deviceIDAddr = 0xFF0000
 	deviceIDLength = 1
-	
+
 	deviceIdMapDict = {
 			0x0d00:"24f04ka201", 0x0d02:"24f04ka200", 0x4b14:"24f16kl402", 0x4b1e:"24f16kl401", 0x4b04:"24f08kl402", 0x4b0e:"24f08kl401",
 			0x4b00:"24f08kl302", 0x4b0a:"24f08kl301", 0x4b06:"24f08kl201", 0x4b05:"24f08kl200", 0x4b02:"24f04kl101", 0x4b01:"24f04kl100"
 	}
+
 	def getIHexInterpreter(self):
 		inter = IHexInterpreter()
 		inter.progmemRanges = [ AddressRange(0, 2 * self.flashPageSize) ]
 		inter.fuseRanges = [ AddressRange(2 * self.configWordAddr,
 						  2 * self.configWordAddr + 1) ]
 		return inter
-		
+
 	@classmethod
 	def getSupportFlags(cls):
 		flags = super(Chip_Microchip16_common, cls).getSupportFlags()
@@ -81,7 +81,7 @@ class Chip_Microchip16_common(Chip):
 			flags &= ~(Chip.SUPPORT_EEPROMREAD | \
 				   Chip.SUPPORT_EEPROMWRITE)
 		return flags
-	
+
 	def __init__(self,
 			chipPackage, chipPinVCC, chipPinsVPP, chipPinGND,
 			signature,
@@ -103,7 +103,7 @@ class Chip_Microchip16_common(Chip):
 		self.isInPmMode = False
 		self.BufferedBytes = 0
 		self.Image = b""
-		
+
 	def enterPM(self, lowVoltageIcspEntry=True):
 		if self.isInPmMode:
 			return
@@ -146,7 +146,7 @@ class Chip_Microchip16_common(Chip):
 			self.printWarning(msg)
 		else:
 			self.throwError(msg)
-			
+
 	def old_readSignature(self):
 		self.progressMeterInit("Reading signature", 0)
 		self.enterPM()
@@ -158,10 +158,10 @@ class Chip_Microchip16_common(Chip):
 		self.read2words()
 		self.progressMeterFinish()
 		return self.top.cmdReadBufferReg(4)
-		
+
 	def erase(self):
-			self.__erase()
-				
+		self.__erase()
+
 	def __erase(self, keepEEPROM=False):
 		def er(NVMCON):
 			self.executeCode(self.codeExitResetVector)
@@ -186,10 +186,11 @@ class Chip_Microchip16_common(Chip):
 		def unpackImage():
 			out = b""
 			for halfPackAddr in range(0, len(self.Image), 6):
-				out += self.Image[halfPackAddr:halfPackAddr + 3] + b"\0"
-				out += self.Image[halfPackAddr + 4:halfPackAddr + 6] + self.Image[halfPackAddr + 3] + b"\0"
+				out += self.Image[halfPackAddr : halfPackAddr + 3] + b"\0"
+				out += self.Image[halfPackAddr + 4 : halfPackAddr + 6]
+				out += self.Image[halfPackAddr + 3 : halfPackAddr + 4] + b"\0"
 			return out
-	
+
 		nrWords = self.flashPages * self.flashPageSize
 		# return self.readSequentialBlock(0x0 , nrWords/2, "Reading Progmem")
 		# something wrong for packed PM reading below
@@ -214,9 +215,7 @@ class Chip_Microchip16_common(Chip):
 		self.progressMeterFinish()
 		self.flushBufferToImage()
 		self.exitPM()
-		# return self.Image
 		return unpackImage()
-		
 
 	def _t_readEEPROM(self):	
 		nrWords = self.eepromPages * self.eepromPageSize
@@ -235,11 +234,11 @@ class Chip_Microchip16_common(Chip):
 		self.progressMeterFinish()
 		self.flushBufferToImage()
 		return self.Image
-	
+
 	def readEEPROM(self):
 		nrWords = self.eepromPages * self.eepromPageSize
 		return self.readSequentialBlock(self.eepromStartAddress , nrWords, "Reading EEPROM")
-	
+
 	def readFuse(self):
 		return self.readSequentialBlock(self.configWordAddr, self.fuseBytes // 2, "Reading Config Words")
 
@@ -258,6 +257,7 @@ class Chip_Microchip16_common(Chip):
 		else:
 			print("WARNING: device id {:o} not found in local dictionary".format(devId))
 		return self.Image
+
 	def readSignature(self):
 		signature = self.readSequentialBlock(self.deviceIDAddr, self.deviceIDLength, "Reading Signature")
 		devId = (byte2int(signature[1]) << 8) | byte2int(signature[0])
@@ -269,6 +269,7 @@ class Chip_Microchip16_common(Chip):
 		
 	def testPORTA(self):
 		self.executeCode((0x0, 0x23CFF4, 0x881644, 0x0, 0xEB8200, 0x881654, 0x0, 0x0))
+
 	def readSequentialBlock(self, startAddr, nWords, infoText):	
 		self.enterPM()
 		self.progressMeterInit(infoText, nWords)
@@ -288,7 +289,7 @@ class Chip_Microchip16_common(Chip):
 		self.flushBufferToImage()
 		self.exitPM()
 		return self.Image
-				
+
 	def writeProgmem(self, image):
 		def writePackedInstructionWords(addr, _16bytes):
 			"""
@@ -340,8 +341,7 @@ class Chip_Microchip16_common(Chip):
 		writeSeq()
 		self.progressMeterFinish()
 		self.exitPM()
-		
-		
+
 	def writeEEPROM(self, image):
 		nrWords = self.eepromPages * self.eepromPageSize
 		if len(image) > nrWords * 2:
@@ -400,7 +400,7 @@ class Chip_Microchip16_common(Chip):
 			self.executeCode(self.codeExitResetVectorSimple)
 		self.top.flushCommands()
 		self.progressMeterFinish()
-				
+
 	def exitPM(self):
 		"Exit programming mode. Vdd last exit mode"
 		self.top.flushCommands()
@@ -420,7 +420,6 @@ class Chip_Microchip16_common(Chip):
 			self.top.cmdFPGAWrite(addr, sdi & 0xFF)
 			sdi = sdi >> 8
 
-
 	def sendCommand(self, command):
 		'''
 		16 - send command
@@ -429,7 +428,7 @@ class Chip_Microchip16_common(Chip):
 		CMD_ENTERPM 2
 		'''
 		self.top.cmdFPGAWrite(0x12, command)
-	
+
 	def readREGOUTword(self):
 		def incBbAndCheckFillImage():
 			self.BufferedBytes += 1
@@ -446,12 +445,11 @@ class Chip_Microchip16_common(Chip):
 		self.readSDOBufferHigh()
 		incBbAndCheckFillImage()
 
-	
 	def flushBufferToImage(self):
 		if self.BufferedBytes > 0:
 			self.Image += self.top.cmdReadBufferReg(self.BufferedBytes)
 			self.BufferedBytes = 0
-	
+
 	def sendSIX(self, instr, is9SIX=False):
 		self.busyWait()		
 		self.setSDI(instr)
@@ -465,8 +463,7 @@ class Chip_Microchip16_common(Chip):
 		self.executeCode((0x000000, 0xBA0BB6, 0x000000, 0x000000))
 		self.readREGOUTword()
 		self.executeCode((0x000000,))
-		
-	
+
 	def executeCode(self, code):
 		for instr in code:
 			self.sendSIX(instr)
@@ -496,10 +493,10 @@ class Chip_Microchip16_common(Chip):
 
 	def readSDOBufferHigh(self):
 		self.top.cmdFPGARead(0x10)
-	
+
 	def readSDOBufferLow(self):
 		self.top.cmdFPGARead(0x13)	
-	
+
 	def rawSDIOState(self):
 		return bool(self.getStatusFlags() & self.STAT_SDIO)
 
@@ -531,7 +528,7 @@ class Chip_Microchip16_common(Chip):
 
 	def getCodeSetNVMCON(self, NVMCON):
 		return (0x20000A | ((NVMCON & 0xFFFF) << 4), 0x883B0A)
-	
+
 	def isWRset(self):
 		self.executeCode(self.codeExitResetVectorSimple)
 		self.executeCode((0x803B02, 0x883C22, 0x000000))
