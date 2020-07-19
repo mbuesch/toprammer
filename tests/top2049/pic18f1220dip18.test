@@ -1,0 +1,32 @@
+#!/bin/sh
+
+test_init()
+{
+	request_DUT "pic18f1220dip18" || return 1
+	return 0
+}
+
+test_run()
+{
+	# Check signature
+	toprammer --read-sig "$tmpfile"
+	compare_file_to_hex "$tmpfile" "E707" || die "signature mismatch"
+
+	toprammer --erase
+
+	# Check progmem
+	toprammer --write-prog "$testfile_4k"
+	toprammer --read-prog "$tmpfile"
+	compare_files "$testfile_4k" "$tmpfile" || die "progmem mismatch"
+
+	# Check EEPROM
+	toprammer --write-eeprom "$testfile_256"
+	toprammer --read-eeprom "$tmpfile"
+	compare_files "$testfile_256" "$tmpfile" || die "EEPROM mismatch"
+
+	# Check fuses
+	testfuses="00CF 0F1F 0080 8500 03C0 03E0 0340"
+	echo "0x0000: $testfuses" | toprammer -I ahex --write-fuse -
+	toprammer --read-fuse "$tmpfile"
+	compare_file_to_hex "$tmpfile" "$testfuses" || die "fuses mismatch"
+}
