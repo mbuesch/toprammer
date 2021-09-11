@@ -1,6 +1,6 @@
 #!/bin/sh
 # Rebuild FPGA bit files
-# Copyright (c) 2010-2012 Michael Buesch <m@bues.ch>
+# Copyright (c) 2010-2021 Michael Buesch <m@bues.ch>
 # Licensed under the GNU/GPL v2+
 
 basedir="$(dirname "$0")"
@@ -57,7 +57,7 @@ done
 
 bitparser()
 {
-	python "$basedir/../bitfile.py" "$@" ||\
+	PYTHONPATH="$basedir/../..:$PYTHONPATH" python3 "$basedir/../bitfile.py" "$@" ||\
 		die "Failed to execute bitparser"
 }
 

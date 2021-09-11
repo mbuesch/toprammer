@@ -1,7 +1,7 @@
 """
 #    *.BIT file parser
 #
-#    Copyright (c) 2009-2011 Michael Buesch <m@bues.ch>
+#    Copyright (c) 2009-2021 Michael Buesch <m@bues.ch>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -24,10 +24,10 @@ try:
 except ImportError:
 	print("Failed to import the 'pkg_resources' Python module.")
 	print("'pkg_resources' is part of the Python 'setuptools' package.")
-	print("On Debian Linux run:  apt-get install python-pkg-resources")
+	print("On Debian Linux run:  apt-get install python3-pkg-resources")
 	sys.exit(1)
 
-from .util import *
+from libtoprammer.util import *
 
 
 class BitfileException(Exception): pass
@@ -48,7 +48,7 @@ class Bitfile:
 		self.fpga = ""
 		self.date = ""
 		self.time = ""
-		self.payload = ""
+		self.payload = b""
 
 	def getFilename(self):
 		return self.filename
@@ -175,4 +175,4 @@ if __name__ == "__main__":
 	if action == "GETTIME":
 		sys.stdout.write(b.getTime())
 	if action == "GETPAYLOAD":
-		sys.stdout.write(b.getPayload())
+		sys.stdout.buffer.write(b.getPayload())
