@@ -27,7 +27,7 @@ try:
 	import usb.util
 except (ImportError) as e:
 	print("Python USB (PyUSB) support module not found.\n"
-	      "Please install python-usb.")
+	      "Please install python3-usb.")
 	sys.exit(1)
 
 
