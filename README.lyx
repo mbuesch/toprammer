@@ -1,7 +1,9 @@
-#LyX 2.1 created this file. For more info see http://www.lyx.org/
-\lyxformat 474
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
 \begin_document
 \begin_header
+\save_transient_properties true
+\origin unavailable
 \textclass article
 \use_default_options false
 \maintain_unincluded_children false
@@ -9,16 +11,18 @@
 \language_package default
 \inputencoding auto
 \fontencoding global
-\font_roman default
-\font_sans default
-\font_typewriter default
-\font_math auto
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
 \font_default_family default
 \use_non_tex_fonts false
 \font_sc false
 \font_osf false
-\font_sf_scale 100
-\font_tt_scale 100
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
 \graphics default
 \default_output_format default
 \output_sync 0
@@ -47,6 +51,7 @@
 \suppress_date false
 \justification true
 \use_refstyle 0
+\use_minted 0
 \index Index
 \shortcut idx
 \color #008000
@@ -55,7 +60,10 @@
 \tocdepth 3
 \paragraph_separation indent
 \paragraph_indentation default
-\quotes_language english
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
 \papercolumns 1
 \papersides 1
 \paperpagestyle default
@@ -73,7 +81,7 @@ Toprammer - TOPxxxx OpenSource suite
 \end_layout
 
 \begin_layout Author
-Copyright (c) 2009-2015 Michael Buesch <m@bues.ch>
+Copyright (c) 2009-2022 Michael Büsch <m@bues.ch>
 \end_layout
 
 \begin_layout Section
@@ -81,7 +89,7 @@ Dependencies
 \end_layout
 
 \begin_layout Itemize
-Python 2.7 is required
+Python 3.7 or later is required
 \end_layout
 
 \begin_layout LyX-Code
@@ -89,28 +97,28 @@ https://www.python.org/
 \end_layout
 
 \begin_layout Itemize
-python-usb module is required:
+python3-usb module is required:
 \end_layout
 
 \begin_layout LyX-Code
-https://walac.github.io/pyusb/
+https://pypi.org/project/pyusb/
 \end_layout
 
 \begin_layout Itemize
-python-pkg-resources module is required 'pkg_resources' is part of the Python
- 'setuptools' package.
+python3-pkg-resources module is required 'pkg_resources' is part of the
+ Python 'setuptools' package.
 \end_layout
 
 \begin_layout LyX-Code
-https://pypi.python.org/pypi/setuptools
+https://pypi.org/project/setuptools/
 \end_layout
 
 \begin_layout Itemize
-PySide is required for the graphical QT user interface (optional):
+PyQT5 is required for the graphical QT user interface (optional):
 \end_layout
 
 \begin_layout LyX-Code
-https://pypi.python.org/pypi/PySide
+https://riverbankcomputing.com/software/pyqt/download
 \end_layout
 
 \begin_layout Section
@@ -249,8 +257,8 @@ This will show you a layout of how to insert the chip into the programmer.
  This will hopefully match your request.
  :) Alternatively, it will yield an error message, if it was unable to find
  a layout that fits the contraints.
- Note that the --vcc, --vpp and --gnd pins specified on the commandline
- are with respect to the package (_not_ the ZIF socket).
+ Note that the –vcc, –vpp and –gnd pins specified on the commandline are
+ with respect to the package (_not_ the ZIF socket).
  The whole purpose of the tool is to map the package and its pin layout
  to the ZIF socket, while obeying the programmer constraints.
 \end_layout
