@@ -1,7 +1,7 @@
 """
 #    TOP2049 Open Source programming suite
 #
-#    Copyright (c) 2009-2017 Michael Buesch <m@bues.ch>
+#    Copyright (c) 2009-2022 Michael Buesch <m@bues.ch>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -50,6 +50,7 @@ class FoundDev(object):
 class TOP(object):
 	# Supported programmer types
 	TYPE_TOP2049		= "TOP2049"
+	TYPE_TOP853		= "TOP853"
 
 	def __init__(self, devIdentifier=None, verbose=0,
 		     forceLevel=0, noqueue=False, usebroken=False,
@@ -155,6 +156,7 @@ class TOP(object):
 		try:
 			toptype = {
 				(0x2471, 0x0853):	TOP.TYPE_TOP2049,
+				(0x2472, 0x0103):	TOP.TYPE_TOP853,
 			}[ (usbdev.idVendor, usbdev.idProduct) ]
 		except (KeyError) as e:
 			return None
@@ -188,12 +190,21 @@ class TOP(object):
 			self.vcc = top2049_vcc_layouts.VCCLayout(self)
 			self.vpp = top2049_vpp_layouts.VPPLayout(self)
 			self.gnd = top2049_gnd_layouts.GNDLayout(self)
+		elif foundDev.toptype == self.TYPE_TOP853:
+			self.hw = top853_hardware_access.HardwareAccess(
+					foundUSBDev = foundDev.busdata,
+					noQueue = noQueue,
+					doRawDump = (self.verbose >= 3))
+			self.vcc = top853_vcc_layouts.VCCLayout(self)
+			self.vpp = top853_vpp_layouts.VPPLayout(self)
+			self.gnd = top853_gnd_layouts.GNDLayout(self)
 		else:
 			assert(0)
 		self.topType = foundDev.toptype
 
 		versionRegex = (
 			(r"top2049\s+ver\s*(\d+\.\d+)", self.TYPE_TOP2049),
+			(r"top853\s+ver\s*(\d+\.\d+)", self.TYPE_TOP853),
 		)
 
 		# This is the first hardware access. Try several times since the programmer is in an unknown state.
