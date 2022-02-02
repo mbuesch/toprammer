@@ -6,9 +6,9 @@ TOP2049 USB protocol (incomplete)
 
 00		>= 4 usec delay
 
-01		>= Read a byte from the FPGA at address 0x10 into the status register.
+01		>= Read a byte from the FPGA at address 0x10 into the buffer register.
 
-07		>= Read the status register.
+07		>= Read the buffer register.
 		   The register is read by sending 07h via bulk out
 		   and reading 64bytes via bulk in.
 
@@ -16,11 +16,11 @@ TOP2049 USB protocol (incomplete)
 		   xx is the address (clocked via ALE).
 		   yy is the data (clocked via WR).
 
-0Bxx		>= Read a byte from the FPGA at address xx into the status register.
+0Bxx		>= Read a byte from the FPGA at address xx into the buffer register.
 
 0D		>= Unknown
 
-0E110000	>= Put the device ID string into the status register.
+0E110000	>= Put the device ID string into the buffer register.
 		   String length is 16 bytes.
 
 0E12xx00	>= Set VPP, where xx is the voltage.

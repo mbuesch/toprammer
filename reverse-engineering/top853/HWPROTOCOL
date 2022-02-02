@@ -6,7 +6,7 @@ TOP853 USB protocol (incomplete)
 
 00              >= Unknown
 
-07              >= Read the status register.
+07              >= Read the buffer register.
                    The register is read by sending 07h via bulk out
                    and reading 64bytes via bulk in.
 
@@ -20,7 +20,7 @@ TOP853 USB protocol (incomplete)
 
 0E100000        >= Unknown
 
-0E110000        >= Put the device ID string into the status register.
+0E110000        >= Put the device ID string into the buffer register.
                    The received data length is 64 bytes.
 
 0E13xx00	>= Set VCC ???
