@@ -1,1 +1,6 @@
-SUBSYSTEM=="usb", ACTION=="add", ATTR{idVendor}=="2471", ATTR{idProduct}=="0853", MODE="660", GROUP="dialout"
+# All users in the group 'plugdev' have access to TOP devices.
+
+# TOP2049
+SUBSYSTEM=="usb", ACTION=="add", ATTR{idVendor}=="2471", ATTR{idProduct}=="0853", MODE="660", GROUP="plugdev"
+# TOP853
+SUBSYSTEM=="usb", ACTION=="add", ATTR{idVendor}=="2472", ATTR{idProduct}=="0103", MODE="660", GROUP="plugdev"
