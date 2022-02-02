@@ -60,29 +60,48 @@ class HardwareAccessUSB(CommandQueue):
 
 	def __initUSB(self):
 		try:
-			config = self.usbdev.configurations()[0]
-			interface = config.interfaces()[0]
-
 			# Find the endpoints
 			self.bulkOut = None
 			self.bulkIn = None
-			for ep in interface.endpoints():
-				if not self.bulkIn and \
-				   usb.util.endpoint_type(ep.bmAttributes) == usb.util.ENDPOINT_TYPE_BULK and \
-				   usb.util.endpoint_direction(ep.bEndpointAddress) == usb.util.ENDPOINT_IN:
-					self.bulkIn = ep
-				if not self.bulkOut and \
-				   usb.util.endpoint_type(ep.bmAttributes) == usb.util.ENDPOINT_TYPE_BULK and \
-				   usb.util.endpoint_direction(ep.bEndpointAddress) == usb.util.ENDPOINT_OUT:
-					self.bulkOut = ep
-			if not self.bulkIn or not self.bulkOut:
+			selectedConfig = None
+			selectedInterface = None
+			for config in self.usbdev.configurations():
+				for interface in config.interfaces():
+					for ep in interface.endpoints():
+						if self.bulkIn is None and \
+						   usb.util.endpoint_type(ep.bmAttributes) == usb.util.ENDPOINT_TYPE_BULK and \
+						   usb.util.endpoint_direction(ep.bEndpointAddress) == usb.util.ENDPOINT_IN:
+							self.bulkIn = ep
+							selectedConfig = config
+							selectedInterface = interface
+						if self.bulkOut is None and \
+						   usb.util.endpoint_type(ep.bmAttributes) == usb.util.ENDPOINT_TYPE_BULK and \
+						   usb.util.endpoint_direction(ep.bEndpointAddress) == usb.util.ENDPOINT_OUT:
+							self.bulkOut = ep
+							selectedConfig = config
+							selectedInterface = interface
+					if selectedInterface is not None:
+						break
+				if selectedConfig is not None:
+					break
+			if self.bulkIn is None or self.bulkOut is None or \
+			   selectedConfig is None or selectedInterface is None:
 				raise TOPException("Did not find all USB EPs")
 
-			self.usbdev.set_configuration(config)
+			bInterfaceNumber = selectedInterface.bInterfaceNumber
+
+			# If some kernel driver attached to our device, detach it.
+			if self.usbdev.is_kernel_driver_active(bInterfaceNumber):
+				try:
+					self.usbdev.detach_kernel_driver(bInterfaceNumber)
+				except usb.core.USBError as e:
+					raise TOPException("USB error: "
+						"Failed to detach kernel driver: " + str(e))
+
+			self.usbdev.set_configuration(selectedConfig)
 			self.bulkIn.clear_halt()
 			self.bulkOut.clear_halt()
-
-		except (usb.core.USBError) as e:
+		except usb.core.USBError as e:
 			raise TOPException("USB error: " + str(e))
 
 	def shutdown(self):
