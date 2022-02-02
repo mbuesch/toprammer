@@ -3,7 +3,7 @@
 #
 #    Generic command queue.
 #
-#    Copyright (c) 2012 Michael Buesch <m@bues.ch>
+#    Copyright (c) 2012-2022 Michael Buesch <m@bues.ch>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -54,7 +54,9 @@ class CommandQueue(object):
 	def flushCommands(self, sleepSeconds=0):
 		"""Flush the command queue."""
 		command = b""
-		for oneCommand in self.commandQueue:
+		commandQueue = self.commandQueue
+		self.commandQueue = []
+		for oneCommand in commandQueue:
 			assert(len(oneCommand) <= self.maxPacketBytes)
 			if len(command) + len(oneCommand) > self.maxPacketBytes:
 				self.send(command)
@@ -62,7 +64,6 @@ class CommandQueue(object):
 			command += oneCommand
 		if command:
 			self.send(command)
-		self.commandQueue = []
 		if sleepSeconds:
 			time.sleep(sleepSeconds)
 
