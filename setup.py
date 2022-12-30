@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from distutils.core import setup
+from setuptools import setup
 import libtoprammer.main as toprammer_main
 
 setup(	name		= "toprammer",
