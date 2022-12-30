@@ -1,14 +1,14 @@
-include COPYING.txt
+global-include makeSip6.py
+graft libtoprammer/fpga
+graft reverse-engineering
+graft tests
 include 01-toprammer-udev.rules
-include README.lyx
-include README.ps
+include COPYING.txt
 include README-DEVELOPERS.lyx
 include README-DEVELOPERS.ps
+include README.lyx
+include README.ps
 include RUNTIME_IDS
-global-include makeSip6.py
-graft tests
-graft reverse-engineering
-graft libtoprammer/fpga
-
-prune build
+include requirements.txt
 prune ./build
+prune build
