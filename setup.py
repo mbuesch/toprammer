@@ -18,7 +18,7 @@ setup(	name		= "toprammer",
 	package_data	= { "libtoprammer" : [ "fpga/bin/*.bit",
 					       "icons/*.png", ], },
 	scripts		= [ "toprammer", "toprammer-gui", "toprammer-layout", ],
-	keywords	= "universal programmer TOP2049 EEPROM burner",
+	keywords	= "TOP2049 universal programmer EPROM EEPROM microcontroller burner",
 	install_requires = [ "PyQt5", "pyusb", ],
 	classifiers	= [
 		"Development Status :: 5 - Production/Stable",
