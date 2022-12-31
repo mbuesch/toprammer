@@ -19,7 +19,7 @@ setup(	name		= "toprammer",
 					       "icons/*.png", ], },
 	scripts		= [ "toprammer", "toprammer-gui", "toprammer-layout", ],
 	keywords	= "TOP2049 universal programmer EPROM EEPROM microcontroller burner",
-	install_requires = [ "PyQt5", "pyusb", ],
+	install_requires = [ "PyQt6", "pyusb", ],
 	classifiers	= [
 		"Development Status :: 5 - Production/Stable",
 		"Environment :: Console",

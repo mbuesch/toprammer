@@ -4,7 +4,7 @@
 #
 #    Qt-based graphical user interface
 #
-#    Copyright (c) 2010-2012 Michael Buesch <m@bues.ch>
+#    Copyright (c) 2010-2023 Michael Buesch <m@bues.ch>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -28,17 +28,17 @@ import time
 import html
 import configparser
 try:
-	from PyQt5.QtCore import *
-	from PyQt5.QtGui import *
-	from PyQt5.QtWidgets import *
+	from PyQt6.QtCore import *
+	from PyQt6.QtGui import *
+	from PyQt6.QtWidgets import *
 	Signal = pyqtSignal
-except (ImportError) as e:
-	print("Failed to import PyQt5 modules: %s" % str(e))
-	print("Please install PyQt5. On Debian Linux run: apt install python3-pyqt5")
+except ImportError as e:
+	print("Failed to import PyQt6 modules: %s" % str(e))
+	print("Please install PyQt6. On Debian Linux run: apt install python3-pyqt6")
 	sys.exit(1)
 
 
-EVENT_HWTHREAD		= QEvent.Type(QEvent.User + 0)
+EVENT_HWTHREAD		= QEvent.Type(QEvent.Type.User + 0)
 
 
 def stringRemoveChars(string, chars):
@@ -95,22 +95,22 @@ class ZifPinButton(QWidget):
 		self.label.clicked.connect(self.toggle)
 
 		if textPos == self.TEXT_RIGHT:
-			self.label.setAlignment(Qt.AlignLeft)
+			self.label.setAlignment(Qt.AlignmentFlag.AlignLeft)
 			self.layout().addWidget(self.checkbox)
 			self.layout().addWidget(self.label)
 		else:
-			self.label.setAlignment(Qt.AlignRight)
+			self.label.setAlignment(Qt.AlignmentFlag.AlignRight)
 			self.layout().addWidget(self.label)
 			self.layout().addWidget(self.checkbox)
 
 	def __cbStateChanged(self, newState):
-		self.stateChanged.emit(newState == Qt.Checked)
+		self.stateChanged.emit(newState == Qt.CheckState.Checked)
 
 	def state(self):
-		return self.checkbox.checkState() == Qt.Checked
+		return self.checkbox.checkState() == Qt.CheckState.Checked
 
 	def setState(self, en):
-		self.checkbox.setCheckState(Qt.Checked if en else Qt.Unchecked)
+		self.checkbox.setCheckState(Qt.CheckState.Checked if en else Qt.CheckState.Unchecked)
 
 	def toggle(self):
 		self.setState(not self.state())
@@ -128,8 +128,9 @@ class ZifWidget(QGroupBox):
 		self.ignoreOutChange = False
 
 		label = QLabel("ZIF\nsocket", self)
-		label.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-		label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+		label.setFrameShape(QFrame.Shape.Panel)
+		label.setFrameShadow(QFrame.Shadow.Sunken)
+		label.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
 		label.setMinimumWidth(80)
 		self.layout().addWidget(label, 0, 2, self.nrPins // 2, 1)
 
@@ -337,7 +338,7 @@ class UnitestDialog(QDialog):
 		group = QGroupBox("Input polling", self)
 		group.setLayout(QGridLayout())
 		self.inputPollEn = QCheckBox("Enabled", self)
-		self.inputPollEn.setCheckState(Qt.Checked)
+		self.inputPollEn.setCheckState(Qt.CheckState.Checked)
 		group.layout().addWidget(self.inputPollEn, 0, 0)
 		self.inputPollInterval = QDoubleSpinBox(self)
 		self.inputPollInterval.setPrefix("Interval ")
@@ -351,10 +352,10 @@ class UnitestDialog(QDialog):
 		group = QGroupBox("Frequency counter", self)
 		group.setLayout(QGridLayout())
 		self.fcntEn = QCheckBox("Enabled", self)
-		self.fcntEn.setCheckState(Qt.Unchecked)
+		self.fcntEn.setCheckState(Qt.CheckState.Unchecked)
 		group.layout().addWidget(self.fcntEn, 0, 0)
 		self.fcntPosEdge = QCheckBox("Positive edge", self)
-		self.fcntPosEdge.setCheckState(Qt.Checked)
+		self.fcntPosEdge.setCheckState(Qt.CheckState.Checked)
 		group.layout().addWidget(self.fcntPosEdge, 1, 0)
 		self.fcntPin = QComboBox(self)
 		group.layout().addWidget(self.fcntPin, 2, 0)
@@ -519,9 +520,9 @@ class UnitestDialog(QDialog):
 			layouts = p.get(sect, "vppLayout").split(",")
 			for layId in list(self.vppLayouts.keys()):
 				if layId in layouts:
-					self.vppLayouts[layId].setCheckState(Qt.Checked)
+					self.vppLayouts[layId].setCheckState(Qt.CheckState.Checked)
 				else:
-					self.vppLayouts[layId].setCheckState(Qt.Unchecked)
+					self.vppLayouts[layId].setCheckState(Qt.CheckState.Unchecked)
 
 			voltage = p.getfloat(sect, "vppVoltage")
 			self.vppVoltage.setValue(voltage)
@@ -531,9 +532,9 @@ class UnitestDialog(QDialog):
 
 			enabled = p.getboolean(sect, "inputPollEnabled")
 			if enabled:
-				self.inputPollEn.setCheckState(Qt.Checked)
+				self.inputPollEn.setCheckState(Qt.CheckState.Checked)
 			else:
-				self.inputPollEn.setCheckState(Qt.Unchecked)
+				self.inputPollEn.setCheckState(Qt.CheckState.Unchecked)
 
 			div = p.getint(sect, "oscillatorDiv")
 			self.oscDiv.setValue(div)
@@ -554,14 +555,14 @@ class UnitestDialog(QDialog):
 
 			enabled = p.getboolean(sect, "fcntEnabled")
 			if enabled:
-				self.fcntEn.setCheckState(Qt.Checked)
+				self.fcntEn.setCheckState(Qt.CheckState.Checked)
 			else:
-				self.fcntEn.setCheckState(Qt.Unchecked)
+				self.fcntEn.setCheckState(Qt.CheckState.Unchecked)
 			pos = p.getboolean(sect, "fcntPosEdge")
 			if pos:
-				self.fcntPosEdge.setCheckState(Qt.Checked)
+				self.fcntPosEdge.setCheckState(Qt.CheckState.Checked)
 			else:
-				self.fcntPosEdge.setCheckState(Qt.Unchecked)
+				self.fcntPosEdge.setCheckState(Qt.CheckState.Unchecked)
 			pin = p.getint(sect, "fcntPin")
 			if pin >= 0:
 				idx = self.fcntPin.findData(pin)
@@ -596,7 +597,7 @@ class UnitestDialog(QDialog):
 			fd.write("vccVoltage=%f\r\n" % self.vccVoltage.value())
 			vppLayouts = ""
 			for layId in list(self.vppLayouts.keys()):
-				if self.vppLayouts[layId].checkState() == Qt.Checked:
+				if self.vppLayouts[layId].checkState() == Qt.CheckState.Checked:
 					if vppLayouts:
 						vppLayouts += ","
 					vppLayouts += str(layId)
@@ -604,10 +605,10 @@ class UnitestDialog(QDialog):
 				vppLayouts = "0"
 			fd.write("vppLayout=%s\r\n" % vppLayouts)
 			fd.write("vppVoltage=%f\r\n" % self.vppVoltage.value())
-			fd.write("inputPollEnabled=%d\r\n" % int(self.inputPollEn.checkState() == Qt.Checked))
+			fd.write("inputPollEnabled=%d\r\n" % int(self.inputPollEn.checkState() == Qt.CheckState.Checked))
 			fd.write("inputPollInterval=%f\r\n" % self.inputPollInterval.value())
-			fd.write("fcntEnabled=%d\r\n" % (int(self.fcntEn.checkState() == Qt.Checked)))
-			fd.write("fcntPosEdge=%d\r\n" % (int(self.fcntPosEdge.checkState() == Qt.Checked)))
+			fd.write("fcntEnabled=%d\r\n" % (int(self.fcntEn.checkState() == Qt.CheckState.Checked)))
+			fd.write("fcntPosEdge=%d\r\n" % (int(self.fcntPosEdge.checkState() == Qt.CheckState.Checked)))
 			idx = self.fcntPin.currentIndex()
 			pin = -1
 			if idx >= 0:
@@ -669,7 +670,7 @@ class UnitestDialog(QDialog):
 		blockedPins.extend(self.queryTop("top.vcc.ID2pinlist(...)", lay))
 		# VPP
 		for key in list(self.vppLayouts.keys()):
-			if self.vppLayouts[key].checkState() == Qt.Checked:
+			if self.vppLayouts[key].checkState() == Qt.CheckState.Checked:
 				blockedPins.extend(self.queryTop("top.vpp.ID2pinlist(...)", key))
 		# OSC
 		idx = self.oscPin.currentIndex()
@@ -720,7 +721,7 @@ class UnitestDialog(QDialog):
 		selVoltage = self.vppVoltage.value()
 		selLayouts = []
 		for key in list(self.vppLayouts.keys()):
-			if self.vppLayouts[key].checkState() == Qt.Checked:
+			if self.vppLayouts[key].checkState() == Qt.CheckState.Checked:
 				selLayouts.append(key)
 		try:
 			self.queryTop("top.getChip().setVPP(...)", selVoltage, selLayouts)
@@ -738,13 +739,13 @@ class UnitestDialog(QDialog):
 			return
 		ok = self.zifWidget.readInputs()
 		if ok:
-			if self.fcntEn.checkState() == Qt.Checked:
+			if self.fcntEn.checkState() == Qt.CheckState.Checked:
 				ok = self.__readFcntValue()
 				if ok:
 					self.__updateFcntValueLabel()
 		if not ok:
 			# Whoops, error. Disable input polling
-			self.inputPollEn.setCheckState(Qt.Unchecked)
+			self.inputPollEn.setCheckState(Qt.CheckState.Unchecked)
 			return False
 		# Reschedule
 		inter = int(self.inputPollInterval.value() * 1000)
@@ -754,7 +755,7 @@ class UnitestDialog(QDialog):
 	def inputPollChanged(self, unused=None):
 		if self.uiChangeBlocked:
 			return
-		if self.inputPollEn.checkState() == Qt.Checked:
+		if self.inputPollEn.checkState() == Qt.CheckState.Checked:
 			self.inputPollInterval.setEnabled(True)
 			if self.doInputPollTimer():
 				inter = int(self.inputPollInterval.value() * 1000)
@@ -767,17 +768,17 @@ class UnitestDialog(QDialog):
 		if self.uiChangeBlocked:
 			return
 		try:
-			if self.fcntEn.checkState() == Qt.Checked:
+			if self.fcntEn.checkState() == Qt.CheckState.Checked:
 				self.switchMode(Chip_Unitest.MODE_FCNT)
 				idx = self.fcntPin.currentIndex()
 				pinNumber = self.fcntPin.itemData(idx)
-				inv = (self.fcntPosEdge.checkState() != Qt.Checked)
+				inv = (self.fcntPosEdge.checkState() != Qt.CheckState.Checked)
 				self.queryTop("top.getChip().setFreqCountPin(...)",
 					      pinNumber, inv)
 				self.__readFcntValue()
 				self.__updateFcntValueLabel()
 				# Force enable input polling
-				self.inputPollEn.setCheckState(Qt.Checked)
+				self.inputPollEn.setCheckState(Qt.CheckState.Checked)
 				self.inputPollEn.setEnabled(False)
 			else:
 				self.switchMode(Chip_Unitest.MODE_UNITEST)
@@ -1087,7 +1088,8 @@ class Console(QDockWidget):
 		self.addPrefix = True
 		self.statusUpdateBlocked = 0
 
-		self.setFeatures(self.DockWidgetMovable | self.DockWidgetFloatable)
+		self.setFeatures(self.DockWidgetFeature.DockWidgetMovable |
+				 self.DockWidgetFeature.DockWidgetFloatable)
 		self.setWidget(QWidget(self))
 		self.widget().show()
 		self.widget().setLayout(QGridLayout(self.widget()))
@@ -1226,13 +1228,13 @@ class HexEditWidget(QWidget):
 
 		font = self.font()
 		font.setFamily("Courier")
-		font.setStyleHint(QFont.Courier)
-		font.setWeight(QFont.Normal)
+		font.setStyleHint(QFont.StyleHint.Courier)
+		font.setWeight(QFont.Weight.Normal)
 		font.setPointSize(10)
 		font.setBold(False)
 		font.setFixedPitch(True)
 		self.setFont(font)
-		self.charWidth = self.fontMetrics().width("X" * 100) / 100
+		self.charWidth = self.fontMetrics().boundingRect("X" * 100).width() / 100
 		self.charHeight = self.fontMetrics().height()
 
 		self.bytesPerLine = 16
@@ -1241,7 +1243,7 @@ class HexEditWidget(QWidget):
 		self.setData(b"")
 		self.__setCursor(0, False)
 
-		self.setFocusPolicy(Qt.StrongFocus)
+		self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
 	def updateText(self):
 		lines = []
@@ -1273,7 +1275,7 @@ class HexEditWidget(QWidget):
 		self.nrLines = len(lines)
 		self.previousData = self.getData()
 
-		width = self.fontMetrics().width(self.textLines[0])
+		width = self.fontMetrics().boundingRect(self.textLines[0]).width()
 		height = self.nrLines * self.charHeight
 		self.resize(width + 20, height + 20)
 		self.repaint()
@@ -1319,43 +1321,43 @@ class HexEditWidget(QWidget):
 	def keyPressEvent(self, e):
 		linesOnScreen = self.scrollArea.viewport().height() // self.charHeight
 
-		if e.matches(QKeySequence.Delete) or\
-		   e.key() == Qt.Key_Backspace:
+		if e.matches(QKeySequence.StandardKey.Delete) or\
+		   e.key() == Qt.Key.Key_Backspace:
 			self.__setCursor(self.cursorByte - 1, self.cursorOnAscii)
 			return
 
-		if e.matches(QKeySequence.MoveToNextChar):
+		if e.matches(QKeySequence.StandardKey.MoveToNextChar):
 			self.__setCursor(self.cursorByte + 1, self.cursorOnAscii)
 			return
-		if e.matches(QKeySequence.MoveToPreviousChar):
+		if e.matches(QKeySequence.StandardKey.MoveToPreviousChar):
 			self.__setCursor(self.cursorByte - 1, self.cursorOnAscii)
 			return
-		if e.matches(QKeySequence.MoveToStartOfLine):
+		if e.matches(QKeySequence.StandardKey.MoveToStartOfLine):
 			self.__setCursor(self.cursorByte - self.cursorByte % self.bytesPerLine,
 					 self.cursorOnAscii)
 			return
-		if e.matches(QKeySequence.MoveToEndOfLine):
+		if e.matches(QKeySequence.StandardKey.MoveToEndOfLine):
 			self.__setCursor(self.cursorByte - self.cursorByte % self.bytesPerLine
 					 + self.bytesPerLine - 1,
 					 self.cursorOnAscii)
 			return
-		if e.matches(QKeySequence.MoveToNextLine):
+		if e.matches(QKeySequence.StandardKey.MoveToNextLine):
 			self.__setCursor(self.cursorByte + self.bytesPerLine, self.cursorOnAscii)
 			return
-		if e.matches(QKeySequence.MoveToPreviousLine):
+		if e.matches(QKeySequence.StandardKey.MoveToPreviousLine):
 			self.__setCursor(self.cursorByte - self.bytesPerLine, self.cursorOnAscii)
 			return
-		if e.matches(QKeySequence.MoveToStartOfDocument):
+		if e.matches(QKeySequence.StandardKey.MoveToStartOfDocument):
 			self.__setCursor(0, self.cursorOnAscii)
 			return
-		if e.matches(QKeySequence.MoveToEndOfDocument):
+		if e.matches(QKeySequence.StandardKey.MoveToEndOfDocument):
 			self.__setCursor(len(self.data) - 1, self.cursorOnAscii)
 			return
-		if e.matches(QKeySequence.MoveToNextPage):
+		if e.matches(QKeySequence.StandardKey.MoveToNextPage):
 			self.__setCursor(self.cursorByte + int(linesOnScreen * 0.8) * self.bytesPerLine,
 					 self.cursorOnAscii)
 			return
-		if e.matches(QKeySequence.MoveToPreviousPage):
+		if e.matches(QKeySequence.StandardKey.MoveToPreviousPage):
 			self.__setCursor(self.cursorByte - int(linesOnScreen * 0.8) * self.bytesPerLine,
 					 self.cursorOnAscii)
 			return
@@ -1456,7 +1458,7 @@ class HexEdit(QScrollArea):
 	def __init__(self, parent=None):
 		QScrollArea.__init__(self, parent)
 
-		self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+		self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
 		self.setWidgetResizable(False)
 		self.setWidget(HexEditWidget(self, self))
 
@@ -1517,10 +1519,10 @@ class InfoBufferWidget(BufferWidget):
 
 		def addLabel(name, y):
 			l = QLabel(name, self)
-			l.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+			l.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
 			self.layout().addWidget(l, y, 1)
 			label = QLabel(self)
-			label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+			label.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
 			font = label.font()
 			font.setBold(True)
 			label.setFont(font)
@@ -1591,10 +1593,10 @@ class InfoBufferWidget(BufferWidget):
 	def setChipLayout(self, asciiArtLayout):
 		if asciiArtLayout:
 			self.zifLayout.setText(asciiArtLayout)
-			self.zifLayout.setFrameShape(QFrame.StyledPanel)
+			self.zifLayout.setFrameShape(QFrame.Shape.StyledPanel)
 		else:
 			self.zifLayout.clear()
-			self.zifLayout.setFrameShape(QFrame.NoFrame)
+			self.zifLayout.setFrameShape(QFrame.Shape.NoFrame)
 
 class ImageBufferWidget(BufferWidget):
 	def __init__(self, mainWindow, name):
@@ -1625,7 +1627,7 @@ class BitBufferWidget(BufferWidget):
 
 		self.bitsAreaScroll = QScrollArea(self)
 		self.layout().addWidget(self.bitsAreaScroll, 0, 0)
-		self.bitsAreaScroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+		self.bitsAreaScroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
 		self.bitsAreaScroll.setWidgetResizable(False)
 
 		self.bitsArea = None
@@ -1670,7 +1672,7 @@ class BitBufferWidget(BufferWidget):
 				desc = " (%s)" % desc
 			checkbox = QCheckBox("bit %d%s" % (i, desc), self.bitsArea)
 			if byte2int(image[i // 8]) & bit(i % 8):
-				checkbox.setCheckState(Qt.Checked)
+				checkbox.setCheckState(Qt.CheckState.Checked)
 			self.bitsArea.layout().addWidget(checkbox, 1 + i, 0, 1, 2)
 			checkbox.stateChanged.connect(self.__bitStateChanged)
 			self.checkboxes.append(checkbox)
@@ -1685,7 +1687,7 @@ class BitBufferWidget(BufferWidget):
 		tmp = 0
 		i = 0
 		for checkbox in self.checkboxes:
-			if checkbox.checkState() == Qt.Checked:
+			if checkbox.checkState() == Qt.CheckState.Checked:
 				tmp |= bit(i)
 			i += 1
 			if i == 8:
@@ -1756,7 +1758,7 @@ class BufferTabWidget(QTabWidget):
 		self.lockBuffer = LockBufferWidget(mainWindow)
 		self.ramBuffer = RAMBufferWidget(mainWindow)
 
-		self.setTabPosition(self.South)
+		self.setTabPosition(self.TabPosition.South)
 		self.__addBufferTab(self.infoBuffer, readOnly=True)
 		self.removeAll()
 
@@ -1887,7 +1889,7 @@ class ChipSelectDialog(QDialog):
 		groupBox = QGroupBox("Chip type", self)
 		groupBox.setLayout(QGridLayout(groupBox))
 		self.allRadio = QRadioButton("All types", groupBox)
-		self.allRadio.setChecked(Qt.Checked)
+		self.allRadio.setChecked(True)
 		groupBox.layout().addWidget(self.allRadio, 0, 0)
 		self.mcuRadio = QRadioButton("Microcontrollers", groupBox)
 		groupBox.layout().addWidget(self.mcuRadio, 1, 0)
@@ -1943,17 +1945,17 @@ class ChipSelectDialog(QDialog):
 		QListWidgetItem(self.ALL_VENDORS, self.vendorList)
 		for vendorName in list(vendors.keys()):
 			descriptors = vendors[vendorName]
-			if self.showBroken.checkState() != Qt.Checked:
+			if self.showBroken.checkState() != Qt.CheckState.Checked:
 				descriptors = [d for d in descriptors if not d.broken]
 			descriptors = [d for d in descriptors if (d.chipType == selType or selType == -1) and\
 						       (d.chipType != ChipDescription.TYPE_INTERNAL)]
 			if not descriptors:
 				continue
 			item = QListWidgetItem(vendorName, self.vendorList)
-			item.setData(Qt.UserRole, descriptors)
+			item.setData(Qt.ItemDataRole.UserRole, descriptors)
 		self.vendorList.sortItems()
 		if previousVendor:
-			items = self.vendorList.findItems(previousVendor, Qt.MatchExactly)
+			items = self.vendorList.findItems(previousVendor, Qt.MatchFlag.MatchExactly)
 			if len(items) == 1:
 				self.vendorList.setCurrentItem(items[0])
 			else:
@@ -1974,7 +1976,7 @@ class ChipSelectDialog(QDialog):
 		self.chipList.clear()
 		for descriptor in getRegisteredChips():
 			if descriptor.broken and\
-			   self.showBroken.checkState() != Qt.Checked:
+			   self.showBroken.checkState() != Qt.CheckState.Checked:
 				continue
 			if descriptor.chipType != selType and selType != -1:
 				continue
@@ -1984,11 +1986,11 @@ class ChipSelectDialog(QDialog):
 				continue
 			item = QListWidgetItem(self.__descriptorText(descriptor),
 					       self.chipList)
-			item.setData(Qt.UserRole, descriptor)
+			item.setData(Qt.ItemDataRole.UserRole, descriptor)
 		self.chipList.sortItems()
 		if previousChip:
 			items = self.chipList.findItems(self.__descriptorText(previousChip),
-							Qt.MatchExactly)
+							Qt.MatchFlag.MatchExactly)
 			if len(items) == 1:
 				self.chipList.setCurrentItem(items[0])
 			else:
@@ -2031,7 +2033,7 @@ class ChipSelectDialog(QDialog):
 		item = self.chipList.currentItem()
 		if not item:
 			return None
-		chipDescription = item.data(Qt.UserRole)
+		chipDescription = item.data(Qt.ItemDataRole.UserRole)
 		return chipDescription
 
 class StatusBar(QStatusBar):
@@ -2042,7 +2044,7 @@ class TopToolBar(QToolBar):
 	def __init__(self, mainWindow):
 		QToolBar.__init__(self, "Toolbar", mainWindow)
 		self.mainWindow = mainWindow
-		self.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+		self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
 		self.setup(0)
 
 	def setup(self, chipSupportFlags):
@@ -2065,7 +2067,7 @@ class RightToolBar(QToolBar):
 	def __init__(self, mainWindow):
 		QToolBar.__init__(self, "Toolbar", mainWindow)
 		self.mainWindow = mainWindow
-		self.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+		self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
 		self.setup(0)
 
 	def setup(self, chipSupportFlags):
@@ -2094,14 +2096,15 @@ class AutorunWidget(QDockWidget):
 		self.running = False
 		self.currentAction = -1
 
-		self.setFeatures(self.DockWidgetMovable | self.DockWidgetFloatable)
+		self.setFeatures(self.DockWidgetFeature.DockWidgetMovable |
+				 self.DockWidgetFeature.DockWidgetFloatable)
 		self.setup(0)
 
 	def __addCheckBox(self, row, condition, text, checked):
 		if condition:
 			checkbox = QCheckBox(text, self.widget())
 			if checked:
-				checkbox.setCheckState(Qt.Checked)
+				checkbox.setCheckState(Qt.CheckState.Checked)
 			self.widget().layout().addWidget(checkbox, row, 0)
 			row += 1
 			return (checkbox, row)
@@ -2171,9 +2174,9 @@ class AutorunWidget(QDockWidget):
 			"Please insert a new %s chip into the ZIF socket "
 			"and press Ok to perform the operations..." %\
 			self.mainWindow.currentChipDescription.description,
-			QMessageBox.Ok | QMessageBox.Cancel,
-			QMessageBox.Ok)
-		if res != QMessageBox.Ok:
+			QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
+			QMessageBox.StandardButton.Ok)
+		if res != QMessageBox.StandardButton.Ok:
 			self.abortRun()
 			return
 		self.runNextAction()
@@ -2241,7 +2244,7 @@ class AutorunWidget(QDockWidget):
 
 	def __runAction(self, function, checkbox, actionName):
 		self.currentAction += 1
-		if checkbox.checkState() == Qt.Checked:
+		if checkbox.checkState() == Qt.CheckState.Checked:
 			self.mainWindow.console.showMessage(
 				"Running action: %s\n" % actionName, bold=True)
 			if not function():
@@ -2251,7 +2254,7 @@ class AutorunWidget(QDockWidget):
 
 	def __verifySelectedMemories(self):
 		def checked(cb):
-			return cb and (cb.checkState() == Qt.Checked)
+			return cb and (cb.checkState() == Qt.CheckState.Checked)
 		return self.mainWindow.verifySelectedMemories(
 			verifyProgmem = checked(self.progmemCheckBox),
 			verifyEEPROM = checked(self.eepromCheckBox),
@@ -2290,14 +2293,14 @@ class ProgrammerSelectDialog(QDialog):
 			text = "%s  (%s)" % (foundDev.toptype,
 					     foundDev.devIdentifier)
 			item = QListWidgetItem(text, self.deviceList)
-			item.setData(Qt.UserRole, foundDev.devIdentifier)
+			item.setData(Qt.ItemDataRole.UserRole, foundDev.devIdentifier)
 		self.deviceList.setCurrentRow(0)
 
 	def getIdentifier(self):
 		item = self.deviceList.currentItem()
 		if not item:
 			return None
-		return item.data(Qt.UserRole)
+		return item.data(Qt.ItemDataRole.UserRole)
 
 	def selectionChanged(self, unused):
 		if self.deviceList.currentItem():
@@ -2342,8 +2345,8 @@ class MainWindow(QMainWindow):
 		self.setStatusBar(StatusBar(self))
 		self.topToolBar = TopToolBar(self)
 		self.rightToolBar = RightToolBar(self)
-		self.addToolBar(Qt.TopToolBarArea, self.topToolBar)
-		self.addToolBar(Qt.RightToolBarArea, self.rightToolBar)
+		self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.topToolBar)
+		self.addToolBar(Qt.ToolBarArea.RightToolBarArea, self.rightToolBar)
 
 		self.setMenuBar(QMenuBar(self))
 
@@ -2373,10 +2376,10 @@ class MainWindow(QMainWindow):
 		self.setCentralWidget(self.bufferTab)
 
 		self.console = Console(self)
-		self.addDockWidget(Qt.BottomDockWidgetArea, self.console)
+		self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.console)
 
 		self.autorun = AutorunWidget(self)
-		self.addDockWidget(Qt.LeftDockWidgetArea, self.autorun)
+		self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.autorun)
 
 		self.hwThread = HwThread(self)
 		self.threadRunning = False
@@ -2437,7 +2440,7 @@ class MainWindow(QMainWindow):
 
 	def showAbout(self):
 		QMessageBox.information(self, "About TOPrammer",
-			"Copyright (c) Michael Buesch <m@bues.ch>")
+			"Copyright (c) Michael Büsch <m@bues.ch>")
 
 	def startUnitest(self):
 		self.bufferTab.setupBuffers(0)
@@ -2448,7 +2451,7 @@ class MainWindow(QMainWindow):
 		self.console.blockStatusUpdate()
 		try:
 			dlg = UnitestDialog(self)
-			dlg.exec_()
+			dlg.exec()
 		except (TOPException) as e:
 			self.console.showMessage("Failed to start Unitest: %s\n" % str(e),
 						 bold=True)
@@ -2460,7 +2463,7 @@ class MainWindow(QMainWindow):
 
 	def selectProgrammer(self):
 		dlg = ProgrammerSelectDialog(self)
-		if dlg.exec_() != QDialog.Accepted:
+		if dlg.exec() != QDialog.DialogCode.Accepted:
 			return
 		devIdentifier = dlg.getIdentifier()
 		self.runOperationSync(HwThread.TASK_SHUTDOWN)
@@ -2476,7 +2479,7 @@ class MainWindow(QMainWindow):
 			"Enter raw command to send, in " +\
 			"hex format (AABB1122...).\n" +\
 			"WARNING: The programmer will malfunction on invalid commands.",
-			QLineEdit.Normal,
+			QLineEdit.EchoMode.Normal,
 			self.previousRawCommand)
 		if not ok:
 			return
@@ -2556,9 +2559,9 @@ class MainWindow(QMainWindow):
 						"If 'No' is selected, the IHEX file will be read "
 						"in raw mode and all of its data will be "
 						"put into the current buffer.",
-						QMessageBox.Yes | QMessageBox.No,
-						QMessageBox.Yes)
-					readRaw = (res != QMessageBox.Yes)
+						QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+						QMessageBox.StandardButton.Yes)
+					readRaw = (res != QMessageBox.StandardButton.Yes)
 				else:
 					readRaw = True
 				ok = bufWidget.setDataWithIHexInterpreter(interp, readRaw)
@@ -2614,7 +2617,7 @@ class MainWindow(QMainWindow):
 
 	def selectChip(self):
 		dlg = ChipSelectDialog(self)
-		if dlg.exec_() != QDialog.Accepted:
+		if dlg.exec() != QDialog.DialogCode.Accepted:
 			return
 		chipDescription = dlg.getSelectedChip()
 		if not chipDescription:
@@ -2792,7 +2795,7 @@ class MainWindow(QMainWindow):
 			       hwTask, taskParameter)
 		self.runOperation(op)
 		while not op.finished:
-			QApplication.processEvents(QEventLoop.AllEvents, 50)
+			QApplication.processEvents(QEventLoop.ProcessEventsFlag.AllEvents, 50)
 		self.runningOps.pop(id(op))
 		return (op.failed, op.returnValue)
 
@@ -2886,7 +2889,7 @@ def main():
 	mainwnd.show()
 	mainwnd.resize(int(mainwnd.width() * 1.6),
 		       int(mainwnd.height() * 1.2))
-	return app.exec_()
+	return app.exec()
 
 if __name__ == "__main__":
 	sys.exit(main())
