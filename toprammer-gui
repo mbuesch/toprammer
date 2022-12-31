@@ -486,7 +486,7 @@ class UnitestDialog(QDialog):
 
 	def __loadFile(self, filename):
 		try:
-			p = configparser.SafeConfigParser()
+			p = configparser.ConfigParser()
 			p.read((filename,))
 
 			sect = "TOPRAMMER-UNITEST-SETTINGS"
