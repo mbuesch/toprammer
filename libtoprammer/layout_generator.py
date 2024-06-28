@@ -324,7 +324,7 @@ class LayoutGeneratorDIP(LayoutGenerator):
 
 def createLayoutGenerator(package):
 	try:
-		for regex in ("DIP(\d+)", "PDIP(\d+)", "SO(\d+)", "TSSOP(\d+)", ):
+		for regex in (r"DIP(\d+)", r"PDIP(\d+)", r"SO(\d+)", r"TSSOP(\d+)", ):
 			m = re.match(regex, package, re.IGNORECASE)
 			if m:
 				nrPins = int(m.group(1))
