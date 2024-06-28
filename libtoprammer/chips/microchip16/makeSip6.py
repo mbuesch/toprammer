@@ -27,14 +27,14 @@ import sys
 import os
 
 def substitute(input, oldSocket, newSocket):
-	input = re.sub('(^\s*packages).*', lambda m:'{} = (("DIP10", ""), ),'.format(m.group(1)), input)
-	input = re.sub('(^\s*chipPackage).*', lambda m:'{} = "DIP10",'.format(m.group(1)), input)
-	input = re.sub('(^\s*chipPinVCC).*', lambda m:'{} = 9,'.format(m.group(1)), input)
-	input = re.sub('(^\s*chipPinsVPP).*', lambda m:'{} = 10,'.format(m.group(1)), input)
-	input = re.sub('(^\s*chipPinGND).*', lambda m:'{} = 8,'.format(m.group(1)), input)
-	input = re.sub('(^\s*runtimeID).*', lambda m:'{} = (0xDF05, 0x01),'.format(m.group(1)), input)
-	input = re.sub('(^\s*description).+"(.*)".*', lambda m:'{} = "{} - ICD",'.format(m.group(1), m.group(2)), input)
-	input = re.sub('(^\s*bitfile).*', lambda m:'{} = "microchip16sip6",'.format(m.group(1)), input)
+	input = re.sub(r'(^\s*packages).*', lambda m:'{} = (("DIP10", ""), ),'.format(m.group(1)), input)
+	input = re.sub(r'(^\s*chipPackage).*', lambda m:'{} = "DIP10",'.format(m.group(1)), input)
+	input = re.sub(r'(^\s*chipPinVCC).*', lambda m:'{} = 9,'.format(m.group(1)), input)
+	input = re.sub(r'(^\s*chipPinsVPP).*', lambda m:'{} = 10,'.format(m.group(1)), input)
+	input = re.sub(r'(^\s*chipPinGND).*', lambda m:'{} = 8,'.format(m.group(1)), input)
+	input = re.sub(r'(^\s*runtimeID).*', lambda m:'{} = (0xDF05, 0x01),'.format(m.group(1)), input)
+	input = re.sub(r'(^\s*description).+"(.*)".*', lambda m:'{} = "{} - ICD",'.format(m.group(1), m.group(2)), input)
+	input = re.sub(r'(^\s*bitfile).*', lambda m:'{} = "microchip16sip6",'.format(m.group(1)), input)
 	input = re.sub("{}".format(oldSocket), "{}".format(newSocket), input)
 	input = re.sub("{}".format(oldSocket.upper()), "{}".format(newSocket.upper()), input)
 	return input
@@ -44,10 +44,10 @@ def makeSip():
 	fin = open(inputFileName)
 	dMCU = {}
 	for line in fin:
-		matchObj = re.match('.*(pic[0-9]+l?f\w+)(sip[0-9a]+).*', line)
+		matchObj = re.match(r'.*(pic[0-9]+l?f\w+)(sip[0-9a]+).*', line)
 		if matchObj:
 			continue
-		matchObj = re.match('.*(pic[0-9]+l?f\w+)(dip[0-9a]+).*', line)
+		matchObj = re.match(r'.*(pic[0-9]+l?f\w+)(dip[0-9a]+).*', line)
 		if not matchObj:
 			print("{} did not match".format(line))
 			continue
