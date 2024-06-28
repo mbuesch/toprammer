@@ -1,16 +1,16 @@
-#LyX 2.3 created this file. For more info see http://www.lyx.org/
-\lyxformat 544
+#LyX 2.4 created this file. For more info see https://www.lyx.org/
+\lyxformat 620
 \begin_document
 \begin_header
 \save_transient_properties true
 \origin unavailable
 \textclass article
 \use_default_options false
-\maintain_unincluded_children false
+\maintain_unincluded_children no
 \language english
 \language_package default
-\inputencoding auto
-\fontencoding global
+\inputencoding auto-legacy
+\fontencoding auto
 \font_roman "default" "default"
 \font_sans "default" "default"
 \font_typewriter "default" "default"
@@ -18,7 +18,9 @@
 \font_default_family default
 \use_non_tex_fonts false
 \font_sc false
-\font_osf false
+\font_roman_osf false
+\font_sans_osf false
+\font_typewriter_osf false
 \font_sf_scale 100 100
 \font_tt_scale 100 100
 \use_microtype false
@@ -51,7 +53,9 @@
 \suppress_date false
 \justification true
 \use_refstyle 0
+\use_formatted_ref 0
 \use_minted 0
+\use_lineno 0
 \index Index
 \shortcut idx
 \color #008000
@@ -67,11 +71,16 @@
 \papercolumns 1
 \papersides 1
 \paperpagestyle default
+\tablestyle default
 \tracking_changes false
 \output_changes false
+\change_bars false
+\postpone_fragile_content false
 \html_math_output 0
 \html_css_as_file 0
 \html_be_strict false
+\docbook_table_output 0
+\docbook_mathml_prefix 1
 \end_header
 
 \begin_body
@@ -81,7 +90,7 @@ Toprammer - TOPxxxx OpenSource suite
 \end_layout
 
 \begin_layout Author
-Copyright (c) 2009-2023 Michael Büsch <m@bues.ch>
+Copyright (c) 2009-2024 Michael Büsch <m@bues.ch>
 \end_layout
 
 \begin_layout Section
@@ -105,8 +114,7 @@ https://pypi.org/project/pyusb/
 \end_layout
 
 \begin_layout Itemize
-python3-pkg-resources module is required 'pkg_resources' is part of the
- Python 'setuptools' package.
+python3-pkg-resources module is required 'pkg_resources' is part of the Python 'setuptools' package.
 \end_layout
 
 \begin_layout LyX-Code
@@ -134,8 +142,8 @@ toprammer --list
 \end_layout
 
 \begin_layout Standard
-For a more verbose list, also pass the -V parameter with a verbosity level
- number:
+For a more verbose list,
+ also pass the -V parameter with a verbosity level number:
 \end_layout
 
 \begin_layout LyX-Code
@@ -190,13 +198,15 @@ toprammer-gui
 \end_layout
 
 \begin_layout Standard
-Note that, depending on your system config, you might need to run toprammer-gui
- as root to allow USB hardware access.
+Note that,
+ depending on your system config,
+ you might need to run toprammer-gui as root to allow USB hardware access.
  If you get 
 \begin_inset Quotes eld
 \end_inset
 
-Operation not permitted" errors, try to re-run toprammer-gui as root.
+Operation not permitted" errors,
+ try to re-run toprammer-gui as root.
 \end_layout
 
 \begin_layout Section
@@ -204,8 +214,7 @@ Commandline tool usage
 \end_layout
 
 \begin_layout Standard
-Toprammer needs the identification string of the chip that is inserted into
- the ZIF socket.
+Toprammer needs the identification string of the chip that is inserted into the ZIF socket.
  Additionally it needs an action to be performed on the chip.
  So a call to toprammer might look like this:
 \end_layout
@@ -215,12 +224,12 @@ toprammer --chip-id atmega32dip40 --read-prog flash.img
 \end_layout
 
 \begin_layout Standard
-That command selects an Atmel AtMega32 DIP40 chip and reads its flash contents
- into the flash.img file.
+That command selects an Atmel AtMega32 DIP40 chip and reads its flash contents into the flash.img file.
 \end_layout
 
 \begin_layout Standard
-For a list of supported chips, see the
+For a list of supported chips,
+ see the
 \end_layout
 
 \begin_layout LyX-Code
@@ -237,14 +246,15 @@ ZIF socket layout
 \end_layout
 
 \begin_layout Standard
-The ZIF socket layout generator "toprammer-layout" will try to generate
- a chip-insert layout with the given parameters and print it as ASCII-art
- to the console.
+The ZIF socket layout generator "toprammer-layout" will try to generate a chip-insert layout with the given parameters and print it as ASCII-art to the console.
 \end_layout
 
 \begin_layout Standard
-For example, if you have a DIP28 packaged chip, that needs VCC on pin 7,
- VPP on pin 1 and GND on pin 8, you'd issue the following command:
+For example,
+ if you have a DIP28 packaged chip,
+ that needs VCC on pin 7,
+ VPP on pin 1 and GND on pin 8,
+ you'd issue the following command:
 \end_layout
 
 \begin_layout LyX-Code
@@ -255,12 +265,13 @@ toprammer-layout -d top2049 --package DIP28 --vcc 7 --vpp 1 --gnd 8
 This will show you a layout of how to insert the chip into the programmer.
  It will also show which pins of the ZIF are powered.
  This will hopefully match your request.
- :) Alternatively, it will yield an error message, if it was unable to find
- a layout that fits the contraints.
- Note that the –vcc, –vpp and –gnd pins specified on the commandline are
- with respect to the package (_not_ the ZIF socket).
- The whole purpose of the tool is to map the package and its pin layout
- to the ZIF socket, while obeying the programmer constraints.
+ :) Alternatively,
+ it will yield an error message,
+ if it was unable to find a layout that fits the contraints.
+ Note that the –vcc,
+ –vpp and –gnd pins specified on the commandline are with respect to the package (_not_ the ZIF socket).
+ The whole purpose of the tool is to map the package and its pin layout to the ZIF socket,
+ while obeying the programmer constraints.
 \end_layout
 
 \begin_layout Standard
