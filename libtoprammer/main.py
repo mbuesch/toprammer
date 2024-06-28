@@ -25,7 +25,7 @@ if sys.version_info[0] < 3:
 
 # TOPrammer version stamp
 VERSION_MAJOR	= 0
-VERSION_MINOR	= 19
+VERSION_MINOR	= 20
 VERSION = "%d.%d" % (VERSION_MAJOR, VERSION_MINOR)
 
 
