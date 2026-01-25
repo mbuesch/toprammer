@@ -58,7 +58,7 @@ def getIconPath(name):
 def getIcon(name):
 	return QIcon(getIconPath(name))
 
-class Wrapper(object):
+class Wrapper:
 	def __init__(self, obj):
 		self.obj = obj
 
@@ -836,7 +836,7 @@ class GuiUserInterface(AbstractUserInterface):
 	def debugMessage(self, message):
 		self.__consoleMessage(message)
 
-class GenericTopCall(object):
+class GenericTopCall:
 	"One call to 'class Top'. Used by TASK_GENERICTOPCALL"
 
 	def __init__(self, methodName, *parameters, **userData):
@@ -2308,7 +2308,7 @@ class ProgrammerSelectDialog(QDialog):
 		else:
 			self.okButton.setEnabled(False)
 
-class Operation(object):
+class Operation:
 	OP_NONE		= 0
 	OP_SHUTDOWN	= 1
 	OP_INITCHIP	= 2
